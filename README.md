@@ -1,5 +1,5 @@
-# InterfazBase - G.A.M.A. SOLUTIONS (Web: Laravel)
-**Proyecto A: Sistema de Control de Aulas e Itinerarios Institucionales.**
+# Proyecto A: Sistema de Control de Aulas e Itinerarios Institucionales.
+
 <img width="1891" height="870" alt="image" src="https://github.com/user-attachments/assets/b50e0800-2acc-46df-a88b-11545f24b69e" />
 
 ## Descripción General
