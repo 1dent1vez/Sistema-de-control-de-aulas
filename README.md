@@ -1,4 +1,5 @@
 # InterfazBase - G.A.M.A. SOLUTIONS (Web: Laravel)
+**Proyecto A: Sistema de Control de Aulas e Itinerarios Institucionales.**
 <img width="1891" height="870" alt="image" src="https://github.com/user-attachments/assets/b50e0800-2acc-46df-a88b-11545f24b69e" />
 
 ## Descripción General
@@ -18,19 +19,6 @@ Sólo el Líder del Departamento y Desarrollador UX/UI tiene permitido hacer cam
 - **Desarrollador UX/UI:** Diego Miguel Hernández Fabela  
 
 ---
-
-## Objetivo del Proyecto
-
-Establecer una base sólida para el desarrollo de aplicaciones web que soporten distintas soluciones:
-
-- **Proyecto A: Sistema de Control de Aulas e Itinerarios Institucionales.**
-- **Proyecto B: Plataforma SaaS de Gestión de Asistencias y Cumplimiento Académico.S)**
-- **Proyecto C: Sistema de Control de Accesos y Registro de Visitantes.**
-
-Todo bajo una arquitectura unificada y reutilizable.
-
----
-
 ## Stack Tecnológico (Web)
 
 - **Backend:** Laravel (API + Web)  
