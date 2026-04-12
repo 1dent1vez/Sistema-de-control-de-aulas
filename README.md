@@ -3,13 +3,7 @@
 <img width="1891" height="870" alt="image" src="https://github.com/user-attachments/assets/b50e0800-2acc-46df-a88b-11545f24b69e" />
 
 ## Descripción General
-**InterfazBase** es el núcleo visual y estructural para el desarrollo de aplicaciones web dentro de GAMA Solutions. Este repositorio define un **framework interno basado en Laravel** que estandariza la construcción de interfaces, promoviendo:
-- Consistencia visual  
-- Reutilización de componentes  
-- Escalabilidad de proyectos  
-- Rapidez en el desarrollo  
 
-Está diseñado para servir como base en múltiples sistemas empresariales bajo una misma identidad de marca.
 
 ## Equipo Responsable
 
