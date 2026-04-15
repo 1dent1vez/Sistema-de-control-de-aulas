@@ -10,7 +10,8 @@
 Sólo el Líder del Departamento y Desarrollador UX/UI tiene permitido hacer cambios en el proyecto. Queda prohibido cualquier responsable no mencionado realice modificaciones a este repositorio
 
 - **Líder de Desarrollo Web:** Rubén Alejandro Nolasco Ruiz  
-- **Desarrollador UX/UI:** Diego Miguel Hernández Fabela  
+- **Desarrollador UX/UI:** Diego Miguel Hernández Fabela
+- **Desarrollador Backend:** Ghael Garcia Manjarrez
 
 ---
 ## Stack Tecnológico (Web)
