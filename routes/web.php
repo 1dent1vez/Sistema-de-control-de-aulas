@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-//Principal Routes
+// Principal Routes
 Route::get('/', function () {
     return view('dashboard');
 })->name('dashboard');
@@ -52,7 +52,7 @@ Route::get('/login', function () {
     return view('login');
 })->name('login');
 
-//Terms and Conditions
+// Terms and Conditions
 Route::get('/terms', function () {
     return view('legal.terms');
 })->name('terms');

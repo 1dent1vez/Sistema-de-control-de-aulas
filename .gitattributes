@@ -1,4 +1,12 @@
+# Tratar todos los archivos como texto y forzar LF al hacer commit
 * text=auto eol=lf
+
+# Todos los archivos específicos deben siempre ser LF (especialmente scripts)
+*.sh text eol=lf
+*.php text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+env* text eol=lf
 
 *.blade.php diff=html
 *.css diff=css

@@ -47,6 +47,5 @@ class User extends Authenticatable
         ];
     }
 
-
-    //jsxjsxbhjsbab
+    // jsxjsxbhjsbab
 }
