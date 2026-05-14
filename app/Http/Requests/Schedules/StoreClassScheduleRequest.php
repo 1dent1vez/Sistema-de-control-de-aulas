@@ -49,4 +49,12 @@ class StoreClassScheduleRequest extends FormRequest
             'status' => ['boolean'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        // Acepta group_label (alias del frontend) como group_name
+        if ($this->has('group_label') && ! $this->has('group_name')) {
+            $this->merge(['group_name' => $this->input('group_label')]);
+        }
+    }
 }
