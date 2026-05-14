@@ -1,22 +1,43 @@
 <?php
 
+/**
+ * @descripcion  Service provider principal donde se registran bindings de repositorios.
+ *
+ * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @version      1.0.0
+ *
+ * @creado       2026-05-13
+ *
+ * @modificado   2026-05-13
+ *
+ * @cambios      2026-05-13 - Registro de bindings de repositorios
+ */
+
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Repositories\Catalogs\GamaAbsenceTypeRepository;
+use App\Repositories\Catalogs\GamaInstitutionRepository;
+use App\Repositories\Contracts\AbsenceTypeRepositoryInterface;
+use App\Repositories\Contracts\InstitutionRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        $this->app->bind(InstitutionRepositoryInterface::class, GamaInstitutionRepository::class);
+        $this->app->bind(AbsenceTypeRepositoryInterface::class, GamaAbsenceTypeRepository::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         //

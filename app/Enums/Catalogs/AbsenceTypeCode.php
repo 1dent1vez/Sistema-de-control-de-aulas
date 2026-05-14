@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @descripcion  Seeder principal que orquesta todos los seeders del sistema.
+ * @descripcion  Enum que define los códigos fijos de tipos de ausencia del sistema.
  *
  * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
@@ -17,21 +17,18 @@
  *
  * @modificado   2026-05-13
  *
- * @cambios      2026-05-13 - Creación inicial del seeder
+ * @cambios      2026-05-13 - Creación inicial del enum
  */
 
 declare(strict_types=1);
 
-namespace Database\Seeders;
+namespace App\Enums\Catalogs;
 
-use Illuminate\Database\Seeder;
-
-class DatabaseSeeder extends Seeder
+enum AbsenceTypeCode: string
 {
-    public function run(): void
-    {
-        $this->call([
-            AbsenceTypeSeeder::class,
-        ]);
-    }
+    case COMISION = 'comision';
+    case JUNTA = 'junta';
+    case INCAPACIDAD = 'incapacidad';
+    case PERMISO_ECONOMICO = 'permiso_economico';
+    case OTRO = 'otro';
 }

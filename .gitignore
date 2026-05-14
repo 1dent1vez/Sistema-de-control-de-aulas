@@ -32,4 +32,6 @@ Thumbs.db
 # Archivos de contexto para el agente
 /.opencode/
 /AGENTS.md
-/docs/agents-guide/
+/docs/
+docs/modules/
+docs/PLAN_DESARROLLO.md

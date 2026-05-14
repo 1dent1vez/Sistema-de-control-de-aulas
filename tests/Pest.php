@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @descripcion  Seeder principal que orquesta todos los seeders del sistema.
+ * @descripcion  Archivo de configuración global de Pest.
  *
  * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
@@ -17,21 +17,10 @@
  *
  * @modificado   2026-05-13
  *
- * @cambios      2026-05-13 - Creación inicial del seeder
+ * @cambios      2026-05-13 - Creación inicial de la configuración de Pest
  */
 
 declare(strict_types=1);
+use Tests\TestCase;
 
-namespace Database\Seeders;
-
-use Illuminate\Database\Seeder;
-
-class DatabaseSeeder extends Seeder
-{
-    public function run(): void
-    {
-        $this->call([
-            AbsenceTypeSeeder::class,
-        ]);
-    }
-}
+uses(TestCase::class)->in('Feature');

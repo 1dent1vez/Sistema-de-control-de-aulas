@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @descripcion  Seeder principal que orquesta todos los seeders del sistema.
+ * @descripcion  Interfaz del repositorio de tipos de ausencia.
  *
  * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
@@ -17,21 +17,19 @@
  *
  * @modificado   2026-05-13
  *
- * @cambios      2026-05-13 - Creación inicial del seeder
+ * @cambios      2026-05-13 - Creación inicial de la interfaz
  */
 
 declare(strict_types=1);
 
-namespace Database\Seeders;
+namespace App\Repositories\Contracts;
 
-use Illuminate\Database\Seeder;
+use App\Models\AbsenceType;
+use Illuminate\Database\Eloquent\Collection;
 
-class DatabaseSeeder extends Seeder
+interface AbsenceTypeRepositoryInterface
 {
-    public function run(): void
-    {
-        $this->call([
-            AbsenceTypeSeeder::class,
-        ]);
-    }
+    public function all(): Collection;
+
+    public function findById(int $id): ?AbsenceType;
 }
