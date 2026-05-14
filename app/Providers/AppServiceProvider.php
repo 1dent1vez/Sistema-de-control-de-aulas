@@ -35,8 +35,10 @@ use App\Repositories\Contracts\ClassroomRepositoryInterface;
 use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use App\Repositories\Contracts\InstitutionRepositoryInterface;
 use App\Repositories\Contracts\LevelRepositoryInterface;
+use App\Repositories\Contracts\QrCodeRepositoryInterface;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
 use App\Repositories\Contracts\TeacherAbsenceRepositoryInterface;
+use App\Repositories\Qr\GamaQrCodeRepository;
 use App\Repositories\Schedules\GamaClassScheduleRepository;
 use App\Repositories\Schedules\GamaSemesterRepository;
 use App\Repositories\TeacherStatus\GamaTeacherAbsenceRepository;
@@ -54,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SemesterRepositoryInterface::class, GamaSemesterRepository::class);
         $this->app->bind(ClassScheduleRepositoryInterface::class, GamaClassScheduleRepository::class);
         $this->app->bind(TeacherAbsenceRepositoryInterface::class, GamaTeacherAbsenceRepository::class);
+        $this->app->bind(QrCodeRepositoryInterface::class, GamaQrCodeRepository::class);
     }
 
     public function boot(): void

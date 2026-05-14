@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Buildings\GamaBuildingController;
 use App\Http\Controllers\Api\V1\Buildings\GamaClassroomController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaAbsenceTypeController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaInstitutionController;
+use App\Http\Controllers\Api\V1\Qr\GamaQrCodeController;
 use App\Http\Controllers\Api\V1\Schedules\GamaClassScheduleController;
 use App\Http\Controllers\Api\V1\Schedules\GamaSemesterController;
 use App\Http\Controllers\Api\V1\TeacherStatus\GamaTeacherAbsenceController;
@@ -97,6 +98,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/{absenceId}', [GamaTeacherAbsenceController::class, 'show'])->name('show');
         Route::put('/{absenceId}', [GamaTeacherAbsenceController::class, 'update'])->name('update');
         Route::delete('/{absenceId}', [GamaTeacherAbsenceController::class, 'destroy'])->name('destroy');
+    });
+
+    // QR Codes
+    Route::prefix('classrooms/{classroomId}/qr')->name('classrooms.qr.')->group(function () {
+        Route::post('/', [GamaQrCodeController::class, 'generate'])->name('generate');
+        Route::get('/', [GamaQrCodeController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('qr-codes')->name('qr-codes.')->group(function () {
+        Route::post('/download', [GamaQrCodeController::class, 'download'])->name('download');
+        Route::get('/{id}/file', [GamaQrCodeController::class, 'file'])->name('file');
     });
 
 });
