@@ -18,7 +18,20 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/app/private
+/storage/framework/cache/data
+/storage/framework/sessions
+/storage/framework/testing
+/storage/framework/views
+/storage/logs
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Archivos de contexto para el agente
+/.opencode/
+/AGENTS.md
+/docs/
+docs/modules/
+docs/PLAN_DESARROLLO.md
