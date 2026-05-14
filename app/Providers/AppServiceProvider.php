@@ -36,8 +36,10 @@ use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use App\Repositories\Contracts\InstitutionRepositoryInterface;
 use App\Repositories\Contracts\LevelRepositoryInterface;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
+use App\Repositories\Contracts\TeacherAbsenceRepositoryInterface;
 use App\Repositories\Schedules\GamaClassScheduleRepository;
 use App\Repositories\Schedules\GamaSemesterRepository;
+use App\Repositories\TeacherStatus\GamaTeacherAbsenceRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ClassroomRepositoryInterface::class, GamaClassroomRepository::class);
         $this->app->bind(SemesterRepositoryInterface::class, GamaSemesterRepository::class);
         $this->app->bind(ClassScheduleRepositoryInterface::class, GamaClassScheduleRepository::class);
+        $this->app->bind(TeacherAbsenceRepositoryInterface::class, GamaTeacherAbsenceRepository::class);
     }
 
     public function boot(): void

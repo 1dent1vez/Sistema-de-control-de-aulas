@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\V1\Catalogs\GamaAbsenceTypeController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaInstitutionController;
 use App\Http\Controllers\Api\V1\Schedules\GamaClassScheduleController;
 use App\Http\Controllers\Api\V1\Schedules\GamaSemesterController;
+use App\Http\Controllers\Api\V1\TeacherStatus\GamaTeacherAbsenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -86,6 +87,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update');
         Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy');
         Route::get('/import/{batchId}/report', [GamaClassScheduleController::class, 'report'])->name('report');
+    });
+
+    // Teacher Absences
+    Route::prefix('teacher-absences')->name('teacher-absences.')->group(function () {
+        Route::get('/', [GamaTeacherAbsenceController::class, 'index'])->name('index');
+        Route::post('/', [GamaTeacherAbsenceController::class, 'store'])->name('store');
+        Route::get('/check-overlap', [GamaTeacherAbsenceController::class, 'checkOverlap'])->name('check-overlap');
+        Route::get('/{absenceId}', [GamaTeacherAbsenceController::class, 'show'])->name('show');
+        Route::put('/{absenceId}', [GamaTeacherAbsenceController::class, 'update'])->name('update');
+        Route::delete('/{absenceId}', [GamaTeacherAbsenceController::class, 'destroy'])->name('destroy');
     });
 
 });
