@@ -39,6 +39,7 @@ class Building extends Model
         'institution_id',
         'name',
         'level_count',
+        'description',
         'status',
     ];
 

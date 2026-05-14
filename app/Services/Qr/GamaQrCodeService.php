@@ -60,7 +60,7 @@ class GamaQrCodeService
 
         $renderer = new ImageRenderer(
             new RendererStyle(300, 2),
-            new SvgImageBackEnd()
+            new SvgImageBackEnd
         );
         $writer = new Writer($renderer);
         $qrImage = $writer->writeString(json_encode($payload));

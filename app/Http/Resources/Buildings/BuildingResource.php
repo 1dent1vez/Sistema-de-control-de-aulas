@@ -36,6 +36,8 @@ class BuildingResource extends JsonResource
             'institutionId' => $this->institution_id,
             'name' => $this->name,
             'levelCount' => $this->level_count,
+            'description' => $this->description ?? null,
+            'isActive' => (bool) $this->status,
             'status' => $this->status,
             'levels' => LevelResource::collection($this->whenLoaded('levels')),
             'createdAt' => $this->created_at?->toISOString(),

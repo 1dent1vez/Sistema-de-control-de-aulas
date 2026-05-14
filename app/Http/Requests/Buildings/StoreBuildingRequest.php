@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Buildings;
 
+use App\Models\Institution;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,7 +39,7 @@ class StoreBuildingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'institution_id' => ['required', 'integer', 'exists:gama_institutions,id'],
+            'institution_id' => ['nullable', 'integer', 'exists:gama_institutions,id'],
             'name' => [
                 'required',
                 'string',
@@ -46,21 +47,29 @@ class StoreBuildingRequest extends FormRequest
                 Rule::unique('gama_buildings', 'name')
                     ->where('institution_id', $this->input('institution_id')),
             ],
-            'level_count' => ['required', 'integer', 'min:1', 'max:5'],
+            'level_count' => ['required', 'integer', 'min:1', 'max:20'],
+            'description' => ['nullable', 'string', 'max:500'],
             'status' => ['boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('institution_id') || ! $this->input('institution_id')) {
+            $first = Institution::first();
+            $this->merge(['institution_id' => $first?->id ?? 1]);
+        }
     }
 
     public function messages(): array
     {
         return [
-            'institution_id.required' => 'La institución es obligatoria.',
             'institution_id.exists' => 'La institución seleccionada no existe.',
             'name.required' => 'El nombre del edificio es obligatorio.',
             'name.unique' => 'Ya existe un edificio con ese nombre en la misma institución.',
             'level_count.required' => 'El número de niveles es obligatorio.',
             'level_count.min' => 'El edificio debe tener al menos 1 nivel.',
-            'level_count.max' => 'El edificio puede tener máximo 5 niveles.',
+            'level_count.max' => 'El edificio puede tener máximo 20 niveles.',
         ];
     }
 }

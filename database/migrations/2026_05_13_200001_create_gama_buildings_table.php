@@ -35,6 +35,7 @@ return new class extends Migration
             $table->foreignId('institution_id')->constrained('gama_institutions');
             $table->string('name', 100);
             $table->tinyInteger('level_count')->unsigned();
+            $table->text('description')->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
             $table->softDeletes();

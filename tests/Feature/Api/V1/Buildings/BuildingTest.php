@@ -81,7 +81,7 @@ it('can create a building with auto-generated levels', function (): void {
     $this->assertDatabaseHas('gama_levels', ['building_id' => $buildingId, 'name' => 'P2', 'display_order' => 2]);
 });
 
-it('validates level_count between 1 and 5', function (): void {
+it('validates level_count between 1 and 20', function (): void {
     $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
         'name' => 'Test',
@@ -91,7 +91,7 @@ it('validates level_count between 1 and 5', function (): void {
     $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
         'name' => 'Test 2',
-        'level_count' => 6,
+        'level_count' => 21,
     ])->assertStatus(422);
 });
 

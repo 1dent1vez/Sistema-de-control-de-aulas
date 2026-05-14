@@ -796,8 +796,392 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ─── Datos de prueba (reemplazar con datos del controlador cuando esté listo) ─── */
-    const SEED = [
+    /* ─── Estado ─── */
+    const PER_PAGE  = 10;
+    let buildings   = [];
+    let page        = 1;
+    let search      = '';
+    let filterEstatus = '';
+    let panelRecord   = null;
+    let inactivarTarget = null;
+    let isLoading   = false;
+
+    /* ─── Refs DOM ─── */
+    const $ = id => document.getElementById(id);
+    const searchInput     = $('searchInput');
+    const filterEstatusEl = $('filterEstatus');
+    const resultsCount    = $('resultsCount');
+    const tableBody       = $('tableBody');
+    const paginationInfo  = $('paginationInfo');
+    const paginationBtns  = $('paginationBtns');
+    const panelBackdrop   = $('panelBackdrop');
+    const sidePanel       = $('sidePanel');
+    const fieldNombre     = $('fieldNombre');
+    const fieldNiveles    = $('fieldNiveles');
+    const fieldDesc       = $('fieldDesc');
+    const inactivarModal  = $('inactivarModal');
+    const toastContainer  = $('toastContainer');
+
+    /* ─── Utilidades ─── */
+    function esc(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function badge(activo) {
+        return activo
+            ? '<span class="st-badge st-activo">Activo</span>'
+            : '<span class="st-badge st-inactivo">Inactivo</span>';
+    }
+
+    /* ─── CSRF ─── */
+    function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    }
+
+    /* ─── API helpers ─── */
+    async function apiFetch(url, options = {}) {
+        const res = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': getCsrf(),
+                ...options.headers,
+            },
+            ...options,
+        });
+        const json = await res.json();
+        if (!res.ok) throw { status: res.status, json };
+        return json;
+    }
+
+    /* ─── Carga de datos desde la API ─── */
+    async function loadBuildings() {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i></td></tr>';
+        try {
+            const json = await apiFetch('/api/v1/buildings');
+            buildings = (json.data ?? []).map(b => ({
+                id:          b.id,
+                nombre:      b.name,
+                niveles:     b.levelCount,
+                descripcion: b.description ?? '',
+                estatus:     b.isActive ? 'Activo' : 'Inactivo',
+                isActive:    b.isActive,
+            }));
+            render();
+        } catch (e) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--status-inactive);">Error al cargar edificios. Verifica la conexión con la API.</td></tr>';
+            showToast('Error', 'No se pudieron cargar los edificios.', 'error');
+        }
+    }
+
+    /* ─── Filtrado ─── */
+    function getFiltered() {
+        const q = search.toLowerCase();
+        return buildings.filter(b => {
+            const matchQ = !q || b.nombre.toLowerCase().includes(q) || (b.descripcion || '').toLowerCase().includes(q);
+            const matchE = !filterEstatus || b.estatus === filterEstatus;
+            return matchQ && matchE;
+        });
+    }
+
+    /* ─── Render principal ─── */
+    function render() {
+        const filtered   = getFiltered();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+        if (page > totalPages) page = totalPages;
+        const pageData = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+        const n = filtered.length;
+        resultsCount.textContent = `${n} edificio${n !== 1 ? 's' : ''} encontrado${n !== 1 ? 's' : ''}`;
+
+        if (pageData.length === 0) {
+            tableBody.innerHTML = `
+                <tr class="edif-empty">
+                    <td colspan="6">
+                        <i class="fas fa-building"></i>
+                        No se encontraron edificios con los filtros aplicados.
+                    </td>
+                </tr>`;
+        } else {
+            tableBody.innerHTML = pageData.map(r => `
+                <tr>
+                    <td class="td-id">${r.id}</td>
+                    <td class="td-name"><div>${esc(r.nombre)}</div></td>
+                    <td class="tc">${r.niveles}</td>
+                    <td>
+                        ${r.descripcion
+                            ? `<span class="td-desc-cell" title="${esc(r.descripcion)}">${esc(r.descripcion)}</span>`
+                            : `<span class="td-empty">Sin descripción</span>`}
+                    </td>
+                    <td>${badge(r.isActive)}</td>
+                    <td>
+                        <div class="edif-actions">
+                            <button class="btn-editar" data-action="editar" data-id="${r.id}">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            ${r.isActive
+                                ? `<button class="btn-inactivar" data-action="inactivar" data-id="${r.id}"
+                                        title="Inactivar edificio">
+                                       <i class="fas fa-ban"></i> Inactivar
+                                   </button>`
+                                : `<span class="inact-label">Inactivo</span>`
+                            }
+                        </div>
+                    </td>
+                </tr>`).join('');
+        }
+
+        const from = filtered.length === 0 ? 0 : (page - 1) * PER_PAGE + 1;
+        const to   = Math.min(page * PER_PAGE, filtered.length);
+        paginationInfo.textContent = filtered.length === 0
+            ? 'Sin registros'
+            : `Mostrando ${from}–${to} de ${filtered.length} registros · 10 por página`;
+
+        let btns = `<button class="pag-btn" id="btnPrev" ${page === 1 ? 'disabled' : ''}>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            btns += `<button class="pag-btn ${page === i ? 'pag-active' : ''}" data-page="${i}">${i}</button>`;
+        }
+        btns += `<button class="pag-btn" id="btnNext" ${page === totalPages ? 'disabled' : ''}>
+                     <i class="fas fa-chevron-right"></i>
+                 </button>`;
+        paginationBtns.innerHTML = btns;
+
+        $('btnPrev').addEventListener('click', () => { if (page > 1) { page--; render(); } });
+        $('btnNext').addEventListener('click', () => { if (page < totalPages) { page++; render(); } });
+        paginationBtns.querySelectorAll('[data-page]').forEach(btn =>
+            btn.addEventListener('click', () => { page = +btn.dataset.page; render(); })
+        );
+    }
+
+    /* ─── Delegación de eventos en la tabla ─── */
+    tableBody.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const record = buildings.find(b => b.id === +btn.dataset.id);
+        if (!record) return;
+        if (btn.dataset.action === 'editar')    openPanel(record);
+        if (btn.dataset.action === 'inactivar') openInactivarModal(record);
+    });
+
+    /* ─── Búsqueda y filtro ─── */
+    let searchTimer;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { search = this.value; page = 1; render(); }, 280);
+    });
+
+    filterEstatusEl.addEventListener('change', function () {
+        filterEstatus = this.value; page = 1; render();
+    });
+
+    /* ─── Panel lateral ─── */
+    function openPanel(record) {
+        panelRecord = record || {};
+        const isEdit = !!record?.id;
+
+        $('panelTitle').textContent    = isEdit ? 'Editar Edificio'                 : 'Nuevo Edificio';
+        $('panelSubtitle').textContent = isEdit ? 'Modifica los datos del edificio' : 'Completa los datos del nuevo edificio';
+
+        fieldNombre.value  = isEdit ? record.nombre      : '';
+        fieldNiveles.value = isEdit ? record.niveles     : '';
+        fieldDesc.value    = isEdit ? record.descripcion : '';
+
+        $('nombreCount').textContent = fieldNombre.value.length;
+        $('descCount').textContent   = fieldDesc.value.length;
+
+        const activo = isEdit ? record.isActive : true;
+        const badgeEl = $('panelStatusBadge');
+        badgeEl.className   = `st-badge ${activo ? 'st-activo' : 'st-inactivo'}`;
+        badgeEl.textContent = activo ? 'Activo' : 'Inactivo';
+        $('panelStatusHint').textContent = isEdit
+            ? '(se gestiona con el botón Inactivar)'
+            : 'Por defecto: Activo';
+
+        clearErrors();
+        sidePanel.classList.add('open');
+        panelBackdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        fieldNombre.focus();
+    }
+
+    function closePanel() {
+        panelRecord = null;
+        sidePanel.classList.remove('open');
+        panelBackdrop.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    $('btnNuevo').addEventListener('click',       () => openPanel(null));
+    $('btnClosePanel').addEventListener('click',  closePanel);
+    $('btnCancelPanel').addEventListener('click', closePanel);
+    panelBackdrop.addEventListener('click',       closePanel);
+
+    fieldNombre.addEventListener('input', () => $('nombreCount').textContent = fieldNombre.value.length);
+    fieldDesc.addEventListener('input',   () => $('descCount').textContent   = fieldDesc.value.length);
+
+    /* ─── Validación del formulario ─── */
+    function clearErrors() {
+        ['errorNombre','errorNiveles','errorDesc'].forEach(id => $(id).classList.add('hidden'));
+        ['fieldNombre','fieldNiveles','fieldDesc'].forEach(id => $(id).classList.remove('has-error'));
+    }
+
+    function showError(fieldId, errorId, msgId, msg) {
+        $(fieldId).classList.add('has-error');
+        $(msgId).textContent = msg;
+        $(errorId).classList.remove('hidden');
+    }
+
+    function validateForm() {
+        clearErrors();
+        let ok = true;
+        const nombre  = fieldNombre.value.trim();
+        const niveles = fieldNiveles.value;
+        const desc    = fieldDesc.value;
+
+        if (!nombre) {
+            showError('fieldNombre','errorNombre','errorNombreMsg','El nombre es obligatorio.');
+            ok = false;
+        } else if (nombre.length > 80) {
+            showError('fieldNombre','errorNombre','errorNombreMsg','Máximo 80 caracteres.');
+            ok = false;
+        }
+
+        if (!niveles) {
+            showError('fieldNiveles','errorNiveles','errorNivelesMsg','El número de niveles es obligatorio.');
+            ok = false;
+        } else if (!Number.isInteger(+niveles) || +niveles <= 0) {
+            showError('fieldNiveles','errorNiveles','errorNivelesMsg','Debe ser un entero positivo mayor a cero.');
+            ok = false;
+        }
+
+        if (desc.length > 200) {
+            showError('fieldDesc','errorDesc','errorDescMsg','Máximo 200 caracteres.');
+            ok = false;
+        }
+
+        return ok;
+    }
+
+    $('btnSavePanel').addEventListener('click', async function () {
+        if (!validateForm()) return;
+
+        const payload = {
+            name:        fieldNombre.value.trim(),
+            level_count: parseInt(fieldNiveles.value),
+            description: fieldDesc.value.trim() || null,
+        };
+
+        const saveBtn = $('btnSavePanel');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Guardando…';
+
+        try {
+            if (panelRecord?.id) {
+                await apiFetch(`/api/v1/buildings/${panelRecord.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload),
+                });
+                showToast('Edificio actualizado', `"${payload.name}" se actualizó correctamente.`, 'success');
+            } else {
+                await apiFetch('/api/v1/buildings', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+                showToast('Edificio registrado', `"${payload.name}" fue registrado exitosamente.`, 'success');
+            }
+            closePanel();
+            await loadBuildings();
+        } catch (err) {
+            if (err.json?.errors) {
+                const msgs = err.json.errors;
+                if (msgs.name)        showError('fieldNombre',  'errorNombre',  'errorNombreMsg',  msgs.name[0]);
+                if (msgs.level_count) showError('fieldNiveles', 'errorNiveles', 'errorNivelesMsg', msgs.level_count[0]);
+                if (msgs.description) showError('fieldDesc',    'errorDesc',    'errorDescMsg',    msgs.description[0]);
+            } else {
+                showToast('Error', err.json?.message ?? 'No se pudo guardar el edificio.', 'error');
+            }
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save" style="margin-right:7px;"></i>Guardar';
+        }
+    });
+
+    /* ─── Modal de inactivar ─── */
+    function openInactivarModal(record) {
+        inactivarTarget = record;
+        $('inactivarText').innerHTML =
+            `¿Está seguro de que desea inactivar el edificio
+             <strong style="color:var(--midnight);">"${esc(record.nombre)}"</strong>?<br><br>
+             El registro no se eliminará físicamente. El estatus cambiará a <strong>Inactivo</strong>.`;
+        inactivarModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeInactivarModal() {
+        inactivarTarget = null;
+        inactivarModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    $('btnCloseInactivar').addEventListener('click',  closeInactivarModal);
+    $('btnCancelInactivar').addEventListener('click', closeInactivarModal);
+    inactivarModal.addEventListener('click', e => { if (e.target === inactivarModal) closeInactivarModal(); });
+
+    $('btnConfirmInactivar').addEventListener('click', async function () {
+        if (!inactivarTarget) return;
+        const nombre = inactivarTarget.nombre;
+        const confirmBtn = $('btnConfirmInactivar');
+        confirmBtn.disabled = true;
+
+        try {
+            await apiFetch(`/api/v1/buildings/${inactivarTarget.id}`, { method: 'DELETE' });
+            closeInactivarModal();
+            showToast('Edificio inactivado', `"${nombre}" fue inactivado correctamente.`, 'success');
+            await loadBuildings();
+        } catch (err) {
+            showToast('Error', err.json?.message ?? 'No se pudo inactivar el edificio.', 'error');
+        } finally {
+            confirmBtn.disabled = false;
+        }
+    });
+
+    /* ─── Escape ─── */
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (sidePanel.classList.contains('open'))        closePanel();
+        if (inactivarModal.classList.contains('active')) closeInactivarModal();
+    });
+
+    /* ─── Toast ─── */
+    function showToast(title, message, type = 'success') {
+        const icons = { success: 'check', error: 'times', warning: 'exclamation' };
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="fas fa-${icons[type] || 'check'}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${esc(title)}</div>
+                <div class="toast-message">${esc(message)}</div>
+            </div>
+            <button class="toast-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        const t = setTimeout(() => removeToast(toast), 5000);
+        toast.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(t); removeToast(toast); });
+    }
+
+    function removeToast(toast) {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }
+
+    /* ─── Arranque: carga desde la API ─── */
+    loadBuildings();
+});
+</script>
         { id:  1, nombre: 'Edificio A — Ciencias',    niveles: 4, descripcion: 'Bloque principal, aulas de ciencias básicas.',    estatus: 'Activo',   aulas_activas: 12 },
         { id:  2, nombre: 'Edificio B — Humanidades', niveles: 3, descripcion: 'Aulas de humanidades y ciencias sociales.',       estatus: 'Activo',   aulas_activas: 8  },
         { id:  3, nombre: 'Edificio C — Tecnología',  niveles: 5, descripcion: 'Laboratorios de cómputo y electrónica.',         estatus: 'Activo',   aulas_activas: 0  },
