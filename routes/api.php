@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\V1\Buildings\GamaBuildingController;
 use App\Http\Controllers\Api\V1\Buildings\GamaClassroomController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaAbsenceTypeController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaInstitutionController;
+use App\Http\Controllers\Api\V1\Schedules\GamaClassScheduleController;
+use App\Http\Controllers\Api\V1\Schedules\GamaSemesterController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -63,6 +65,27 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/{classroomId}', [GamaClassroomController::class, 'show'])->name('show');
         Route::put('/{classroomId}', [GamaClassroomController::class, 'update'])->name('update');
         Route::delete('/{classroomId}', [GamaClassroomController::class, 'destroy'])->name('destroy');
+    });
+
+    // Semesters
+    Route::prefix('semesters')->name('semesters.')->group(function () {
+        Route::get('/', [GamaSemesterController::class, 'index'])->name('index');
+        Route::get('/current', [GamaSemesterController::class, 'current'])->name('current');
+        Route::post('/', [GamaSemesterController::class, 'store'])->name('store');
+        Route::get('/{semesterId}', [GamaSemesterController::class, 'show'])->name('show');
+        Route::put('/{semesterId}', [GamaSemesterController::class, 'update'])->name('update');
+        Route::delete('/{semesterId}', [GamaSemesterController::class, 'destroy'])->name('destroy');
+    });
+
+    // Class Schedules
+    Route::prefix('class-schedules')->name('class-schedules.')->group(function () {
+        Route::get('/', [GamaClassScheduleController::class, 'index'])->name('index');
+        Route::post('/', [GamaClassScheduleController::class, 'store'])->name('store');
+        Route::post('/import', [GamaClassScheduleController::class, 'import'])->name('import');
+        Route::get('/{scheduleId}', [GamaClassScheduleController::class, 'show'])->name('show');
+        Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update');
+        Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy');
+        Route::get('/import/{batchId}/report', [GamaClassScheduleController::class, 'report'])->name('report');
     });
 
 });

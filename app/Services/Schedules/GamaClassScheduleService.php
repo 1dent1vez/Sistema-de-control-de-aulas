@@ -1,0 +1,99 @@
+<?php
+
+/**
+ * @descripcion  Servicio de horarios con validación de empalme.
+ *
+ * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @version      1.0.0
+ *
+ * @creado       2026-05-13
+ *
+ * @modificado   2026-05-13
+ *
+ * @cambios      2026-05-13 - Creación inicial del servicio
+ */
+
+declare(strict_types=1);
+
+namespace App\Services\Schedules;
+
+use App\Models\ClassSchedule;
+use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
+use App\Repositories\Contracts\SemesterRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
+
+class GamaClassScheduleService
+{
+    public function __construct(
+        private readonly ClassScheduleRepositoryInterface $repository,
+        private readonly SemesterRepositoryInterface $semesterRepository,
+    ) {}
+
+    public function getAll(array $filters = []): Collection
+    {
+        return $this->repository->all($filters);
+    }
+
+    public function getById(int $id): ?ClassSchedule
+    {
+        return $this->repository->findById($id);
+    }
+
+    public function create(array $data): ClassSchedule
+    {
+        $semester = $this->semesterRepository->findById((int) $data['semester_id']);
+
+        if (! $semester) {
+            throw new \RuntimeException('El semestre seleccionado no existe.');
+        }
+
+        if ($this->repository->hasOverlap(
+            (int) $data['classroom_id'],
+            $data['weekday'],
+            $data['start_time'],
+            $data['end_time']
+        )) {
+            throw new \RuntimeException('El horario se empalma con otro existente en el mismo salón y día.');
+        }
+
+        return $this->repository->create($data);
+    }
+
+    public function update(int $id, array $data): ?ClassSchedule
+    {
+        $schedule = $this->repository->findById($id);
+
+        if (! $schedule) {
+            return null;
+        }
+
+        $classroomId = (int) ($data['classroom_id'] ?? $schedule->classroom_id);
+        $weekday = $data['weekday'] ?? $schedule->weekday;
+        $startTime = $data['start_time'] ?? $schedule->start_time->format('H:i');
+        $endTime = $data['end_time'] ?? $schedule->end_time->format('H:i');
+
+        if ($this->repository->hasOverlap($classroomId, $weekday, $startTime, $endTime, $id)) {
+            throw new \RuntimeException('El horario se empalma con otro existente en el mismo salón y día.');
+        }
+
+        return $this->repository->update($schedule, $data);
+    }
+
+    public function delete(int $id): bool
+    {
+        $schedule = $this->repository->findById($id);
+
+        if (! $schedule) {
+            return false;
+        }
+
+        return $this->repository->delete($schedule);
+    }
+}
