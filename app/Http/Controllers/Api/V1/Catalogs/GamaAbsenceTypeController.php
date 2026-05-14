@@ -26,7 +26,7 @@ namespace App\Http\Controllers\Api\V1\Catalogs;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Catalogs\AbsenceTypeResource;
-use App\Http\Traits\ApiResponse;
+use App\Traits\ApiResponse;
 use App\Services\Catalogs\GamaAbsenceTypeService;
 use Illuminate\Http\JsonResponse;
 
@@ -42,7 +42,7 @@ class GamaAbsenceTypeController extends Controller
     {
         $absenceTypes = $this->service->getAll();
 
-        return $this->successResponse(
+        return $this->success(
             AbsenceTypeResource::collection($absenceTypes),
             'Absence types retrieved successfully.'
         );
@@ -53,10 +53,10 @@ class GamaAbsenceTypeController extends Controller
         $absenceType = $this->service->getById($id);
 
         if (! $absenceType) {
-            return $this->notFoundResponse('Absence type not found.');
+            return $this->error('Absence type not found.', 404);
         }
 
-        return $this->successResponse(
+        return $this->success(
             new AbsenceTypeResource($absenceType),
             'Absence type retrieved successfully.'
         );

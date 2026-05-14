@@ -28,7 +28,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalogs\StoreInstitutionRequest;
 use App\Http\Requests\Catalogs\UpdateInstitutionRequest;
 use App\Http\Resources\Catalogs\InstitutionResource;
-use App\Http\Traits\ApiResponse;
+use App\Traits\ApiResponse;
 use App\Services\Catalogs\GamaInstitutionService;
 use Illuminate\Http\JsonResponse;
 
@@ -44,7 +44,7 @@ class GamaInstitutionController extends Controller
     {
         $institutions = $this->service->getAll();
 
-        return $this->successResponse(
+        return $this->success(
             InstitutionResource::collection($institutions),
             'Institutions retrieved successfully.'
         );
@@ -55,10 +55,10 @@ class GamaInstitutionController extends Controller
         $institution = $this->service->getById($id);
 
         if (! $institution) {
-            return $this->notFoundResponse('Institution not found.');
+            return $this->error('Institution not found.', 404);
         }
 
-        return $this->successResponse(
+        return $this->success(
             new InstitutionResource($institution),
             'Institution retrieved successfully.'
         );
@@ -68,9 +68,10 @@ class GamaInstitutionController extends Controller
     {
         $institution = $this->service->create($request->validated());
 
-        return $this->createdResponse(
+        return $this->success(
             new InstitutionResource($institution),
-            'Institution created successfully.'
+            'Institution created successfully.',
+            201
         );
     }
 
@@ -79,10 +80,10 @@ class GamaInstitutionController extends Controller
         $institution = $this->service->update($id, $request->validated());
 
         if (! $institution) {
-            return $this->notFoundResponse('Institution not found.');
+            return $this->error('Institution not found.', 404);
         }
 
-        return $this->successResponse(
+        return $this->success(
             new InstitutionResource($institution),
             'Institution updated successfully.'
         );
@@ -93,9 +94,9 @@ class GamaInstitutionController extends Controller
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {
-            return $this->notFoundResponse('Institution not found.');
+            return $this->error('Institution not found.', 404);
         }
 
-        return $this->successResponse(null, 'Institution deleted successfully.');
+        return $this->success(null, 'Institution deleted successfully.');
     }
 }
