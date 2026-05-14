@@ -28,8 +28,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalogs\StoreInstitutionRequest;
 use App\Http\Requests\Catalogs\UpdateInstitutionRequest;
 use App\Http\Resources\Catalogs\InstitutionResource;
-use App\Traits\ApiResponse;
 use App\Services\Catalogs\GamaInstitutionService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
 class GamaInstitutionController extends Controller

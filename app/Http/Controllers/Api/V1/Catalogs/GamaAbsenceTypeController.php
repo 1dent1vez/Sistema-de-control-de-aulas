@@ -26,8 +26,8 @@ namespace App\Http\Controllers\Api\V1\Catalogs;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Catalogs\AbsenceTypeResource;
-use App\Traits\ApiResponse;
 use App\Services\Catalogs\GamaAbsenceTypeService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
 class GamaAbsenceTypeController extends Controller

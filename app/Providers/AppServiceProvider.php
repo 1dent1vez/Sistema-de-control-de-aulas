@@ -24,10 +24,16 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Repositories\Buildings\GamaBuildingRepository;
+use App\Repositories\Buildings\GamaClassroomRepository;
+use App\Repositories\Buildings\GamaLevelRepository;
 use App\Repositories\Catalogs\GamaAbsenceTypeRepository;
 use App\Repositories\Catalogs\GamaInstitutionRepository;
 use App\Repositories\Contracts\AbsenceTypeRepositoryInterface;
+use App\Repositories\Contracts\BuildingRepositoryInterface;
+use App\Repositories\Contracts\ClassroomRepositoryInterface;
 use App\Repositories\Contracts\InstitutionRepositoryInterface;
+use App\Repositories\Contracts\LevelRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(InstitutionRepositoryInterface::class, GamaInstitutionRepository::class);
         $this->app->bind(AbsenceTypeRepositoryInterface::class, GamaAbsenceTypeRepository::class);
+        $this->app->bind(BuildingRepositoryInterface::class, GamaBuildingRepository::class);
+        $this->app->bind(LevelRepositoryInterface::class, GamaLevelRepository::class);
+        $this->app->bind(ClassroomRepositoryInterface::class, GamaClassroomRepository::class);
     }
 
     public function boot(): void
