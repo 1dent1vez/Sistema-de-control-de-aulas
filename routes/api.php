@@ -22,6 +22,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Auth\SamIdentityController;
 use App\Http\Controllers\Api\V1\Buildings\GamaBuildingController;
 use App\Http\Controllers\Api\V1\Buildings\GamaClassroomController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaAbsenceTypeController;
@@ -109,6 +111,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::prefix('qr-codes')->name('qr-codes.')->group(function () {
         Route::post('/download', [GamaQrCodeController::class, 'download'])->name('download');
         Route::get('/{id}/file', [GamaQrCodeController::class, 'file'])->name('file');
+    });
+
+    // Auth — público (rate limit: auth)
+    Route::post('auth/captcha', [AuthController::class, 'captcha'])->name('auth.captcha')->middleware('throttle:auth');
+    Route::post('auth/validate-captcha', [AuthController::class, 'validateCaptcha'])->name('auth.validate-captcha')->middleware('throttle:auth');
+    Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login')->middleware('throttle:auth');
+
+    // Auth + SamIdentities — protegido
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+        Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');
+
+        Route::get('sam-identities', [SamIdentityController::class, 'index'])->name('sam-identities.index');
+        Route::get('sam-identities/search', [SamIdentityController::class, 'search'])->name('sam-identities.search');
+        Route::post('sam-identities/{externalId}/assign-role', [SamIdentityController::class, 'assignRole'])->name('sam-identities.assign-role');
     });
 
 });
