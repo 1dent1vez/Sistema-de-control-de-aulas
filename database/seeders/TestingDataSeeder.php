@@ -64,20 +64,20 @@ class TestingDataSeeder extends Seeder
                 'name' => 'Edificio A — Ciencias',
                 'description' => 'Bloque principal, aulas de ciencias básicas.',
                 'levels' => 2,
-                'classrooms' => 8
+                'classrooms' => 8,
             ],
             [
                 'name' => 'Edificio B — Humanidades',
                 'description' => 'Aulas de humanidades y ciencias sociales.',
                 'levels' => 3,
-                'classrooms' => 12
+                'classrooms' => 12,
             ],
             [
                 'name' => 'Edificio C — Tecnología',
                 'description' => 'Laboratorios de cómputo y electrónica.',
                 'levels' => 1,
-                'classrooms' => 4
-            ]
+                'classrooms' => 4,
+            ],
         ];
 
         foreach ($buildingsData as $bData) {
@@ -91,7 +91,7 @@ class TestingDataSeeder extends Seeder
 
             $createdLevels = [];
             for ($i = 0; $i < $bData['levels']; $i++) {
-                $levelName = $i === 0 ? 'Planta Baja' : 'Nivel ' . $i;
+                $levelName = $i === 0 ? 'Planta Baja' : 'Nivel '.$i;
                 $createdLevels[] = Level::create([
                     'building_id' => $building->id,
                     'name' => $levelName,
@@ -104,7 +104,9 @@ class TestingDataSeeder extends Seeder
 
             foreach ($createdLevels as $level) {
                 for ($j = 0; $j < $classroomsPerLevel; $j++) {
-                    if ($classroomCount > $bData['classrooms']) break;
+                    if ($classroomCount > $bData['classrooms']) {
+                        break;
+                    }
 
                     $prefix = substr(explode(' ', $building->name)[1], 0, 1); // e.g. "A" from "Edificio A"
                     $roomNumber = ($level->display_order + 1) * 100 + $j + 1; // 101, 102... 201...
@@ -112,11 +114,11 @@ class TestingDataSeeder extends Seeder
                     Classroom::create([
                         'building_id' => $building->id,
                         'level_id' => $level->id,
-                        'classroom_name' => 'Aula ' . $prefix . '-' . $roomNumber,
+                        'classroom_name' => 'Aula '.$prefix.'-'.$roomNumber,
                         'classroom_type' => 'Standard',
                         'status' => true,
                     ]);
-                    
+
                     $classroomCount++;
                 }
             }

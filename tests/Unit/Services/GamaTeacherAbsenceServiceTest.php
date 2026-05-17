@@ -71,7 +71,7 @@ it('throws exception if absence is entirely in the past', function () {
         'end_date' => Carbon::now()->subDays(1)->format('Y-m-d'),
     ];
 
-    expect(fn () => $this->service->store($data))->toThrow(\RuntimeException::class, 'La ausencia no puede estar completamente en el pasado.');
+    expect(fn () => $this->service->store($data))->toThrow(RuntimeException::class, 'La ausencia no puede estar completamente en el pasado.');
 });
 
 it('throws OverlapRequiredException on overlap without confirmation', function () {
@@ -136,7 +136,7 @@ it('throws exception if updating an absence that already started', function () {
     ]);
 
     expect(fn () => $this->service->update($absence->id, ['end_date' => Carbon::now()->addDays(6)->format('Y-m-d')]))
-        ->toThrow(\RuntimeException::class, 'No se puede modificar una ausencia que ya inició.');
+        ->toThrow(RuntimeException::class, 'No se puede modificar una ausencia que ya inició.');
 });
 
 it('can delete absence', function () {

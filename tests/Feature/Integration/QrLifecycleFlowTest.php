@@ -72,7 +72,7 @@ it('executes the QR lifecycle flow correctly', function () {
     // 6. Ejecutar descarga masiva en lote y verificar que procesa solo el activo
     $response = $this->postJson('/api/v1/qr-codes/download', [
         'classroom_ids' => [$classroom->id],
-        'format' => 'png'
+        'format' => 'png',
     ]);
 
     $batchId = $response->json('data.batchId');

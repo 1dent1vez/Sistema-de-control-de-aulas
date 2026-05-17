@@ -26,6 +26,7 @@ namespace App\Services\Schedules;
 
 use App\Models\Semester;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
 class GamaSemesterService
@@ -67,8 +68,8 @@ class GamaSemesterService
         }
 
         if (isset($data['start_date']) || isset($data['end_date'])) {
-            $startDate = $data['start_date'] ?? \Carbon\Carbon::parse($semester->start_date)->format('Y-m-d');
-            $endDate = $data['end_date'] ?? \Carbon\Carbon::parse($semester->end_date)->format('Y-m-d');
+            $startDate = $data['start_date'] ?? Carbon::parse($semester->start_date)->format('Y-m-d');
+            $endDate = $data['end_date'] ?? Carbon::parse($semester->end_date)->format('Y-m-d');
 
             if ($this->repository->hasOverlap($semester->institution_id, $startDate, $endDate, $id)) {
                 throw new \RuntimeException('El rango de fechas se solapa con otro semestre existente.');

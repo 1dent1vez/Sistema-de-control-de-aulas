@@ -22,6 +22,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Level;
 use Illuminate\Support\Facades\Storage;
 
 it('executes the full infrastructure flow correctly', function () {
@@ -52,19 +53,19 @@ it('executes the full infrastructure flow correctly', function () {
     // 3. Verificar que se crearon los niveles PB, P1, P2
     $this->assertDatabaseHas('gama_levels', [
         'building_id' => $buildingId,
-        'name' => 'PB'
+        'name' => 'PB',
     ]);
     $this->assertDatabaseHas('gama_levels', [
         'building_id' => $buildingId,
-        'name' => 'P1'
+        'name' => 'P1',
     ]);
     $this->assertDatabaseHas('gama_levels', [
         'building_id' => $buildingId,
-        'name' => 'P2'
+        'name' => 'P2',
     ]);
 
     // Recuperar el ID del nivel PB
-    $pbLevel = \App\Models\Level::where('building_id', $buildingId)->where('name', 'PB')->first();
+    $pbLevel = Level::where('building_id', $buildingId)->where('name', 'PB')->first();
 
     // 4. Crear un Aula asignada al edificio y nivel PB
     $response = $this->postJson('/api/v1/classrooms', [

@@ -96,7 +96,7 @@ it('throws exception if semester does not exist', function () {
         'end_time' => '10:00',
     ];
 
-    expect(fn () => $this->service->create($data))->toThrow(\RuntimeException::class, 'El semestre seleccionado no existe.');
+    expect(fn () => $this->service->create($data))->toThrow(RuntimeException::class, 'El semestre seleccionado no existe.');
 });
 
 it('throws exception on create with time overlap', function () {
@@ -119,7 +119,7 @@ it('throws exception on create with time overlap', function () {
         'end_time' => '11:00',
     ];
 
-    expect(fn () => $this->service->create($data))->toThrow(\RuntimeException::class);
+    expect(fn () => $this->service->create($data))->toThrow(RuntimeException::class);
 });
 
 it('can update schedule', function () {
@@ -153,7 +153,7 @@ it('throws exception on update with time overlap', function () {
 
     expect(fn () => $this->service->update($schedule2->id, [
         'start_time' => '09:00', // Overlaps with schedule1
-    ]))->toThrow(\RuntimeException::class);
+    ]))->toThrow(RuntimeException::class);
 });
 
 it('can delete schedule', function () {

@@ -25,7 +25,6 @@ declare(strict_types=1);
 use App\Models\Building;
 use App\Models\Classroom;
 use App\Models\Level;
-use App\Models\QrCode;
 use App\Services\Qr\GamaQrCodeService;
 use Illuminate\Support\Facades\Storage;
 
@@ -53,12 +52,12 @@ it('throws exception when generating qr if one already active', function () {
     $this->service->generateForClassroom($this->classroom->id);
 
     expect(fn () => $this->service->generateForClassroom($this->classroom->id))
-        ->toThrow(\RuntimeException::class, 'Ya existe un código QR activo para esta aula. Utiliza forceRegenerate para reemplazarlo.');
+        ->toThrow(RuntimeException::class, 'Ya existe un código QR activo para esta aula. Utiliza forceRegenerate para reemplazarlo.');
 });
 
 it('can force regenerate qr code, invalidating previous', function () {
     $firstQr = $this->service->generateForClassroom($this->classroom->id);
-    
+
     // Force generate
     $secondQr = $this->service->generateForClassroom($this->classroom->id, true);
 
@@ -79,7 +78,7 @@ it('can get active qr', function () {
 
 it('throws exception if batch downloading without active qrs', function () {
     expect(fn () => $this->service->downloadBatch([$this->classroom->id], 'png'))
-        ->toThrow(\RuntimeException::class, 'No se encontraron códigos QR activos para las aulas especificadas.');
+        ->toThrow(RuntimeException::class, 'No se encontraron códigos QR activos para las aulas especificadas.');
 });
 
 it('can download single png', function () {

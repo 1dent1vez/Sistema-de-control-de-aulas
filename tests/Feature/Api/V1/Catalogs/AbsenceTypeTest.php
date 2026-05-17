@@ -24,23 +24,21 @@ declare(strict_types=1);
 
 use App\Models\AbsenceType;
 
-
-
 it('can list absence types via API', function () {
     AbsenceType::factory()->count(3)->create();
 
     $response = $this->getJson('/api/v1/absence-types');
 
     $response->assertStatus(200)
-             ->assertJsonCount(3, 'data')
-             ->assertJsonStructure([
-                 'success',
-                 'statusCode',
-                 'message',
-                 'data' => [
-                     '*' => ['id', 'name', 'code']
-                 ]
-             ]);
+        ->assertJsonCount(3, 'data')
+        ->assertJsonStructure([
+            'success',
+            'statusCode',
+            'message',
+            'data' => [
+                '*' => ['id', 'name', 'code'],
+            ],
+        ]);
 });
 
 it('can get single absence type via API', function () {
@@ -49,6 +47,6 @@ it('can get single absence type via API', function () {
     $response = $this->getJson("/api/v1/absence-types/{$absenceType->id}");
 
     $response->assertStatus(200)
-             ->assertJsonPath('data.id', $absenceType->id)
-             ->assertJsonPath('data.name', $absenceType->name);
+        ->assertJsonPath('data.id', $absenceType->id)
+        ->assertJsonPath('data.name', $absenceType->name);
 });

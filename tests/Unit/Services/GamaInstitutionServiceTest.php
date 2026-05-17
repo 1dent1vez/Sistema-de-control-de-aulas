@@ -25,8 +25,6 @@ declare(strict_types=1);
 use App\Models\Institution;
 use App\Services\Catalogs\GamaInstitutionService;
 
-
-
 beforeEach(function () {
     $this->service = app(GamaInstitutionService::class);
 });
@@ -59,7 +57,7 @@ it('can create institution', function () {
     expect($institution->name)->toBe('Test Institution')
         ->and($institution->code)->toBe('TEST-01')
         ->and($institution->is_active)->toBeTrue();
-    
+
     $this->assertDatabaseHas('gama_institutions', ['name' => 'Test Institution']);
 });
 

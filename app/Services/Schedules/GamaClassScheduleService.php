@@ -27,6 +27,7 @@ namespace App\Services\Schedules;
 use App\Models\ClassSchedule;
 use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
 class GamaClassScheduleService
@@ -76,8 +77,8 @@ class GamaClassScheduleService
 
         $classroomId = (int) ($data['classroom_id'] ?? $schedule->classroom_id);
         $weekday = $data['weekday'] ?? $schedule->weekday;
-        $startTime = $data['start_time'] ?? \Carbon\Carbon::parse($schedule->start_time)->format('H:i');
-        $endTime = $data['end_time'] ?? \Carbon\Carbon::parse($schedule->end_time)->format('H:i');
+        $startTime = $data['start_time'] ?? Carbon::parse($schedule->start_time)->format('H:i');
+        $endTime = $data['end_time'] ?? Carbon::parse($schedule->end_time)->format('H:i');
 
         if ($this->repository->hasOverlap($classroomId, $weekday, $startTime, $endTime, $id)) {
             throw new \RuntimeException('El horario se empalma con otro existente en el mismo salón y día.');

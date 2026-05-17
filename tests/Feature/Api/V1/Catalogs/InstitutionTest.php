@@ -24,23 +24,21 @@ declare(strict_types=1);
 
 use App\Models\Institution;
 
-
-
 it('can list institutions via API', function () {
     Institution::factory()->count(3)->create();
 
     $response = $this->getJson('/api/v1/institutions');
 
     $response->assertStatus(200)
-             ->assertJsonCount(3, 'data')
-             ->assertJsonStructure([
-                 'success',
-                 'statusCode',
-                 'message',
-                 'data' => [
-                     '*' => ['id', 'name', 'code', 'isActive']
-                 ]
-             ]);
+        ->assertJsonCount(3, 'data')
+        ->assertJsonStructure([
+            'success',
+            'statusCode',
+            'message',
+            'data' => [
+                '*' => ['id', 'name', 'code', 'isActive'],
+            ],
+        ]);
 });
 
 it('can get single institution via API', function () {
@@ -49,8 +47,8 @@ it('can get single institution via API', function () {
     $response = $this->getJson("/api/v1/institutions/{$institution->id}");
 
     $response->assertStatus(200)
-             ->assertJsonPath('data.id', $institution->id)
-             ->assertJsonPath('data.name', $institution->name);
+        ->assertJsonPath('data.id', $institution->id)
+        ->assertJsonPath('data.name', $institution->name);
 });
 
 it('can create institution via API', function () {
@@ -63,8 +61,8 @@ it('can create institution via API', function () {
     $response = $this->postJson('/api/v1/institutions', $data);
 
     $response->assertStatus(201)
-             ->assertJsonPath('data.name', 'API Institution');
-             
+        ->assertJsonPath('data.name', 'API Institution');
+
     $this->assertDatabaseHas('gama_institutions', ['name' => 'API Institution']);
 });
 
@@ -72,7 +70,7 @@ it('validates creation of institution', function () {
     $response = $this->postJson('/api/v1/institutions', []);
 
     $response->assertStatus(422)
-             ->assertJsonValidationErrors(['name', 'code']);
+        ->assertJsonValidationErrors(['name', 'code']);
 });
 
 it('can update institution via API', function () {
@@ -85,8 +83,8 @@ it('can update institution via API', function () {
     ]);
 
     $response->assertStatus(200)
-             ->assertJsonPath('data.name', 'Updated Name');
-             
+        ->assertJsonPath('data.name', 'Updated Name');
+
     $this->assertDatabaseHas('gama_institutions', ['id' => $institution->id, 'name' => 'Updated Name']);
 });
 
@@ -96,6 +94,6 @@ it('can delete institution via API', function () {
     $response = $this->deleteJson("/api/v1/institutions/{$institution->id}");
 
     $response->assertStatus(200);
-             
+
     $this->assertSoftDeleted('gama_institutions', ['id' => $institution->id]);
 });

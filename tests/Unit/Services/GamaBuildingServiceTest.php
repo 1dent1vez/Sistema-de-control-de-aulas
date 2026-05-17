@@ -63,7 +63,7 @@ it('can create building and auto-generates levels', function () {
 
     $this->assertDatabaseHas('gama_buildings', ['name' => 'Service Building']);
     $this->assertDatabaseCount('gama_levels', 3);
-    
+
     $this->assertDatabaseHas('gama_levels', ['building_id' => $building->id, 'name' => 'PB', 'display_order' => 0]);
     $this->assertDatabaseHas('gama_levels', ['building_id' => $building->id, 'name' => 'P1', 'display_order' => 1]);
     $this->assertDatabaseHas('gama_levels', ['building_id' => $building->id, 'name' => 'P2', 'display_order' => 2]);

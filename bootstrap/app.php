@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SamAuthMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -19,7 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'sam.auth' => SamAuthMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
@@ -89,6 +92,6 @@ RateLimiter::for('api', function (Request $request) {
 });
 
 RateLimiter::for('auth', function (Request $request) {
-    return Limit::perMinute((int) env('API_RATE_LIMIT_AUTH', 10))
+    return Limit::perMinute((int) env('AUTH_RATE_LIMIT', 10))
         ->by($request->ip());
 });

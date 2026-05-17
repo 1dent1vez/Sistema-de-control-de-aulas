@@ -88,7 +88,7 @@ it('throws exception on create with overlap', function () {
         'end_date' => '2026-10-31',
     ];
 
-    expect(fn () => $this->service->create($data))->toThrow(\RuntimeException::class);
+    expect(fn () => $this->service->create($data))->toThrow(RuntimeException::class);
 });
 
 it('can update semester', function () {
@@ -118,7 +118,7 @@ it('throws exception on update with overlap', function () {
 
     expect(fn () => $this->service->update($semester2->id, [
         'start_date' => '2026-05-01', // Overlaps with semester1
-    ]))->toThrow(\RuntimeException::class);
+    ]))->toThrow(RuntimeException::class);
 });
 
 it('can delete semester', function () {
