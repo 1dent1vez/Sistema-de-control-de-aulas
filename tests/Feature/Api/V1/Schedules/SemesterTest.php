@@ -47,6 +47,7 @@ it('returns 404 when no current semester', function (): void {
 });
 
 it('can create a semester', function (): void {
+    $this->loginAsAdmin();
     $data = [
         'institution_id' => $this->institution->id,
         'name' => 'Enero-Junio 2026',
@@ -63,6 +64,7 @@ it('can create a semester', function (): void {
 });
 
 it('rejects overlapping semester dates', function (): void {
+    $this->loginAsAdmin();
     Semester::factory()->create([
         'institution_id' => $this->institution->id,
         'start_date' => now()->addDay()->format('Y-m-d'),
@@ -80,6 +82,7 @@ it('rejects overlapping semester dates', function (): void {
 });
 
 it('can soft delete a semester', function (): void {
+    $this->loginAsAdmin();
     $semester = Semester::factory()->create();
 
     $this->deleteJson("$this->endpoint/{$semester->id}")
@@ -89,6 +92,7 @@ it('can soft delete a semester', function (): void {
 });
 
 it('rejects invalid date range', function (): void {
+    $this->loginAsAdmin();
     $response = $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
         'name' => 'Invalid',

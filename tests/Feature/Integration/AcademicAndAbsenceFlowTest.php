@@ -30,6 +30,7 @@ use App\Models\Level;
 use Carbon\Carbon;
 
 it('executes the academic and teacher absence flow correctly', function () {
+    $this->loginAsAdmin('TEACHER-INT');
     // 1. Preparar infraestructura base
     $institution = Institution::factory()->create();
     $building = Building::factory()->create(['institution_id' => $institution->id]);

@@ -62,6 +62,7 @@ it('returns 404 when building not found', function (): void {
 });
 
 it('can create a building with auto-generated levels', function (): void {
+    $this->loginAsAdmin();
     $data = [
         'institution_id' => $this->institution->id,
         'name' => 'Edificio Principal',
@@ -82,6 +83,7 @@ it('can create a building with auto-generated levels', function (): void {
 });
 
 it('validates level_count between 1 and 20', function (): void {
+    $this->loginAsAdmin();
     $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
         'name' => 'Test',
@@ -96,6 +98,7 @@ it('validates level_count between 1 and 20', function (): void {
 });
 
 it('validates unique building name per institution', function (): void {
+    $this->loginAsAdmin();
     $building = Building::factory()->create(['institution_id' => $this->institution->id]);
 
     $this->postJson($this->endpoint, [
@@ -106,6 +109,7 @@ it('validates unique building name per institution', function (): void {
 });
 
 it('can soft delete a building', function (): void {
+    $this->loginAsAdmin();
     $building = Building::factory()->create();
 
     $this->deleteJson("$this->endpoint/{$building->id}")
@@ -115,6 +119,7 @@ it('can soft delete a building', function (): void {
 });
 
 it('can get levels of a building', function (): void {
+    $this->loginAsAdmin();
     $data = [
         'institution_id' => $this->institution->id,
         'name' => 'Building With Levels',

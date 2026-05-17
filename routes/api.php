@@ -36,80 +36,70 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
-    // Catálogos - Institutions
+    // Catálogos - Institutions (reads público, writes admin)
     Route::prefix('institutions')->name('institutions.')->group(function () {
         Route::get('/', [GamaInstitutionController::class, 'index'])->name('index');
-        Route::post('/', [GamaInstitutionController::class, 'store'])->name('store');
+        Route::post('/', [GamaInstitutionController::class, 'store'])->name('store')->middleware('auth:sanctum');
         Route::get('/{institutionId}', [GamaInstitutionController::class, 'show'])->name('show');
-        Route::put('/{institutionId}', [GamaInstitutionController::class, 'update'])->name('update');
-        Route::delete('/{institutionId}', [GamaInstitutionController::class, 'destroy'])->name('destroy');
+        Route::put('/{institutionId}', [GamaInstitutionController::class, 'update'])->name('update')->middleware('auth:sanctum');
+        Route::delete('/{institutionId}', [GamaInstitutionController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
     });
 
-    // Catálogos - Absence Types
+    // Catálogos - Absence Types (público)
     Route::prefix('absence-types')->name('absence-types.')->group(function () {
         Route::get('/', [GamaAbsenceTypeController::class, 'index'])->name('index');
         Route::get('/{absenceTypeId}', [GamaAbsenceTypeController::class, 'show'])->name('show');
     });
 
-    // Buildings
+    // Buildings (reads público, writes admin)
     Route::prefix('buildings')->name('buildings.')->group(function () {
         Route::get('/', [GamaBuildingController::class, 'index'])->name('index');
-        Route::post('/', [GamaBuildingController::class, 'store'])->name('store');
+        Route::post('/', [GamaBuildingController::class, 'store'])->name('store')->middleware('auth:sanctum');
         Route::get('/{buildingId}', [GamaBuildingController::class, 'show'])->name('show');
-        Route::put('/{buildingId}', [GamaBuildingController::class, 'update'])->name('update');
-        Route::delete('/{buildingId}', [GamaBuildingController::class, 'destroy'])->name('destroy');
+        Route::put('/{buildingId}', [GamaBuildingController::class, 'update'])->name('update')->middleware('auth:sanctum');
+        Route::delete('/{buildingId}', [GamaBuildingController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
         Route::get('/{buildingId}/levels', [GamaBuildingController::class, 'levels'])->name('levels');
         Route::get('/{buildingId}/classrooms', [GamaClassroomController::class, 'byBuilding'])->name('classrooms');
     });
 
-    // Classrooms
+    // Classrooms (reads público, writes admin)
     Route::prefix('classrooms')->name('classrooms.')->group(function () {
         Route::get('/', [GamaClassroomController::class, 'index'])->name('index');
-        Route::post('/', [GamaClassroomController::class, 'store'])->name('store');
+        Route::post('/', [GamaClassroomController::class, 'store'])->name('store')->middleware('auth:sanctum');
         Route::get('/{classroomId}', [GamaClassroomController::class, 'show'])->name('show');
-        Route::put('/{classroomId}', [GamaClassroomController::class, 'update'])->name('update');
-        Route::delete('/{classroomId}', [GamaClassroomController::class, 'destroy'])->name('destroy');
+        Route::put('/{classroomId}', [GamaClassroomController::class, 'update'])->name('update')->middleware('auth:sanctum');
+        Route::delete('/{classroomId}', [GamaClassroomController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
     });
 
-    // Semesters
+    // Semesters (reads público, writes admin)
     Route::prefix('semesters')->name('semesters.')->group(function () {
         Route::get('/', [GamaSemesterController::class, 'index'])->name('index');
         Route::get('/current', [GamaSemesterController::class, 'current'])->name('current');
-        Route::post('/', [GamaSemesterController::class, 'store'])->name('store');
+        Route::post('/', [GamaSemesterController::class, 'store'])->name('store')->middleware('auth:sanctum');
         Route::get('/{semesterId}', [GamaSemesterController::class, 'show'])->name('show');
-        Route::put('/{semesterId}', [GamaSemesterController::class, 'update'])->name('update');
-        Route::delete('/{semesterId}', [GamaSemesterController::class, 'destroy'])->name('destroy');
+        Route::put('/{semesterId}', [GamaSemesterController::class, 'update'])->name('update')->middleware('auth:sanctum');
+        Route::delete('/{semesterId}', [GamaSemesterController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
     });
 
-    // Class Schedules
+    // Class Schedules (reads público, writes admin)
     Route::prefix('class-schedules')->name('class-schedules.')->group(function () {
         Route::get('/', [GamaClassScheduleController::class, 'index'])->name('index');
-        Route::post('/', [GamaClassScheduleController::class, 'store'])->name('store');
-        Route::post('/import', [GamaClassScheduleController::class, 'import'])->name('import');
+        Route::post('/', [GamaClassScheduleController::class, 'store'])->name('store')->middleware('auth:sanctum');
+        Route::post('/import', [GamaClassScheduleController::class, 'import'])->name('import')->middleware('auth:sanctum');
         Route::get('/{scheduleId}', [GamaClassScheduleController::class, 'show'])->name('show');
-        Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update');
-        Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy');
+        Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update')->middleware('auth:sanctum');
+        Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
         Route::get('/import/{batchId}/report', [GamaClassScheduleController::class, 'report'])->name('report');
-    });
-
-    // Teacher Absences
-    Route::prefix('teacher-absences')->name('teacher-absences.')->group(function () {
-        Route::get('/', [GamaTeacherAbsenceController::class, 'index'])->name('index');
-        Route::post('/', [GamaTeacherAbsenceController::class, 'store'])->name('store');
-        Route::get('/check-overlap', [GamaTeacherAbsenceController::class, 'checkOverlap'])->name('check-overlap');
-        Route::get('/{absenceId}', [GamaTeacherAbsenceController::class, 'show'])->name('show');
-        Route::put('/{absenceId}', [GamaTeacherAbsenceController::class, 'update'])->name('update');
-        Route::delete('/{absenceId}', [GamaTeacherAbsenceController::class, 'destroy'])->name('destroy');
     });
 
     // QR Codes
     Route::prefix('classrooms/{classroomId}/qr')->name('classrooms.qr.')->group(function () {
-        Route::post('/', [GamaQrCodeController::class, 'generate'])->name('generate');
+        Route::post('/', [GamaQrCodeController::class, 'generate'])->name('generate')->middleware('auth:sanctum');
         Route::get('/', [GamaQrCodeController::class, 'show'])->name('show');
     });
 
     Route::prefix('qr-codes')->name('qr-codes.')->group(function () {
-        Route::post('/download', [GamaQrCodeController::class, 'download'])->name('download');
+        Route::post('/download', [GamaQrCodeController::class, 'download'])->name('download')->middleware('auth:sanctum');
         Route::get('/{id}/file', [GamaQrCodeController::class, 'file'])->name('file');
     });
 
@@ -120,6 +110,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // Auth + SamIdentities — protegido
     Route::middleware('auth:sanctum')->group(function () {
+        // Teacher Absences (Privado)
+        Route::prefix('teacher-absences')->name('teacher-absences.')->group(function () {
+            Route::get('/', [GamaTeacherAbsenceController::class, 'index'])->name('index');
+            Route::post('/', [GamaTeacherAbsenceController::class, 'store'])->name('store');
+            Route::get('/check-overlap', [GamaTeacherAbsenceController::class, 'checkOverlap'])->name('check-overlap');
+            Route::get('/{absenceId}', [GamaTeacherAbsenceController::class, 'show'])->name('show');
+            Route::put('/{absenceId}', [GamaTeacherAbsenceController::class, 'update'])->name('update');
+            Route::delete('/{absenceId}', [GamaTeacherAbsenceController::class, 'destroy'])->name('destroy');
+        });
+
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');
 

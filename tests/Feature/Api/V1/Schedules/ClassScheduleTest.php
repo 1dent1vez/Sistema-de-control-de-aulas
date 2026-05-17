@@ -55,6 +55,7 @@ it('returns 404 when schedule not found', function (): void {
 });
 
 it('can create a class schedule', function (): void {
+    $this->loginAsAdmin();
     $data = [
         'semester_id' => $this->semester->id,
         'classroom_id' => $this->classroom->id,
@@ -75,6 +76,7 @@ it('can create a class schedule', function (): void {
 });
 
 it('rejects overlapping schedules', function (): void {
+    $this->loginAsAdmin();
     ClassSchedule::factory()->create([
         'classroom_id' => $this->classroom->id,
         'weekday' => 'monday',
@@ -97,6 +99,7 @@ it('rejects overlapping schedules', function (): void {
 });
 
 it('can soft delete a schedule', function (): void {
+    $this->loginAsAdmin();
     $schedule = ClassSchedule::factory()->create();
 
     $this->deleteJson("$this->endpoint/{$schedule->id}")

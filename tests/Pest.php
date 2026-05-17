@@ -22,6 +22,8 @@
 
 declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Helpers\AuthenticatesAsAdmin;
+use Tests\Helpers\AuthenticatesAsTeacher;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class)->in('Feature', 'Unit');
+uses(TestCase::class, RefreshDatabase::class, AuthenticatesAsAdmin::class, AuthenticatesAsTeacher::class)->in('Feature', 'Unit');

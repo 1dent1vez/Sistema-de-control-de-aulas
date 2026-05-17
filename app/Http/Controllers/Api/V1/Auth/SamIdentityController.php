@@ -45,6 +45,7 @@ class SamIdentityController extends Controller
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', SamIdentity::class);
         $identities = SamIdentity::paginate(20);
 
         return $this->success(
@@ -55,6 +56,7 @@ class SamIdentityController extends Controller
 
     public function search(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SamIdentity::class);
         $query = $request->query('q', '');
         if (empty($query)) {
             return $this->error('El parámetro de búsqueda es obligatorio.', 422);
@@ -67,6 +69,7 @@ class SamIdentityController extends Controller
 
     public function assignRole(string $externalId, AssignRoleRequest $request): JsonResponse
     {
+        $this->authorize('create', SamIdentity::class);
         $role = SamRole::from($request->input('role'));
         $identity = $this->samRoleService->assignRole($externalId, $role);
 

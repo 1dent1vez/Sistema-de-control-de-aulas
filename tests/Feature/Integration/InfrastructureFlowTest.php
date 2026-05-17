@@ -26,6 +26,7 @@ use App\Models\Level;
 use Illuminate\Support\Facades\Storage;
 
 it('executes the full infrastructure flow correctly', function () {
+    $this->loginAsAdmin();
     Storage::fake('local');
 
     // 1. Crear Institución

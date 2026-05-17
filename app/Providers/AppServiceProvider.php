@@ -24,6 +24,22 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Building;
+use App\Models\Classroom;
+use App\Models\ClassSchedule;
+use App\Models\Institution;
+use App\Models\QrCode;
+use App\Models\SamIdentity;
+use App\Models\Semester;
+use App\Models\TeacherAbsence;
+use App\Policies\BuildingPolicy;
+use App\Policies\ClassroomPolicy;
+use App\Policies\ClassSchedulePolicy;
+use App\Policies\InstitutionPolicy;
+use App\Policies\QrCodePolicy;
+use App\Policies\SamIdentityPolicy;
+use App\Policies\SemesterPolicy;
+use App\Policies\TeacherAbsencePolicy;
 use App\Repositories\Buildings\GamaBuildingRepository;
 use App\Repositories\Buildings\GamaClassroomRepository;
 use App\Repositories\Buildings\GamaLevelRepository;
@@ -42,6 +58,7 @@ use App\Repositories\Qr\GamaQrCodeRepository;
 use App\Repositories\Schedules\GamaClassScheduleRepository;
 use App\Repositories\Schedules\GamaSemesterRepository;
 use App\Repositories\TeacherStatus\GamaTeacherAbsenceRepository;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -61,6 +78,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        Gate::policy(Institution::class, InstitutionPolicy::class);
+        Gate::policy(Building::class, BuildingPolicy::class);
+        Gate::policy(Classroom::class, ClassroomPolicy::class);
+        Gate::policy(Semester::class, SemesterPolicy::class);
+        Gate::policy(ClassSchedule::class, ClassSchedulePolicy::class);
+        Gate::policy(TeacherAbsence::class, TeacherAbsencePolicy::class);
+        Gate::policy(QrCode::class, QrCodePolicy::class);
+        Gate::policy(SamIdentity::class, SamIdentityPolicy::class);
     }
 }

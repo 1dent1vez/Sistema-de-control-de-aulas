@@ -29,6 +29,7 @@ use App\Http\Requests\Buildings\StoreBuildingRequest;
 use App\Http\Requests\Buildings\UpdateBuildingRequest;
 use App\Http\Resources\Buildings\BuildingResource;
 use App\Http\Resources\Buildings\LevelResource;
+use App\Models\Building;
 use App\Services\Buildings\GamaBuildingService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -65,6 +66,7 @@ class GamaBuildingController extends Controller
 
     public function store(StoreBuildingRequest $request): JsonResponse
     {
+        $this->authorize('create', Building::class);
         $building = $this->service->store($request->validated());
 
         return $this->success(
@@ -76,6 +78,7 @@ class GamaBuildingController extends Controller
 
     public function update(UpdateBuildingRequest $request, int $id): JsonResponse
     {
+        $this->authorize('update', Building::class);
         $building = $this->service->update($id, $request->validated());
 
         if (! $building) {
@@ -90,6 +93,7 @@ class GamaBuildingController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $this->authorize('delete', Building::class);
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {

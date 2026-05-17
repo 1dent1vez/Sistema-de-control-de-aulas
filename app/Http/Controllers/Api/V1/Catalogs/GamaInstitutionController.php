@@ -28,6 +28,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalogs\StoreInstitutionRequest;
 use App\Http\Requests\Catalogs\UpdateInstitutionRequest;
 use App\Http\Resources\Catalogs\InstitutionResource;
+use App\Models\Institution;
 use App\Services\Catalogs\GamaInstitutionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -66,6 +67,7 @@ class GamaInstitutionController extends Controller
 
     public function store(StoreInstitutionRequest $request): JsonResponse
     {
+        $this->authorize('create', Institution::class);
         $institution = $this->service->create($request->validated());
 
         return $this->success(
@@ -77,6 +79,7 @@ class GamaInstitutionController extends Controller
 
     public function update(UpdateInstitutionRequest $request, int $id): JsonResponse
     {
+        $this->authorize('update', Institution::class);
         $institution = $this->service->update($id, $request->validated());
 
         if (! $institution) {
@@ -91,6 +94,7 @@ class GamaInstitutionController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $this->authorize('delete', Institution::class);
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {

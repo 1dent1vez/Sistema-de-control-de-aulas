@@ -28,6 +28,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Buildings\StoreClassroomRequest;
 use App\Http\Requests\Buildings\UpdateClassroomRequest;
 use App\Http\Resources\Buildings\ClassroomResource;
+use App\Models\Classroom;
 use App\Services\Buildings\GamaClassroomService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -64,6 +65,7 @@ class GamaClassroomController extends Controller
 
     public function store(StoreClassroomRequest $request): JsonResponse
     {
+        $this->authorize('create', Classroom::class);
         $classroom = $this->service->create($request->validated());
 
         return $this->success(
@@ -75,6 +77,7 @@ class GamaClassroomController extends Controller
 
     public function update(UpdateClassroomRequest $request, int $id): JsonResponse
     {
+        $this->authorize('update', Classroom::class);
         $classroom = $this->service->update($id, $request->validated());
 
         if (! $classroom) {
@@ -89,6 +92,7 @@ class GamaClassroomController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $this->authorize('delete', Classroom::class);
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {

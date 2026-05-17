@@ -29,6 +29,7 @@ use App\Http\Requests\Schedules\ImportScheduleRequest;
 use App\Http\Requests\Schedules\StoreClassScheduleRequest;
 use App\Http\Resources\Schedules\ClassScheduleResource;
 use App\Jobs\ProcessScheduleImportJob;
+use App\Models\ClassSchedule;
 use App\Services\Schedules\GamaClassScheduleService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,7 @@ class GamaClassScheduleController extends Controller
 
     public function store(StoreClassScheduleRequest $request): JsonResponse
     {
+        $this->authorize('create', ClassSchedule::class);
         try {
             $schedule = $this->service->create($request->validated());
 
@@ -84,6 +86,7 @@ class GamaClassScheduleController extends Controller
 
     public function update(StoreClassScheduleRequest $request, int $id): JsonResponse
     {
+        $this->authorize('update', ClassSchedule::class);
         try {
             $schedule = $this->service->update($id, $request->validated());
 
@@ -102,6 +105,7 @@ class GamaClassScheduleController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $this->authorize('delete', ClassSchedule::class);
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {

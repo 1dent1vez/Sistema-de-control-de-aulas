@@ -30,6 +30,7 @@ use App\Models\QrCode;
 use Illuminate\Support\Facades\Storage;
 
 it('executes the QR lifecycle flow correctly', function () {
+    $this->loginAsAdmin();
     Storage::fake('local');
 
     // 1. Preparar infraestructura base

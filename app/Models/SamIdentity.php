@@ -28,13 +28,14 @@ namespace App\Models;
 use App\Enums\Auth\SamRole;
 use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
 class SamIdentity extends Model implements Authenticatable
 {
-    use AuthenticatableTrait, HasApiTokens, SoftDeletes;
+    use AuthenticatableTrait, HasApiTokens, HasFactory, SoftDeletes;
 
     protected $table = 'gama_sam_identities';
 

@@ -66,6 +66,7 @@ it('returns 404 when classroom not found', function (): void {
 });
 
 it('can create a classroom', function (): void {
+    $this->loginAsAdmin();
     $data = [
         'building_id' => $this->building->id,
         'level_id' => $this->level->id,
@@ -82,6 +83,7 @@ it('can create a classroom', function (): void {
 });
 
 it('validates unique classroom name per building', function (): void {
+    $this->loginAsAdmin();
     Classroom::factory()->create([
         'building_id' => $this->building->id,
         'classroom_name' => 'A101',
@@ -96,6 +98,7 @@ it('validates unique classroom name per building', function (): void {
 });
 
 it('validates classroom type must be classroom or computer_lab', function (): void {
+    $this->loginAsAdmin();
     $this->postJson($this->endpoint, [
         'building_id' => $this->building->id,
         'level_id' => $this->level->id,
@@ -105,6 +108,7 @@ it('validates classroom type must be classroom or computer_lab', function (): vo
 });
 
 it('can soft delete a classroom', function (): void {
+    $this->loginAsAdmin();
     $classroom = Classroom::factory()->create();
 
     $this->deleteJson("$this->endpoint/{$classroom->id}")

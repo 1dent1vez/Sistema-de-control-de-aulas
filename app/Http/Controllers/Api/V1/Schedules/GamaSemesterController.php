@@ -27,6 +27,7 @@ namespace App\Http\Controllers\Api\V1\Schedules;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Schedules\StoreSemesterRequest;
 use App\Http\Resources\Schedules\SemesterResource;
+use App\Models\Semester;
 use App\Services\Schedules\GamaSemesterService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -77,6 +78,7 @@ class GamaSemesterController extends Controller
 
     public function store(StoreSemesterRequest $request): JsonResponse
     {
+        $this->authorize('create', Semester::class);
         try {
             $semester = $this->service->create($request->validated());
 
@@ -92,6 +94,7 @@ class GamaSemesterController extends Controller
 
     public function update(StoreSemesterRequest $request, int $id): JsonResponse
     {
+        $this->authorize('update', Semester::class);
         try {
             $semester = $this->service->update($id, $request->validated());
 
@@ -110,6 +113,7 @@ class GamaSemesterController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $this->authorize('delete', Semester::class);
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {

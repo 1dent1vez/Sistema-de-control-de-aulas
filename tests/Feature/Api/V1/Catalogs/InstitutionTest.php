@@ -52,6 +52,7 @@ it('can get single institution via API', function () {
 });
 
 it('can create institution via API', function () {
+    $this->loginAsAdmin();
     $data = [
         'name' => 'API Institution',
         'code' => 'API-01',
@@ -67,6 +68,7 @@ it('can create institution via API', function () {
 });
 
 it('validates creation of institution', function () {
+    $this->loginAsAdmin();
     $response = $this->postJson('/api/v1/institutions', []);
 
     $response->assertStatus(422)
@@ -74,6 +76,7 @@ it('validates creation of institution', function () {
 });
 
 it('can update institution via API', function () {
+    $this->loginAsAdmin();
     $institution = Institution::factory()->create(['name' => 'Old Name']);
 
     $response = $this->putJson("/api/v1/institutions/{$institution->id}", [
@@ -89,6 +92,7 @@ it('can update institution via API', function () {
 });
 
 it('can delete institution via API', function () {
+    $this->loginAsAdmin();
     $institution = Institution::factory()->create();
 
     $response = $this->deleteJson("/api/v1/institutions/{$institution->id}");

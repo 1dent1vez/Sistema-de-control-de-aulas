@@ -14,6 +14,7 @@ beforeEach(function (): void {
 });
 
 it('can list absences', function (): void {
+    $this->loginAsAdmin('TCH001');
     TeacherAbsence::factory()->count(3)->create();
 
     $response = $this->getJson($this->endpoint);
@@ -27,6 +28,7 @@ it('can list absences', function (): void {
 });
 
 it('can show a single absence', function (): void {
+    $this->loginAsAdmin('TCH001');
     $absence = TeacherAbsence::factory()->create();
 
     $response = $this->getJson("$this->endpoint/{$absence->id}");
@@ -36,11 +38,13 @@ it('can show a single absence', function (): void {
 });
 
 it('returns 404 when absence not found', function (): void {
+    $this->loginAsAdmin('TCH001');
     $this->getJson("$this->endpoint/999")
         ->assertStatus(404);
 });
 
 it('can create an absence', function (): void {
+    $this->loginAsAdmin('TCH001');
     $data = [
         'teacher_external_id' => 'TCH001',
         'absence_type_id' => $this->absenceType->id,
@@ -58,6 +62,7 @@ it('can create an absence', function (): void {
 });
 
 it('rejects absence completely in the past', function (): void {
+    $this->loginAsAdmin('TCH001');
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH001',
         'absence_type_id' => $this->absenceType->id,
@@ -69,6 +74,7 @@ it('rejects absence completely in the past', function (): void {
 });
 
 it('detects overlap and requires confirmation', function (): void {
+    $this->loginAsAdmin('TCH001');
     TeacherAbsence::factory()->confirmed()->create([
         'teacher_external_id' => 'TCH001',
         'start_date' => now()->addDay()->format('Y-m-d'),
@@ -87,6 +93,7 @@ it('detects overlap and requires confirmation', function (): void {
 });
 
 it('creates absence with is_confirmed bypasses overlap', function (): void {
+    $this->loginAsAdmin('TCH001');
     TeacherAbsence::factory()->confirmed()->create([
         'teacher_external_id' => 'TCH001',
         'start_date' => now()->addDay()->format('Y-m-d'),
@@ -105,6 +112,7 @@ it('creates absence with is_confirmed bypasses overlap', function (): void {
 });
 
 it('can filter by teacher_external_id', function (): void {
+    $this->loginAsAdmin('TCH001');
     TeacherAbsence::factory()->count(3)->create();
     TeacherAbsence::factory()->create(['teacher_external_id' => 'FILTER01']);
 
@@ -115,6 +123,7 @@ it('can filter by teacher_external_id', function (): void {
 });
 
 it('can soft delete an absence', function (): void {
+    $this->loginAsAdmin('TCH001');
     $absence = TeacherAbsence::factory()->create();
 
     $this->deleteJson("$this->endpoint/{$absence->id}")

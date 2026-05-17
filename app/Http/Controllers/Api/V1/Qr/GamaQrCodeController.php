@@ -9,6 +9,7 @@ use App\Http\Requests\Qr\DownloadQrRequest;
 use App\Http\Requests\Qr\GenerateQrRequest;
 use App\Http\Resources\Qr\QrCodeResource;
 use App\Jobs\GenerateQrBatchJob;
+use App\Models\QrCode;
 use App\Repositories\Contracts\QrCodeRepositoryInterface;
 use App\Services\Qr\GamaQrCodeService;
 use App\Traits\ApiResponse;
@@ -27,6 +28,7 @@ class GamaQrCodeController extends Controller
 
     public function generate(int $classroomId, GenerateQrRequest $request): JsonResponse
     {
+        $this->authorize('create', QrCode::class);
         try {
             $force = (bool) $request->input('force_regenerate', false);
             $qrCode = $this->service->generateForClassroom($classroomId, $force);

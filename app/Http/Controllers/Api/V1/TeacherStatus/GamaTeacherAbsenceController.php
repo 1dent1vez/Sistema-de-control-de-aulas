@@ -28,6 +28,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TeacherStatus\StoreTeacherAbsenceRequest;
 use App\Http\Requests\TeacherStatus\UpdateTeacherAbsenceRequest;
 use App\Http\Resources\TeacherStatus\TeacherAbsenceResource;
+use App\Models\TeacherAbsence;
 use App\Services\TeacherStatus\GamaTeacherAbsenceService;
 use App\Services\TeacherStatus\OverlapRequiredException;
 use App\Traits\ApiResponse;
@@ -44,6 +45,7 @@ class GamaTeacherAbsenceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', TeacherAbsence::class);
         $filters = $request->only(['teacher_external_id', 'start_date', 'end_date']);
 
         return $this->success(
@@ -60,6 +62,8 @@ class GamaTeacherAbsenceController extends Controller
             return $this->error('Teacher absence not found.', 404);
         }
 
+        $this->authorize('view', $absence);
+
         return $this->success(
             new TeacherAbsenceResource($absence),
             'Teacher absence retrieved successfully.'
@@ -68,8 +72,12 @@ class GamaTeacherAbsenceController extends Controller
 
     public function store(StoreTeacherAbsenceRequest $request): JsonResponse
     {
+        $this->authorize('create', TeacherAbsence::class);
         try {
-            $absence = $this->service->store($request->validated());
+            $data = array_merge($request->validated(), [
+                'teacher_external_id' => $request->user()->external_id,
+            ]);
+            $absence = $this->service->store($data);
 
             return $this->success(
                 new TeacherAbsenceResource($absence),
@@ -91,8 +99,16 @@ class GamaTeacherAbsenceController extends Controller
 
     public function update(UpdateTeacherAbsenceRequest $request, int $id): JsonResponse
     {
+        $absenceModel = $this->service->getById($id);
+        if (! $absenceModel) {
+            return $this->error('Teacher absence not found.', 404);
+        }
+        $this->authorize('update', $absenceModel);
         try {
-            $absence = $this->service->update($id, $request->validated());
+            $data = array_merge($request->validated(), [
+                'teacher_external_id' => $absenceModel->teacher_external_id,
+            ]);
+            $absence = $this->service->update($id, $data);
 
             if (! $absence) {
                 return $this->error('Teacher absence not found.', 404);
@@ -117,6 +133,11 @@ class GamaTeacherAbsenceController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $absence = $this->service->getById($id);
+        if (! $absence) {
+            return $this->error('Teacher absence not found.', 404);
+        }
+        $this->authorize('delete', $absence);
         $deleted = $this->service->delete($id);
 
         if (! $deleted) {

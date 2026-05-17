@@ -22,6 +22,7 @@ beforeEach(function (): void {
 });
 
 it('can generate a new QR code', function (): void {
+    $this->loginAsAdmin();
     $response = $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", []);
 
     $response->assertStatus(201)
@@ -38,6 +39,7 @@ it('can generate a new QR code', function (): void {
 });
 
 it('rejects regeneration without force flag', function (): void {
+    $this->loginAsAdmin();
     QrCode::factory()->create([
         'classroom_id' => $this->classroom->id,
         'is_active' => true,
@@ -49,6 +51,7 @@ it('rejects regeneration without force flag', function (): void {
 });
 
 it('allows regeneration with force flag', function (): void {
+    $this->loginAsAdmin();
     $existing = QrCode::factory()->create([
         'classroom_id' => $this->classroom->id,
         'is_active' => true,
@@ -83,6 +86,7 @@ it('returns 404 when no active QR for classroom', function (): void {
 });
 
 it('can download QR batch', function (): void {
+    $this->loginAsAdmin();
     $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", []);
 
     $response = $this->postJson('/api/v1/qr-codes/download', [
