@@ -1,4 +1,4 @@
-{{--
+﻿{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -31,7 +31,7 @@
    Depende de variables definidas en gama-dashboard.css
 ============================================================ */
 
-/* ── Contenido principal ── */
+/* â”€â”€ Contenido principal â”€â”€ */
 .edif-main {
     margin-left: var(--sidebar-width, 240px);
     min-height: 100vh;
@@ -49,7 +49,7 @@
     gap: 24px;
 }
 
-/* ── Encabezado de página ── */
+/* â”€â”€ Encabezado de página â”€â”€ */
 .edif-page-header {
     display: flex;
     justify-content: space-between;
@@ -108,7 +108,7 @@
     transform: translateY(-2px);
 }
 
-/* ── Tabla ── */
+/* â”€â”€ Tabla â”€â”€ */
 .edif-card {
     background: white;
     border: 1px solid var(--mist-blue);
@@ -243,7 +243,7 @@
     display: block;
 }
 
-/* ── Badges de estatus ── */
+/* â”€â”€ Badges de estatus â”€â”€ */
 .st-badge {
     display: inline-block;
     padding: 3px 12px;
@@ -256,7 +256,7 @@
 .st-activo   { background: rgba(90,154,90,0.13);  color: var(--status-active);   }
 .st-inactivo { background: rgba(194,120,120,0.13); color: var(--status-inactive); }
 
-/* ── Botones de acciones ── */
+/* â”€â”€ Botones de acciones â”€â”€ */
 .edif-actions { display: flex; gap: 6px; align-items: center; }
 
 .btn-editar {
@@ -323,7 +323,7 @@
     border-radius: var(--radius-sm);
 }
 
-/* ── Fila vacía ── */
+/* â”€â”€ Fila vacía â”€â”€ */
 .edif-empty td {
     padding: 48px;
     text-align: center;
@@ -337,7 +337,7 @@
     margin-bottom: 10px;
 }
 
-/* ── Paginación ── */
+/* â”€â”€ Paginación â”€â”€ */
 .edif-pagination {
     display: flex;
     justify-content: space-between;
@@ -387,7 +387,7 @@
     opacity: 0.5;
 }
 
-/* ── Panel lateral ── */
+/* â”€â”€ Panel lateral â”€â”€ */
 .panel-backdrop {
     position: fixed;
     inset: 0;
@@ -568,7 +568,7 @@
     transform: translateY(-1px);
 }
 
-/* ── Modal de confirmación (inactivar) ── */
+/* â”€â”€ Modal de confirmación (inactivar) â”€â”€ */
 .modal-warn-icon {
     width: 64px;
     height: 64px;
@@ -600,7 +600,7 @@
 
 .btn-confirm-inactivar:hover { background: #b85a0d; }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
     .edif-main { margin-left: 0; }
 }
@@ -618,7 +618,7 @@
 <div class="edif-main">
     <div class="edif-body">
 
-        {{-- ── Encabezado ── --}}
+        {{-- â”€â”€ Encabezado â”€â”€ --}}
         <div class="edif-page-header">
             <div>
                 <nav class="edif-breadcrumb">
@@ -637,7 +637,7 @@
             </button>
         </div>
 
-        {{-- ── Tabla ── --}}
+        {{-- â”€â”€ Tabla â”€â”€ --}}
         <div class="edif-card">
 
             {{-- Barra de herramientas --}}
@@ -645,7 +645,7 @@
                 <div class="edif-toolbar-left">
                     <div class="edif-search">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Buscar edificio…" autocomplete="off">
+                        <input type="text" id="searchInput" placeholder="Buscar edificioâ€¦" autocomplete="off">
                     </div>
                     <select class="edif-select" id="filterEstatus">
                         <option value="">Todos los estatus</option>
@@ -683,9 +683,9 @@
     </div>{{-- /edif-body --}}
 </div>{{-- /edif-main --}}
 
-{{-- ══════════════════════════════════════
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      Panel lateral — Nuevo / Editar
-══════════════════════════════════════ --}}
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div class="panel-backdrop" id="panelBackdrop"></div>
 
 <aside class="side-panel" id="sidePanel" aria-modal="true" role="dialog">
@@ -730,7 +730,7 @@
         <div class="form-field">
             <label class="form-label" for="fieldDesc">Descripción / Referencia</label>
             <textarea class="form-textarea" id="fieldDesc" maxlength="200" rows="4"
-                      placeholder="Referencia interna opcional…"></textarea>
+                      placeholder="Referencia interna opcionalâ€¦"></textarea>
             <div class="form-hint"><span id="descCount">0</span>/200</div>
             <div class="form-error hidden" id="errorDesc">
                 <i class="fas fa-exclamation-circle"></i>
@@ -756,9 +756,9 @@
     </div>
 </aside>
 
-{{-- ══════════════════════════════════════
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      Modal — Confirmar inactivar
-══════════════════════════════════════ --}}
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div class="modal-overlay" id="inactivarModal" role="dialog" aria-modal="true">
     <div class="modal">
         <div class="modal-header">
@@ -790,13 +790,13 @@
 {{-- Toast --}}
 <div class="toast-container" id="toastContainer"></div>
 
-{{-- ══════════════════════════════════════
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      JavaScript — Lógica de la vista
-══════════════════════════════════════ --}}
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ─── Estado ─── */
+    /* â”€â”€â”€ Estado â”€â”€â”€ */
     const PER_PAGE  = 10;
     let buildings   = [];
     let page        = 1;
@@ -806,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let inactivarTarget = null;
     let isLoading   = false;
 
-    /* ─── Refs DOM ─── */
+    /* â”€â”€â”€ Refs DOM â”€â”€â”€ */
     const $ = id => document.getElementById(id);
     const searchInput     = $('searchInput');
     const filterEstatusEl = $('filterEstatus');
@@ -822,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const inactivarModal  = $('inactivarModal');
     const toastContainer  = $('toastContainer');
 
-    /* ─── Utilidades ─── */
+    /* â”€â”€â”€ Utilidades â”€â”€â”€ */
     function esc(str) {
         if (!str) return '';
         return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -834,12 +834,12 @@ document.addEventListener('DOMContentLoaded', function () {
             : '<span class="st-badge st-inactivo">Inactivo</span>';
     }
 
-    /* ─── CSRF ─── */
+    /* â”€â”€â”€ CSRF â”€â”€â”€ */
     function getCsrf() {
         return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     }
 
-    /* ─── API helpers ─── */
+    /* â”€â”€â”€ API helpers â”€â”€â”€ */
     async function apiFetch(url, options = {}) {
         const res = await fetch(url, {
             headers: {
@@ -855,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return json;
     }
 
-    /* ─── Carga de datos desde la API ─── */
+    /* â”€â”€â”€ Carga de datos desde la API â”€â”€â”€ */
     async function loadBuildings() {
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i></td></tr>';
         try {
@@ -875,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    /* ─── Filtrado ─── */
+    /* â”€â”€â”€ Filtrado â”€â”€â”€ */
     function getFiltered() {
         const q = search.toLowerCase();
         return buildings.filter(b => {
@@ -885,7 +885,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ─── Render principal ─── */
+    /* â”€â”€â”€ Render principal â”€â”€â”€ */
     function render() {
         const filtered   = getFiltered();
         const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
@@ -956,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    /* ─── Delegación de eventos en la tabla ─── */
+    /* â”€â”€â”€ Delegación de eventos en la tabla â”€â”€â”€ */
     tableBody.addEventListener('click', function (e) {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
@@ -966,7 +966,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btn.dataset.action === 'inactivar') openInactivarModal(record);
     });
 
-    /* ─── Búsqueda y filtro ─── */
+    /* â”€â”€â”€ Búsqueda y filtro â”€â”€â”€ */
     let searchTimer;
     searchInput.addEventListener('input', function () {
         clearTimeout(searchTimer);
@@ -977,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function () {
         filterEstatus = this.value; page = 1; render();
     });
 
-    /* ─── Panel lateral ─── */
+    /* â”€â”€â”€ Panel lateral â”€â”€â”€ */
     function openPanel(record) {
         panelRecord = record || {};
         const isEdit = !!record?.id;
@@ -1022,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fieldNombre.addEventListener('input', () => $('nombreCount').textContent = fieldNombre.value.length);
     fieldDesc.addEventListener('input',   () => $('descCount').textContent   = fieldDesc.value.length);
 
-    /* ─── Validación del formulario ─── */
+    /* â”€â”€â”€ Validación del formulario â”€â”€â”€ */
     function clearErrors() {
         ['errorNombre','errorNiveles','errorDesc'].forEach(id => $(id).classList.add('hidden'));
         ['fieldNombre','fieldNiveles','fieldDesc'].forEach(id => $(id).classList.remove('has-error'));
@@ -1076,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const saveBtn = $('btnSavePanel');
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Guardando…';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Guardandoâ€¦';
 
         try {
             if (panelRecord?.id) {
@@ -1109,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /* ─── Modal de inactivar ─── */
+    /* â”€â”€â”€ Modal de inactivar â”€â”€â”€ */
     function openInactivarModal(record) {
         inactivarTarget = record;
         $('inactivarText').innerHTML =
@@ -1148,14 +1148,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /* ─── Escape ─── */
+    /* â”€â”€â”€ Escape â”€â”€â”€ */
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
         if (sidePanel.classList.contains('open'))        closePanel();
         if (inactivarModal.classList.contains('active')) closeInactivarModal();
     });
 
-    /* ─── Toast ─── */
+    /* â”€â”€â”€ Toast â”€â”€â”€ */
     function showToast(title, message, type = 'success') {
         const icons = { success: 'check', error: 'times', warning: 'exclamation' };
         const toast = document.createElement('div');
@@ -1178,357 +1178,8 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => toast.remove(), 300);
     }
 
-    /* ─── Arranque: carga desde la API ─── */
+    /* â”€â”€â”€ Arranque: carga desde la API â”€â”€â”€ */
     loadBuildings();
 });
 </script>
-        { id:  1, nombre: 'Edificio A — Ciencias',    niveles: 4, descripcion: 'Bloque principal, aulas de ciencias básicas.',    estatus: 'Activo',   aulas_activas: 12 },
-        { id:  2, nombre: 'Edificio B — Humanidades', niveles: 3, descripcion: 'Aulas de humanidades y ciencias sociales.',       estatus: 'Activo',   aulas_activas: 8  },
-        { id:  3, nombre: 'Edificio C — Tecnología',  niveles: 5, descripcion: 'Laboratorios de cómputo y electrónica.',         estatus: 'Activo',   aulas_activas: 0  },
-        { id:  4, nombre: 'Edificio D — Posgrado',    niveles: 2, descripcion: 'Salones exclusivos para programas de maestría.', estatus: 'Inactivo', aulas_activas: 0  },
-        { id:  5, nombre: 'Edificio E — Idiomas',     niveles: 2, descripcion: '',                                                estatus: 'Activo',   aulas_activas: 6  },
-        { id:  6, nombre: 'Edificio F — Arte',        niveles: 1, descripcion: 'Talleres de arte y diseño.',                     estatus: 'Activo',   aulas_activas: 3  },
-        { id:  7, nombre: 'Edificio G — Deportes',    niveles: 1, descripcion: 'Instalaciones deportivas y gimnasio.',           estatus: 'Activo',   aulas_activas: 0  },
-        { id:  8, nombre: 'Edificio H — Rectoría',    niveles: 3, descripcion: 'Administración central.',                        estatus: 'Activo',   aulas_activas: 2  },
-        { id:  9, nombre: 'Edificio I — Biblioteca',  niveles: 2, descripcion: 'Acervo bibliográfico y salas de estudio.',      estatus: 'Activo',   aulas_activas: 0  },
-        { id: 10, nombre: 'Edificio J — Cafetería',   niveles: 1, descripcion: 'Área de servicios generales.',                  estatus: 'Inactivo', aulas_activas: 0  },
-        { id: 11, nombre: 'Edificio K — Innovación',  niveles: 6, descripcion: 'Hub de innovación y startups.',                 estatus: 'Activo',   aulas_activas: 4  },
-        { id: 12, nombre: 'Edificio L — Medicina',    niveles: 4, descripcion: 'Facultad de ciencias médicas.',                 estatus: 'Activo',   aulas_activas: 9  },
-    ];
-
-    const PER_PAGE = 10;
-    let nextId     = 13;
-    let buildings  = [...SEED];
-
-    /* ─── Estado ─── */
-    let page           = 1;
-    let search         = '';
-    let filterEstatus  = '';
-    let panelRecord    = null;   // null=cerrado | {}=nuevo | {id,...}=editar
-    let inactivarTarget = null;
-
-    /* ─── Refs DOM ─── */
-    const $ = id => document.getElementById(id);
-    const searchInput    = $('searchInput');
-    const filterEstatusEl = $('filterEstatus');
-    const resultsCount   = $('resultsCount');
-    const tableBody      = $('tableBody');
-    const paginationInfo = $('paginationInfo');
-    const paginationBtns = $('paginationBtns');
-    const panelBackdrop  = $('panelBackdrop');
-    const sidePanel      = $('sidePanel');
-    const fieldNombre    = $('fieldNombre');
-    const fieldNiveles   = $('fieldNiveles');
-    const fieldDesc      = $('fieldDesc');
-    const inactivarModal = $('inactivarModal');
-    const toastContainer = $('toastContainer');
-
-    /* ─── Utilidades ─── */
-    function esc(str) {
-        if (!str) return '';
-        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    function badge(estatus) {
-        const cls = estatus === 'Activo' ? 'st-activo' : 'st-inactivo';
-        return `<span class="st-badge ${cls}">${estatus}</span>`;
-    }
-
-    /* ─── Filtrado ─── */
-    function getFiltered() {
-        const q = search.toLowerCase();
-        return buildings.filter(b => {
-            const matchQ = !q || b.nombre.toLowerCase().includes(q) || b.descripcion.toLowerCase().includes(q);
-            const matchE = !filterEstatus || b.estatus === filterEstatus;
-            return matchQ && matchE;
-        });
-    }
-
-    /* ─── Render principal ─── */
-    function render() {
-        const filtered   = getFiltered();
-        const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-        if (page > totalPages) page = totalPages;
-        const pageData = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-        /* Contador */
-        const n = filtered.length;
-        resultsCount.textContent = `${n} edificio${n !== 1 ? 's' : ''} encontrado${n !== 1 ? 's' : ''}`;
-
-        /* Filas */
-        if (pageData.length === 0) {
-            tableBody.innerHTML = `
-                <tr class="edif-empty">
-                    <td colspan="6">
-                        <i class="fas fa-building"></i>
-                        No se encontraron edificios con los filtros aplicados.
-                    </td>
-                </tr>`;
-        } else {
-            tableBody.innerHTML = pageData.map(r => `
-                <tr>
-                    <td class="td-id">${r.id}</td>
-                    <td class="td-name">
-                        <div>${esc(r.nombre)}</div>
-                        ${r.aulas_activas > 0 ? `<div class="td-hint">${r.aulas_activas} aulas activas</div>` : ''}
-                    </td>
-                    <td class="tc">${r.niveles}</td>
-                    <td>
-                        ${r.descripcion
-                            ? `<span class="td-desc-cell" title="${esc(r.descripcion)}">${esc(r.descripcion)}</span>`
-                            : `<span class="td-empty">Sin descripción</span>`}
-                    </td>
-                    <td>${badge(r.estatus)}</td>
-                    <td>
-                        <div class="edif-actions">
-                            <button class="btn-editar" data-action="editar" data-id="${r.id}">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            ${r.estatus === 'Activo'
-                                ? `<button class="btn-inactivar ${r.aulas_activas > 0 ? 'blocked' : ''}" data-action="inactivar" data-id="${r.id}"
-                                        title="${r.aulas_activas > 0 ? 'RN-03: No se permite inactivar con aulas asociadas' : 'Inactivar edificio'}">
-                                       <i class="fas fa-ban"></i> Inactivar
-                                   </button>`
-                                : `<span class="inact-label">Inactivo</span>`
-                            }
-                        </div>
-                    </td>
-                </tr>`).join('');
-        }
-
-        /* Info paginación */
-        const from = filtered.length === 0 ? 0 : (page - 1) * PER_PAGE + 1;
-        const to   = Math.min(page * PER_PAGE, filtered.length);
-        paginationInfo.textContent = filtered.length === 0
-            ? 'Sin registros'
-            : `Mostrando ${from}–${to} de ${filtered.length} registros · 10 por página`;
-
-        /* Botones paginación */
-        let btns = `<button class="pag-btn" id="btnPrev" ${page === 1 ? 'disabled' : ''}>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>`;
-        for (let i = 1; i <= totalPages; i++) {
-            btns += `<button class="pag-btn ${page === i ? 'pag-active' : ''}" data-page="${i}">${i}</button>`;
-        }
-        btns += `<button class="pag-btn" id="btnNext" ${page === totalPages ? 'disabled' : ''}>
-                     <i class="fas fa-chevron-right"></i>
-                 </button>`;
-        paginationBtns.innerHTML = btns;
-
-        $('btnPrev').addEventListener('click', () => { if (page > 1) { page--; render(); } });
-        $('btnNext').addEventListener('click', () => { if (page < totalPages) { page++; render(); } });
-        paginationBtns.querySelectorAll('[data-page]').forEach(btn =>
-            btn.addEventListener('click', () => { page = +btn.dataset.page; render(); })
-        );
-    }
-
-    /* ─── Delegación de eventos en la tabla ─── */
-    tableBody.addEventListener('click', function (e) {
-        const btn = e.target.closest('[data-action]');
-        if (!btn) return;
-        const record = buildings.find(b => b.id === +btn.dataset.id);
-        if (!record) return;
-        if (btn.dataset.action === 'editar')     openPanel(record);
-        if (btn.dataset.action === 'inactivar')  {
-            if (record.aulas_activas > 0) {
-                showToast(
-                    'RN-03: Inactivación bloqueada',
-                    'No se puede inactivar el edificio porque tiene aulas asociadas.',
-                    'warning'
-                );
-                return;
-            }
-            openInactivarModal(record);
-        }
-    });
-
-    /* ─── Búsqueda y filtro ─── */
-    let searchTimer;
-    searchInput.addEventListener('input', function () {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => { search = this.value; page = 1; render(); }, 280);
-    });
-
-    filterEstatusEl.addEventListener('change', function () {
-        filterEstatus = this.value; page = 1; render();
-    });
-
-    /* ─── Panel lateral ─── */
-    function openPanel(record) {
-        panelRecord = record || {};
-        const isEdit = !!record?.id;
-
-        $('panelTitle').textContent    = isEdit ? 'Editar Edificio'                : 'Nuevo Edificio';
-        $('panelSubtitle').textContent = isEdit ? 'Modifica los datos del edificio' : 'Completa los datos del nuevo edificio';
-
-        fieldNombre.value  = isEdit ? record.nombre      : '';
-        fieldNiveles.value = isEdit ? record.niveles     : '';
-        fieldDesc.value    = isEdit ? record.descripcion : '';
-
-        $('nombreCount').textContent = fieldNombre.value.length;
-        $('descCount').textContent   = fieldDesc.value.length;
-
-        const estatus = isEdit ? record.estatus : 'Activo';
-        const badge   = $('panelStatusBadge');
-        badge.className   = `st-badge ${estatus === 'Activo' ? 'st-activo' : 'st-inactivo'}`;
-        badge.textContent = estatus;
-        $('panelStatusHint').textContent = isEdit
-            ? '(se gestiona con el botón Inactivar)'
-            : 'Por defecto: Activo';
-
-        clearErrors();
-        sidePanel.classList.add('open');
-        panelBackdrop.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        fieldNombre.focus();
-    }
-
-    function closePanel() {
-        panelRecord = null;
-        sidePanel.classList.remove('open');
-        panelBackdrop.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    $('btnNuevo').addEventListener('click',       () => openPanel(null));
-    $('btnClosePanel').addEventListener('click',  closePanel);
-    $('btnCancelPanel').addEventListener('click', closePanel);
-    panelBackdrop.addEventListener('click',       closePanel);
-
-    fieldNombre.addEventListener('input', () => $('nombreCount').textContent = fieldNombre.value.length);
-    fieldDesc.addEventListener('input',   () => $('descCount').textContent   = fieldDesc.value.length);
-
-    /* ─── Validación del formulario ─── */
-    function clearErrors() {
-        ['errorNombre','errorNiveles','errorDesc'].forEach(id => $(id).classList.add('hidden'));
-        ['fieldNombre','fieldNiveles','fieldDesc'].forEach(id => $(id).classList.remove('has-error'));
-    }
-
-    function showError(fieldId, errorId, msgId, msg) {
-        $(fieldId).classList.add('has-error');
-        $(msgId).textContent = msg;
-        $(errorId).classList.remove('hidden');
-    }
-
-    function validateForm() {
-        clearErrors();
-        let ok = true;
-        const nombre  = fieldNombre.value.trim();
-        const niveles = fieldNiveles.value;
-        const desc    = fieldDesc.value;
-
-        if (!nombre) {
-            showError('fieldNombre','errorNombre','errorNombreMsg','El nombre es obligatorio.');
-            ok = false;
-        } else if (nombre.length > 80) {
-            showError('fieldNombre','errorNombre','errorNombreMsg','Máximo 80 caracteres.');
-            ok = false;
-        } else if (buildings.some(b => b.nombre.toLowerCase() === nombre.toLowerCase() && b.id !== panelRecord?.id)) {
-            showError('fieldNombre','errorNombre','errorNombreMsg','Ya existe un edificio con ese nombre');
-            ok = false;
-        }
-
-        if (!niveles) {
-            showError('fieldNiveles','errorNiveles','errorNivelesMsg','El número de niveles es obligatorio.');
-            ok = false;
-        } else if (!Number.isInteger(+niveles) || +niveles <= 0) {
-            showError('fieldNiveles','errorNiveles','errorNivelesMsg','Debe ser un entero positivo mayor a cero.');
-            ok = false;
-        }
-
-        if (desc.length > 200) {
-            showError('fieldDesc','errorDesc','errorDescMsg','Máximo 200 caracteres.');
-            ok = false;
-        }
-
-        return ok;
-    }
-
-    $('btnSavePanel').addEventListener('click', function () {
-        if (!validateForm()) return;
-
-        const fields = {
-            nombre:      fieldNombre.value.trim(),
-            niveles:     parseInt(fieldNiveles.value),
-            descripcion: fieldDesc.value.trim(),
-        };
-
-        if (panelRecord?.id) {
-            const idx = buildings.findIndex(b => b.id === panelRecord.id);
-            buildings[idx] = { ...buildings[idx], ...fields };
-            showToast('Edificio actualizado', `"${fields.nombre}" se actualizó correctamente.`, 'success');
-        } else {
-            buildings.push({ id: nextId++, ...fields, estatus: 'Activo', aulas_activas: 0 });
-            showToast('Edificio registrado exitosamente', `"${fields.nombre}" fue registrado exitosamente.`, 'success');
-        }
-        closePanel();
-        render();
-    });
-
-    /* ─── Modal de inactivar ─── */
-    function openInactivarModal(record) {
-        inactivarTarget = record;
-        $('inactivarText').innerHTML =
-            `¿Está seguro de que desea inactivar el edificio
-             <strong style="color:var(--midnight);">"${esc(record.nombre)}"</strong>?<br><br>
-             El registro no se eliminará físicamente. El estatus cambiará a <strong>Inactivo</strong>.`;
-        inactivarModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeInactivarModal() {
-        inactivarTarget = null;
-        inactivarModal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    $('btnCloseInactivar').addEventListener('click',  closeInactivarModal);
-    $('btnCancelInactivar').addEventListener('click', closeInactivarModal);
-    inactivarModal.addEventListener('click', e => { if (e.target === inactivarModal) closeInactivarModal(); });
-
-    $('btnConfirmInactivar').addEventListener('click', function () {
-        if (!inactivarTarget) return;
-        const idx = buildings.findIndex(b => b.id === inactivarTarget.id);
-        const nombre = inactivarTarget.nombre;
-        buildings[idx] = { ...buildings[idx], estatus: 'Inactivo' };
-        closeInactivarModal();
-        render();
-        showToast('Edificio inactivado', `"${nombre}" fue inactivado correctamente.`, 'success');
-    });
-
-    /* ─── Escape ─── */
-    document.addEventListener('keydown', e => {
-        if (e.key !== 'Escape') return;
-        if (sidePanel.classList.contains('open'))       closePanel();
-        if (inactivarModal.classList.contains('active')) closeInactivarModal();
-    });
-
-    /* ─── Toast ─── */
-    function showToast(title, message, type = 'success') {
-        const icons = { success: 'check', error: 'times', warning: 'exclamation' };
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <div class="toast-icon"><i class="fas fa-${icons[type] || 'check'}"></i></div>
-            <div class="toast-content">
-                <div class="toast-title">${esc(title)}</div>
-                <div class="toast-message">${esc(message)}</div>
-            </div>
-            <button class="toast-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>`;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 10);
-        const t = setTimeout(() => removeToast(toast), 5000);
-        toast.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(t); removeToast(toast); });
-    }
-
-    function removeToast(toast) {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }
-
-    /* ─── Arranque ─── */
-    render();
-});
-</script>
-
 @endsection

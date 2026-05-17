@@ -1,4 +1,4 @@
-{{--
+﻿{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -180,26 +180,14 @@
         </div>
 
         <div class="field">
-          <label>Docente (búsqueda SAM) *</label>
-          <div class="search-box">
-            <input type="text" x-model="docenteSearch" @focus="showDocentes=true" @input="showDocentes=true" placeholder="Buscar docente...">
-            <div class="search-results" x-show="showDocentes && docentesFiltrados.length > 0" @click.outside="showDocentes=false">
-              <template x-for="d in docentesFiltrados" :key="d.id">
-                <div class="search-item" @click="selectDocente(d)" x-text="d.nombre"></div>
-              </template>
-            </div>
-          </div>
+          <label>ID Docente (SAM) *</label>
+          <input type="text" x-model="form.docenteExterno" placeholder="Ej. SAM-00123" autocomplete="off">
           <div class="err" x-show="errors.docente" x-text="errors.docente"></div>
         </div>
 
         <div class="field">
-          <label>Materia (semestre activo) *</label>
-          <select x-model="form.materiaId">
-            <option value="">Selecciona...</option>
-            <template x-for="m in materiasSemestre" :key="m.id">
-              <option :value="String(m.id)" x-text="m.nombre"></option>
-            </template>
-          </select>
+          <label>Materia *</label>
+          <input type="text" x-model="form.subjectName" placeholder="Ej. Matemáticas I" autocomplete="off">
           <div class="err" x-show="errors.materia" x-text="errors.materia"></div>
         </div>
 
@@ -242,7 +230,7 @@
           </div>
         </div>
 
-        <button class="btn btn-primary btn-md" style="width:100%;" @click="guardarHorario()">
+        <button class="btn btn-primary btn-md" style="width:100%;" @click="guardarHorario()" :disabled="saving">
           <i class="fas fa-save"></i>
           <span>Guardar Horario</span>
         </button>
@@ -294,36 +282,23 @@
 <script>
 function pant05HorarioManual() {
   return {
+    /* â”€â”€ Catálogos cargados desde API â”€â”€ */
     diasCatalogo: [
-      { key: 'LUN', label: 'Lun' }, { key: 'MAR', label: 'Mar' }, { key: 'MIE', label: 'Mie' }, { key: 'JUE', label: 'Jue' }, { key: 'VIE', label: 'Vie' }
+      { key: 'monday',    label: 'Lun' },
+      { key: 'tuesday',   label: 'Mar' },
+      { key: 'wednesday', label: 'Mié' },
+      { key: 'thursday',  label: 'Jue' },
+      { key: 'friday',    label: 'Vie' },
     ],
-    edificiosActivos: [
-      { id: 1, nombre: 'Edificio A' }, { id: 2, nombre: 'Edificio B' }
-    ],
-    aulas: [
-      { id: 101, edificio_id: 1, nombre: 'Aula 101' }, { id: 102, edificio_id: 1, nombre: 'Aula 102' },
-      { id: 201, edificio_id: 2, nombre: 'Aula 201' }, { id: 202, edificio_id: 2, nombre: 'Lab C-1' }
-    ],
-    docentesSAM: [
-      { id: 1, nombre: 'Mtra. Laura Mendez' }, { id: 2, nombre: 'Ing. Jose Rivera' }, { id: 3, nombre: 'Mtro. Daniel Rojas' }, { id: 4, nombre: 'Dra. Patricia Luna' }
-    ],
-    materiasSemestre: [
-      { id: 1, nombre: 'Matematicas I' }, { id: 2, nombre: 'Programacion Web' }, { id: 3, nombre: 'Bases de Datos' }
-    ],
-    horariosActivos: [
-      { id: 1, aula_id: 101, dia: 'LUN', hora_inicio: '08:00', hora_fin: '09:30', docente: 'Mtra. Laura Mendez', materia: 'Matematicas I', grupo: '1A' },
-      { id: 2, aula_id: 101, dia: 'MIE', hora_inicio: '08:00', hora_fin: '09:30', docente: 'Mtra. Laura Mendez', materia: 'Matematicas I', grupo: '1A' },
-      { id: 3, aula_id: 101, dia: 'VIE', hora_inicio: '10:00', hora_fin: '11:30', docente: 'Ing. Jose Rivera', materia: 'Programacion Web', grupo: '3B' }
-    ],
+    edificiosActivos: [],
+    aulas: [],
+    semesterActivo: null,
+    horariosActivos: [],
+
+    /* â”€â”€ Formulario â”€â”€ */
     form: {
-      edificioId: '',
-      aulaId: '',
-      docenteId: '',
-      materiaId: '',
-      grupo: '',
-      dias: [],
-      horaInicio: '',
-      horaFin: ''
+      edificioId: '', aulaId: '', docenteExterno: '',
+      subjectName: '', grupo: '', dias: [], horaInicio: '', horaFin: ''
     },
     docenteSearch: '',
     showDocentes: false,
@@ -332,17 +307,100 @@ function pant05HorarioManual() {
     mensajeError: '',
     mensajeOk: '',
     aulasFiltradas: [],
-    init() {
-      this.aulasFiltradas = [];
+    loadingGrid: false,
+    saving: false,
+
+    /* â”€â”€ Inicialización â”€â”€ */
+    async init() {
+      await this.loadCatalogos();
     },
-    get docentesFiltrados() {
-      const q = this.docenteSearch.trim().toLowerCase();
-      if (!q) return this.docentesSAM.slice(0, 6);
-      return this.docentesSAM.filter(d => d.nombre.toLowerCase().includes(q)).slice(0, 8);
+
+    getCsrf() {
+      return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     },
+
+    async apiFetch(url, opts = {}) {
+      const res = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': this.getCsrf(),
+          ...(opts.headers ?? {}),
+        },
+        ...opts,
+      });
+      const json = await res.json();
+      if (!res.ok) throw { status: res.status, json };
+      return json;
+    },
+
+    async loadCatalogos() {
+      try {
+        const [buildRes, semRes] = await Promise.all([
+          this.apiFetch('/api/v1/buildings'),
+          this.apiFetch('/api/v1/semesters/current'),
+        ]);
+        this.edificiosActivos = (buildRes.data ?? [])
+          .filter(b => b.isActive)
+          .map(b => ({ id: b.id, nombre: b.name }));
+
+        this.semesterActivo = semRes.data ?? null;
+
+        if (this.semesterActivo) {
+          const schedRes = await this.apiFetch(`/api/v1/class-schedules?semester_id=${this.semesterActivo.id}`);
+          this.horariosActivos = (schedRes.data ?? []).map(s => ({
+            id:          s.id,
+            aula_id:     s.classroomId,
+            dia:         s.weekday,
+            hora_inicio: s.startTime,
+            hora_fin:    s.endTime,
+            docente:     s.teacherExternalId,
+            materia:     s.subjectName,
+            grupo:       s.groupLabel ?? '',
+          }));
+        }
+
+        const aulaRes = await this.apiFetch('/api/v1/classrooms');
+        this.aulas = (aulaRes.data ?? [])
+          .filter(c => c.isActive)
+          .map(c => ({ id: c.id, edificio_id: c.buildingId, nombre: c.classroomName }));
+
+      } catch(e) {
+        this.mensajeError = 'Error al cargar catálogos desde la API.';
+      }
+    },
+
+    async onEdificioChange() {
+      this.form.aulaId = '';
+      const id = Number(this.form.edificioId);
+      this.aulasFiltradas = this.aulas.filter(a => a.edificio_id === id);
+
+      if (id && this.form.aulaId === '') {
+        this.horariosActivos = [];
+        if (this.semesterActivo) {
+          try {
+            const res = await this.apiFetch(
+              `/api/v1/class-schedules?semester_id=${this.semesterActivo.id}&building_id=${id}`
+            );
+            this.horariosActivos = (res.data ?? []).map(s => ({
+              id:          s.id,
+              aula_id:     s.classroomId,
+              dia:         s.weekday,
+              hora_inicio: s.startTime,
+              hora_fin:    s.endTime,
+              docente:     s.teacherExternalId,
+              materia:     s.subjectName,
+              grupo:       s.groupLabel ?? '',
+            }));
+          } catch(e) { /* silencioso */ }
+        }
+      }
+    },
+
+    /* â”€â”€ Horas disponibles â”€â”€ */
     get horasDisponibles() {
       const out = [];
-      for (let h = 7; h <= 21; h += 1) {
+      for (let h = 7; h <= 21; h++) {
         out.push(String(h).padStart(2, '0') + ':00');
         out.push(String(h).padStart(2, '0') + ':30');
       }
@@ -351,45 +409,42 @@ function pant05HorarioManual() {
     get slotsGrid() {
       return this.horasDisponibles.filter(h => h >= '07:00' && h <= '20:30');
     },
-    onEdificioChange() {
-      this.form.aulaId = '';
-      const id = Number(this.form.edificioId);
-      this.aulasFiltradas = this.aulas.filter(a => a.edificio_id === id);
-    },
+
     toggleDia(dia) {
-      if (this.form.dias.includes(dia)) this.form.dias = this.form.dias.filter(d => d !== dia);
-      else this.form.dias = [...this.form.dias, dia];
+      if (this.form.dias.includes(dia))
+        this.form.dias = this.form.dias.filter(d => d !== dia);
+      else
+        this.form.dias = [...this.form.dias, dia];
     },
-    selectDocente(d) {
-      this.form.docenteId = String(d.id);
-      this.docenteSearch = d.nombre;
-      this.showDocentes = false;
-    },
+
     toMin(hhmm) {
       const [h, m] = hhmm.split(':').map(Number);
       return h * 60 + m;
     },
-    overlaps(aStart, aEnd, bStart, bEnd) {
-      return this.toMin(aStart) < this.toMin(bEnd) && this.toMin(aEnd) > this.toMin(bStart);
+    overlaps(aS, aE, bS, bE) {
+      return this.toMin(aS) < this.toMin(bE) && this.toMin(aE) > this.toMin(bS);
     },
+
     validateBase() {
       this.errors = {};
       this.mensajeError = '';
       this.mensajeOk = '';
       this.conflictos = [];
-      if (!this.form.edificioId) this.errors.edificio = 'Selecciona un edificio.';
-      if (!this.form.aulaId) this.errors.aula = 'Selecciona un aula.';
-      if (!this.form.docenteId) this.errors.docente = 'Selecciona un docente.';
-      if (!this.form.materiaId) this.errors.materia = 'Selecciona una materia.';
-      if (!this.form.grupo.trim()) this.errors.grupo = 'El grupo es obligatorio.';
-      if (this.form.dias.length === 0) this.errors.dias = 'Selecciona al menos un dia.';
-      if (!this.form.horaInicio) this.errors.horaInicio = 'Selecciona hora de inicio.';
-      if (!this.form.horaFin) this.errors.horaFin = 'Selecciona hora de fin.';
-      if (this.form.horaInicio && this.form.horaFin && this.toMin(this.form.horaFin) <= this.toMin(this.form.horaInicio)) {
+      if (!this.form.edificioId)     this.errors.edificio    = 'Selecciona un edificio.';
+      if (!this.form.aulaId)         this.errors.aula        = 'Selecciona un aula.';
+      if (!this.form.docenteExterno.trim()) this.errors.docente = 'El ID de docente es obligatorio.';
+      if (!this.form.subjectName.trim()) this.errors.materia  = 'El nombre de materia es obligatorio.';
+      if (!this.form.grupo.trim())   this.errors.grupo       = 'El grupo es obligatorio.';
+      if (this.form.dias.length === 0) this.errors.dias      = 'Selecciona al menos un día.';
+      if (!this.form.horaInicio)     this.errors.horaInicio  = 'Selecciona hora de inicio.';
+      if (!this.form.horaFin)        this.errors.horaFin     = 'Selecciona hora de fin.';
+      if (this.form.horaInicio && this.form.horaFin &&
+          this.toMin(this.form.horaFin) <= this.toMin(this.form.horaInicio))
         this.errors.horaFin = 'La hora fin debe ser mayor a la hora inicio.';
-      }
-      return Object.keys(this.errors).length === 0;
+      if (!this.semesterActivo) this.mensajeError = 'No hay semestre activo. Crea uno primero.';
+      return Object.keys(this.errors).length === 0 && !!this.semesterActivo;
     },
+
     checkConflictos() {
       const aulaId = Number(this.form.aulaId);
       const diaSet = new Set(this.form.dias);
@@ -400,52 +455,83 @@ function pant05HorarioManual() {
       );
       this.conflictos = choques;
       if (choques.length > 0) {
-        const detalle = choques.map(c => `${c.dia} ${c.hora_inicio}-${c.hora_fin} (${c.materia} ${c.grupo})`).join(' | ');
-        this.mensajeError = `Conflicto detectado con horario activo: ${detalle}`;
+        const det = choques.map(c => `${c.dia} ${c.hora_inicio}-${c.hora_fin} (${c.materia})`).join(' | ');
+        this.mensajeError = `Conflicto detectado: ${det}`;
         return false;
       }
       return true;
     },
-    guardarHorario() {
+
+    async guardarHorario() {
       if (!this.validateBase()) return;
       if (!this.checkConflictos()) return;
-      const docente = this.docentesSAM.find(d => d.id === Number(this.form.docenteId));
-      const materia = this.materiasSemestre.find(m => m.id === Number(this.form.materiaId));
-      const baseId = Date.now();
-      this.form.dias.forEach((dia, idx) => {
-        this.horariosActivos.push({
-          id: baseId + idx,
-          aula_id: Number(this.form.aulaId),
-          dia: dia,
-          hora_inicio: this.form.horaInicio,
-          hora_fin: this.form.horaFin,
-          docente: docente ? docente.nombre : '',
-          materia: materia ? materia.nombre : '',
-          grupo: this.form.grupo.trim()
-        });
-      });
-      this.mensajeOk = 'Horario guardado y asociado al semestre activo.';
-      this.showToast('Horario guardado', 'El horario se registro exitosamente.', 'success');
-      this.form = { edificioId: this.form.edificioId, aulaId: this.form.aulaId, docenteId: '', materiaId: '', grupo: '', dias: [], horaInicio: '', horaFin: '' };
-      this.docenteSearch = '';
-      this.errors = {};
-      this.conflictos = [];
+      this.saving = true;
+
+      const saved = [];
+      try {
+        for (const dia of this.form.dias) {
+          const res = await this.apiFetch('/api/v1/class-schedules', {
+            method: 'POST',
+            body: JSON.stringify({
+              semester_id:          this.semesterActivo.id,
+              classroom_id:         Number(this.form.aulaId),
+              teacher_external_id:  this.form.docenteExterno.trim(),
+              subject_name:         this.form.subjectName.trim(),
+              group_label:          this.form.grupo.trim(),
+              weekday:              dia,
+              start_time:           this.form.horaInicio,
+              end_time:             this.form.horaFin,
+            }),
+          });
+          if (res.data) {
+            this.horariosActivos.push({
+              id:          res.data.id,
+              aula_id:     res.data.classroomId,
+              dia:         res.data.weekday,
+              hora_inicio: res.data.startTime,
+              hora_fin:    res.data.endTime,
+              docente:     res.data.teacherExternalId,
+              materia:     res.data.subjectName,
+              grupo:       res.data.groupLabel ?? '',
+            });
+          }
+        }
+        this.mensajeOk = 'Horario guardado y asociado al semestre activo.';
+        this.showToast('Horario guardado', 'El horario se registró exitosamente.', 'success');
+        this.form = {
+          edificioId: this.form.edificioId,
+          aulaId: this.form.aulaId,
+          docenteExterno: '', subjectName: '', grupo: '',
+          dias: [], horaInicio: '', horaFin: '',
+        };
+        this.errors = {};
+        this.conflictos = [];
+      } catch(err) {
+        const errs = err.json?.errors ?? {};
+        const first = Object.values(errs)[0];
+        this.mensajeError = first?.[0] ?? (err.json?.message ?? 'Error al guardar el horario.');
+      } finally {
+        this.saving = false;
+      }
     },
+
     horariosEnCelda(dia, slot) {
       const aulaId = Number(this.form.aulaId || 0);
       if (!aulaId) return [];
-      const start = slot;
       const endMin = this.toMin(slot) + 30;
       const end = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0');
-      return this.horariosActivos.filter(h => h.aula_id === aulaId && h.dia === dia && this.overlaps(start, end, h.hora_inicio, h.hora_fin));
+      return this.horariosActivos.filter(h =>
+        h.aula_id === aulaId && h.dia === dia && this.overlaps(slot, end, h.hora_inicio, h.hora_fin)
+      );
     },
+
     isConflictCell(dia, slot) {
       if (this.conflictos.length === 0) return false;
-      const start = slot;
       const endMin = this.toMin(slot) + 30;
       const end = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0');
-      return this.conflictos.some(c => c.dia === dia && this.overlaps(start, end, c.hora_inicio, c.hora_fin));
+      return this.conflictos.some(c => c.dia === dia && this.overlaps(slot, end, c.hora_inicio, c.hora_fin));
     },
+
     showToast(title, message, type) {
       const root = document.getElementById('toastContainer');
       const icon = type === 'success' ? 'check' : 'exclamation';
@@ -454,8 +540,7 @@ function pant05HorarioManual() {
       t.innerHTML = `
         <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
         <div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div>
-        <button class="toast-close"><i class="fas fa-times"></i></button>
-      `;
+        <button class="toast-close"><i class="fas fa-times"></i></button>`;
       root.appendChild(t);
       setTimeout(() => t.classList.add('show'), 10);
       const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };

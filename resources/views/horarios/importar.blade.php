@@ -1,4 +1,4 @@
-{{--
+﻿{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -128,9 +128,7 @@
       <div class="imp-row">
         <button class="btn btn-outline btn-md" id="btnPlantilla"><i class="fas fa-download"></i><span>Descargar Plantilla</span></button>
         <select class="imp-select" id="semestreDestino">
-          <option value="">Selecciona semestre destino...</option>
-          <option value="2026-A">2026-A</option>
-          <option value="2026-B">2026-B</option>
+          <option value="">Cargando semestresâ€¦</option>
         </select>
         <button class="btn btn-primary btn-md" id="btnProcesar"><i class="fas fa-cogs"></i><span>Procesar Archivo</span></button>
       </div>
@@ -168,127 +166,191 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const REQUIRED = ['aula','docente','materia','grupo','dias','hora_inicio','hora_fin'];
-  const EXISTING_AULAS = ['Aula 101', 'Aula 201', 'Lab C-1'];
-  const EXISTING_DOCENTES = ['Laura Mendez', 'Jose Rivera', 'Daniel Rojas'];
-  const ACTIVE = [
-    { aula:'Aula 101', dia:'LUN', inicio:'08:00', fin:'09:30' },
-    { aula:'Aula 101', dia:'MIE', inicio:'10:00', fin:'11:30' }
-  ];
-
-  let selectedFile = null;
   const $ = (id) => document.getElementById(id);
-  const dz = $('dropzone'), fi = $('fileInput'), fileLabel = $('fileLabel');
+
+  /* -- CSRF -- */
+  function getCsrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+  }
+
+  /* -- API helper generico -- */
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
+      ...opts,
+    });
+    const json = await res.json();
+    if (!res.ok) throw { status: res.status, json };
+    return json;
+  }
+
+  /* -- Toast -- */
+  function toast(title, message, type = 'success') {
+    const icon = { success: 'check', error: 'times', warning: 'exclamation' }[type] ?? 'check';
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-icon"><i class="fas fa-${icon}"></i></div>` +
+      `<div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div>` +
+      `<button class="toast-close"><i class="fas fa-times"></i></button>`;
+    $('toastContainer').appendChild(t);
+    setTimeout(() => t.classList.add('show'), 10);
+    const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };
+    const timer = setTimeout(rm, 4500);
+    t.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(timer); rm(); });
+  }
+
+  function showMsg(type, text) {
+    $('msgBox').innerHTML = `<div class="msg ${type}">${text}</div>`;
+  }
+
+  /* -- Cargar semestres desde la API -- */
+  async function loadSemesters() {
+    const sel = $('semestreDestino');
+    try {
+      const res = await apiFetch('/api/v1/semesters');
+      const semesters = res.data ?? [];
+      if (!semesters.length) {
+        sel.innerHTML = '<option value="">Sin semestres registrados</option>';
+        return;
+      }
+      sel.innerHTML = '<option value="">Selecciona semestre destino...</option>' +
+        semesters.map(s =>
+          `<option value="${s.id}">${s.name}${s.isActive ? ' activo' : ''}</option>`
+        ).join('');
+    } catch (e) {
+      sel.innerHTML = '<option value="">Error al cargar semestres</option>';
+      showMsg('error', 'No se pudieron cargar los semestres desde la API.');
+    }
+  }
+
+  /* -- Drag and Drop / seleccion de archivo -- */
+  let selectedFile = null;
+  const dz = $('dropzone');
+  const fi = $('fileInput');
+  const fileLabel = $('fileLabel');
 
   dz.addEventListener('click', () => fi.click());
   fi.addEventListener('change', (e) => setFile(e.target.files[0] || null));
   dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
   dz.addEventListener('drop', (e) => {
-    e.preventDefault(); dz.classList.remove('drag-over');
+    e.preventDefault();
+    dz.classList.remove('drag-over');
     setFile(e.dataTransfer.files[0] || null);
   });
 
   function setFile(file) {
     selectedFile = file;
-    fileLabel.textContent = file ? `Archivo seleccionado: ${file.name}` : 'Arrastra el archivo CSV/XLSX aquí o haz clic para seleccionarlo';
+    fileLabel.textContent = file
+      ? `Archivo seleccionado: ${file.name}`
+      : 'Arrastra el archivo CSV/XLSX aqui o haz clic para seleccionarlo';
   }
 
+  /* -- Plantilla descargable (columnas que espera la API) -- */
   $('btnPlantilla').addEventListener('click', () => {
-    const csv = 'aula,docente,materia,grupo,dias,hora_inicio,hora_fin\nAula 101,Laura Mendez,Matematicas I,1A,LUN|MIE,08:00,09:30\n';
+    const csv =
+      'classroom_name,teacher_external_id,subject_name,group_label,weekdays,start_time,end_time\n' +
+      'Aula 101,SAM-00123,Matematicas I,1A,monday|wednesday,08:00,09:30\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'plantilla_horarios.csv'; a.click();
+    a.href = URL.createObjectURL(blob);
+    a.download = 'plantilla_horarios.csv';
+    a.click();
     URL.revokeObjectURL(a.href);
   });
 
-  function toMin(h) { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; }
-  function overlap(aS, aE, bS, bE) { return toMin(aS) < toMin(bE) && toMin(aE) > toMin(bS); }
-  function showMsg(type, text) { $('msgBox').innerHTML = `<div class="msg ${type}">${text}</div>`; }
-  function toast(title, message) {
-    const t = document.createElement('div');
-    t.className = 'toast success';
-    t.innerHTML = `<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div><button class="toast-close"><i class="fas fa-times"></i></button>`;
-    $('toastContainer').appendChild(t); setTimeout(() => t.classList.add('show'), 10);
-    const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };
-    const timer = setTimeout(rm, 4500); t.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(timer); rm(); });
-  }
-
-  function parseCsv(text) {
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    if (!lines.length) return { headers: [], rows: [] };
-    const headers = lines[0].split(',').map(x => x.trim().toLowerCase());
-    const rows = lines.slice(1).map((line, idx) => {
-      const values = line.split(',').map(v => v.trim());
-      const row = { __line: idx + 2 };
-      headers.forEach((h, i) => { row[h] = values[i] ?? ''; });
-      return row;
-    });
-    return { headers, rows };
-  }
-
+  /* -- Procesar: envio a la API real -- */
   $('btnProcesar').addEventListener('click', async () => {
     $('reportCard').style.display = 'none';
     $('reportBody').innerHTML = '';
     $('msgBox').innerHTML = '';
 
-    const sem = $('semestreDestino').value;
+    const semId = $('semestreDestino').value;
     if (!selectedFile) { showMsg('error', 'Selecciona un archivo CSV/XLSX antes de procesar.'); return; }
-    if (!sem) { showMsg('error', 'Selecciona el semestre destino antes de procesar.'); return; }
-    if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
-      showMsg('error', 'Para esta demo visual, el procesamiento activo es CSV. XLSX se valida solo como tipo permitido.');
-      return;
-    }
+    if (!semId)        { showMsg('error', 'Selecciona el semestre destino antes de procesar.'); return; }
 
-    const text = await selectedFile.text();
-    const { headers, rows } = parseCsv(text);
+    const procBtn = $('btnProcesar');
+    procBtn.disabled = true;
+    procBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Procesando...</span>';
 
-    // Fase 1: estructura
-    const missing = REQUIRED.filter(c => !headers.includes(c));
-    if (missing.length > 0) {
-      showMsg('error', `Estructura invalida. Faltan columnas obligatorias: ${missing.join(', ')}`);
-      return;
-    }
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('semester_id', semId);
 
-    // Fase 2: validacion por fila
-    const okRows = [];
-    const badRows = [];
-    rows.forEach(r => {
-      const dias = (r.dias || '').split('|').map(d => d.trim().toUpperCase()).filter(Boolean);
-      let err = '';
-      if (!EXISTING_AULAS.includes(r.aula)) err = 'El aula no existe en el sistema';
-      else if (!EXISTING_DOCENTES.includes(r.docente)) err = 'El docente no existe en el sistema';
-      else if (!r.hora_inicio || !r.hora_fin || toMin(r.hora_fin) <= toMin(r.hora_inicio)) err = 'Hora fin debe ser mayor a hora inicio';
-      else {
-        const choque = ACTIVE.find(a => a.aula === r.aula && dias.includes(a.dia) && overlap(r.hora_inicio, r.hora_fin, a.inicio, a.fin));
-        if (choque) err = `Empalme con horario activo ${choque.dia} ${choque.inicio}-${choque.fin}`;
-      }
-      if (err) badRows.push({ ...r, detalle: err }); else okRows.push({ ...r, detalle: 'Importado correctamente' });
-    });
-
-    // Simula importacion parcial solo de validos
-    okRows.forEach(r => {
-      (r.dias || '').split('|').map(d => d.trim().toUpperCase()).forEach(dia => {
-        ACTIVE.push({ aula: r.aula, dia, inicio: r.hora_inicio, fin: r.hora_fin });
+      /* No incluir Content-Type: el navegador agrega el boundary correcto */
+      const res = await fetch('/api/v1/class-schedules/import', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+        body: formData,
       });
-    });
+      const json = await res.json();
+      if (!res.ok) throw { status: res.status, json };
+
+      /* Si la API devuelve batchId, obtener el reporte detallado */
+      const batchId  = json.data?.batchId ?? json.data?.batch_id ?? null;
+      let reportRows = json.data?.rows ?? (Array.isArray(json.data) ? json.data : []);
+
+      if (batchId && !reportRows.length) {
+        try {
+          const rpt = await apiFetch(`/api/v1/class-schedules/import/${batchId}/report`);
+          reportRows = rpt.data ?? [];
+        } catch (_) { /* usar lo que tenemos */ }
+      }
+
+      renderReport(reportRows, json.message ?? 'Importacion completada.');
+      toast('Importacion completada', json.message ?? 'Archivo procesado exitosamente.', 'success');
+
+    } catch (err) {
+      const msg = err.json?.message ?? 'Error al procesar el archivo en el servidor.';
+      showMsg('error', msg);
+      toast('Error de importacion', msg, 'error');
+    } finally {
+      procBtn.disabled = false;
+      procBtn.innerHTML = '<i class="fas fa-cogs"></i><span>Procesar Archivo</span>';
+    }
+  });
+
+  /* -- Render del reporte -- */
+  function renderReport(rows, summaryMsg) {
+    const okRows  = rows.filter(r => r.status === 'imported'  || r.ok === true  || r.estado === 'Importada');
+    const badRows = rows.filter(r => r.status === 'discarded' || r.ok === false || r.estado === 'Descartada');
 
     $('reportCard').style.display = 'block';
-    $('okCount').textContent = `Importadas: ${okRows.length}`;
+    $('okCount').textContent  = `Importadas: ${okRows.length}`;
     $('badCount').textContent = `Descartadas: ${badRows.length}`;
-    const reportRows = [
-      ...okRows.map(r => ({...r, estado:'Importada', cls:'row-ok'})),
-      ...badRows.map(r => ({...r, estado:'Descartada', cls:'row-bad'}))
-    ];
-    $('reportBody').innerHTML = reportRows.map(r => `
-      <tr class="${r.cls}">
-        <td>${r.__line}</td><td>${r.estado}</td><td>${r.aula || '-'}</td><td>${r.docente || '-'}</td><td>${r.materia || '-'}</td>
-        <td>${r.dias || '-'}</td><td>${r.hora_inicio || '-'} - ${r.hora_fin || '-'}</td><td>${r.detalle}</td>
-      </tr>`).join('');
 
-    showMsg('ok', `Proceso completado. Estructura valida. ${okRows.length} fila(s) importada(s), ${badRows.length} descartada(s).`);
-    toast('Importacion completada', `${okRows.length} registro(s) importado(s) exitosamente.`);
-  });
+    if (!rows.length) {
+      $('reportBody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--soft-steel);">Sin filas en el reporte.</td></tr>';
+      showMsg('ok', summaryMsg);
+      return;
+    }
+
+    $('reportBody').innerHTML = rows.map((r, idx) => {
+      const isOk   = r.status === 'imported' || r.ok === true || r.estado === 'Importada';
+      const cls    = isOk ? 'row-ok' : 'row-bad';
+      const estado = isOk ? 'Importada' : 'Descartada';
+      const line   = r.row ?? r.__line ?? (idx + 2);
+      const aula   = r.classroomName     ?? r.classroom_name     ?? r.aula    ?? '-';
+      const doc    = r.teacherExternalId ?? r.teacher_external_id ?? r.docente ?? '-';
+      const mat    = r.subjectName       ?? r.subject_name       ?? r.materia ?? '-';
+      const dia    = r.weekday ?? r.weekdays ?? r.dias ?? '-';
+      const hora   = r.startTime && r.endTime
+                      ? `${r.startTime} - ${r.endTime}`
+                      : (r.hora_inicio ? `${r.hora_inicio} - ${r.hora_fin}` : '-');
+      const det    = r.error ?? r.detail ?? r.detalle ?? (isOk ? 'Importado correctamente' : '-');
+      return `<tr class="${cls}">
+        <td>${line}</td><td>${estado}</td><td>${aula}</td><td>${doc}</td>
+        <td>${mat}</td><td>${dia}</td><td>${hora}</td><td>${det}</td>
+      </tr>`;
+    }).join('');
+
+    showMsg('ok', summaryMsg);
+  }
+
+  /* -- Arranque -- */
+  loadSemesters();
 });
 </script>
 @endsection

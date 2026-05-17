@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AbsenceTypeSeeder::class,
+            TestingDataSeeder::class,
         ]);
     }
 }

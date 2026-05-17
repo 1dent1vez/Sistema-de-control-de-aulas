@@ -26,13 +26,13 @@ class GamaQrCodeService
         $classroom = Classroom::with('building')->find($classroomId);
 
         if (! $classroom) {
-            throw new \RuntimeException('Classroom not found.', 404);
+            throw new \RuntimeException('El aula seleccionada no existe.', 404);
         }
 
         $active = $this->repository->findActiveByClassroom($classroomId);
 
         if ($active && ! $force) {
-            throw new \RuntimeException('An active QR already exists for this classroom. Use forceRegenerate to replace.', 409);
+            throw new \RuntimeException('Ya existe un código QR activo para esta aula. Utiliza forceRegenerate para reemplazarlo.', 409);
         }
 
         if ($active && $force) {
@@ -87,7 +87,7 @@ class GamaQrCodeService
         $qrCodes = $this->repository->getActiveByClassroomIds($classroomIds);
 
         if ($qrCodes->isEmpty()) {
-            throw new \RuntimeException('No active QR codes found for the specified classrooms.', 404);
+            throw new \RuntimeException('No se encontraron códigos QR activos para las aulas especificadas.', 404);
         }
 
         $batchId = (string) Str::uuid();
@@ -131,6 +131,6 @@ class GamaQrCodeService
             return $pdfPath;
         }
 
-        throw new \RuntimeException('Invalid format. Use pdf or png.', 422);
+        throw new \RuntimeException('Formato inválido. Utiliza pdf o png.', 422);
     }
 }

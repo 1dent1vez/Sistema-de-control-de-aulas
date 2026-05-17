@@ -38,4 +38,17 @@ enum Weekday: string
     {
         return array_column(self::cases(), 'value');
     }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::MONDAY => 'Lunes',
+            self::TUESDAY => 'Martes',
+            self::WEDNESDAY => 'Miércoles',
+            self::THURSDAY => 'Jueves',
+            self::FRIDAY => 'Viernes',
+            self::SATURDAY => 'Sábado',
+            self::SUNDAY => 'Domingo',
+        };
+    }
 }
