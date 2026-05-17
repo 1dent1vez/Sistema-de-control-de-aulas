@@ -1,4 +1,4 @@
-{{--
+﻿{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -282,7 +282,7 @@
 <script>
 function pant05HorarioManual() {
   return {
-    /* ── Catálogos cargados desde API ── */
+    /* â”€â”€ Catálogos cargados desde API â”€â”€ */
     diasCatalogo: [
       { key: 'monday',    label: 'Lun' },
       { key: 'tuesday',   label: 'Mar' },
@@ -295,7 +295,7 @@ function pant05HorarioManual() {
     semesterActivo: null,
     horariosActivos: [],
 
-    /* ── Formulario ── */
+    /* â”€â”€ Formulario â”€â”€ */
     form: {
       edificioId: '', aulaId: '', docenteExterno: '',
       subjectName: '', grupo: '', dias: [], horaInicio: '', horaFin: ''
@@ -310,7 +310,7 @@ function pant05HorarioManual() {
     loadingGrid: false,
     saving: false,
 
-    /* ── Inicialización ── */
+    /* â”€â”€ Inicialización â”€â”€ */
     async init() {
       await this.loadCatalogos();
     },
@@ -397,7 +397,7 @@ function pant05HorarioManual() {
       }
     },
 
-    /* ── Horas disponibles ── */
+    /* â”€â”€ Horas disponibles â”€â”€ */
     get horasDisponibles() {
       const out = [];
       for (let h = 7; h <= 21; h++) {
@@ -541,172 +541,6 @@ function pant05HorarioManual() {
         <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
         <div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div>
         <button class="toast-close"><i class="fas fa-times"></i></button>`;
-      root.appendChild(t);
-      setTimeout(() => t.classList.add('show'), 10);
-      const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };
-      const timer = setTimeout(rm, 4200);
-      t.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(timer); rm(); });
-    }
-  }
-}
-</script>
-@endsection
-    aulas: [
-      { id: 101, edificio_id: 1, nombre: 'Aula 101' }, { id: 102, edificio_id: 1, nombre: 'Aula 102' },
-      { id: 201, edificio_id: 2, nombre: 'Aula 201' }, { id: 202, edificio_id: 2, nombre: 'Lab C-1' }
-    ],
-    docentesSAM: [
-      { id: 1, nombre: 'Mtra. Laura Mendez' }, { id: 2, nombre: 'Ing. Jose Rivera' }, { id: 3, nombre: 'Mtro. Daniel Rojas' }, { id: 4, nombre: 'Dra. Patricia Luna' }
-    ],
-    materiasSemestre: [
-      { id: 1, nombre: 'Matematicas I' }, { id: 2, nombre: 'Programacion Web' }, { id: 3, nombre: 'Bases de Datos' }
-    ],
-    horariosActivos: [
-      { id: 1, aula_id: 101, dia: 'LUN', hora_inicio: '08:00', hora_fin: '09:30', docente: 'Mtra. Laura Mendez', materia: 'Matematicas I', grupo: '1A' },
-      { id: 2, aula_id: 101, dia: 'MIE', hora_inicio: '08:00', hora_fin: '09:30', docente: 'Mtra. Laura Mendez', materia: 'Matematicas I', grupo: '1A' },
-      { id: 3, aula_id: 101, dia: 'VIE', hora_inicio: '10:00', hora_fin: '11:30', docente: 'Ing. Jose Rivera', materia: 'Programacion Web', grupo: '3B' }
-    ],
-    form: {
-      edificioId: '',
-      aulaId: '',
-      docenteId: '',
-      materiaId: '',
-      grupo: '',
-      dias: [],
-      horaInicio: '',
-      horaFin: ''
-    },
-    docenteSearch: '',
-    showDocentes: false,
-    errors: {},
-    conflictos: [],
-    mensajeError: '',
-    mensajeOk: '',
-    aulasFiltradas: [],
-    init() {
-      this.aulasFiltradas = [];
-    },
-    get docentesFiltrados() {
-      const q = this.docenteSearch.trim().toLowerCase();
-      if (!q) return this.docentesSAM.slice(0, 6);
-      return this.docentesSAM.filter(d => d.nombre.toLowerCase().includes(q)).slice(0, 8);
-    },
-    get horasDisponibles() {
-      const out = [];
-      for (let h = 7; h <= 21; h += 1) {
-        out.push(String(h).padStart(2, '0') + ':00');
-        out.push(String(h).padStart(2, '0') + ':30');
-      }
-      return out;
-    },
-    get slotsGrid() {
-      return this.horasDisponibles.filter(h => h >= '07:00' && h <= '20:30');
-    },
-    onEdificioChange() {
-      this.form.aulaId = '';
-      const id = Number(this.form.edificioId);
-      this.aulasFiltradas = this.aulas.filter(a => a.edificio_id === id);
-    },
-    toggleDia(dia) {
-      if (this.form.dias.includes(dia)) this.form.dias = this.form.dias.filter(d => d !== dia);
-      else this.form.dias = [...this.form.dias, dia];
-    },
-    selectDocente(d) {
-      this.form.docenteId = String(d.id);
-      this.docenteSearch = d.nombre;
-      this.showDocentes = false;
-    },
-    toMin(hhmm) {
-      const [h, m] = hhmm.split(':').map(Number);
-      return h * 60 + m;
-    },
-    overlaps(aStart, aEnd, bStart, bEnd) {
-      return this.toMin(aStart) < this.toMin(bEnd) && this.toMin(aEnd) > this.toMin(bStart);
-    },
-    validateBase() {
-      this.errors = {};
-      this.mensajeError = '';
-      this.mensajeOk = '';
-      this.conflictos = [];
-      if (!this.form.edificioId) this.errors.edificio = 'Selecciona un edificio.';
-      if (!this.form.aulaId) this.errors.aula = 'Selecciona un aula.';
-      if (!this.form.docenteId) this.errors.docente = 'Selecciona un docente.';
-      if (!this.form.materiaId) this.errors.materia = 'Selecciona una materia.';
-      if (!this.form.grupo.trim()) this.errors.grupo = 'El grupo es obligatorio.';
-      if (this.form.dias.length === 0) this.errors.dias = 'Selecciona al menos un dia.';
-      if (!this.form.horaInicio) this.errors.horaInicio = 'Selecciona hora de inicio.';
-      if (!this.form.horaFin) this.errors.horaFin = 'Selecciona hora de fin.';
-      if (this.form.horaInicio && this.form.horaFin && this.toMin(this.form.horaFin) <= this.toMin(this.form.horaInicio)) {
-        this.errors.horaFin = 'La hora fin debe ser mayor a la hora inicio.';
-      }
-      return Object.keys(this.errors).length === 0;
-    },
-    checkConflictos() {
-      const aulaId = Number(this.form.aulaId);
-      const diaSet = new Set(this.form.dias);
-      const choques = this.horariosActivos.filter(h =>
-        h.aula_id === aulaId &&
-        diaSet.has(h.dia) &&
-        this.overlaps(this.form.horaInicio, this.form.horaFin, h.hora_inicio, h.hora_fin)
-      );
-      this.conflictos = choques;
-      if (choques.length > 0) {
-        const detalle = choques.map(c => `${c.dia} ${c.hora_inicio}-${c.hora_fin} (${c.materia} ${c.grupo})`).join(' | ');
-        this.mensajeError = `Conflicto detectado con horario activo: ${detalle}`;
-        return false;
-      }
-      return true;
-    },
-    guardarHorario() {
-      if (!this.validateBase()) return;
-      if (!this.checkConflictos()) return;
-      const docente = this.docentesSAM.find(d => d.id === Number(this.form.docenteId));
-      const materia = this.materiasSemestre.find(m => m.id === Number(this.form.materiaId));
-      const baseId = Date.now();
-      this.form.dias.forEach((dia, idx) => {
-        this.horariosActivos.push({
-          id: baseId + idx,
-          aula_id: Number(this.form.aulaId),
-          dia: dia,
-          hora_inicio: this.form.horaInicio,
-          hora_fin: this.form.horaFin,
-          docente: docente ? docente.nombre : '',
-          materia: materia ? materia.nombre : '',
-          grupo: this.form.grupo.trim()
-        });
-      });
-      this.mensajeOk = 'Horario guardado y asociado al semestre activo.';
-      this.showToast('Horario guardado', 'El horario se registro exitosamente.', 'success');
-      this.form = { edificioId: this.form.edificioId, aulaId: this.form.aulaId, docenteId: '', materiaId: '', grupo: '', dias: [], horaInicio: '', horaFin: '' };
-      this.docenteSearch = '';
-      this.errors = {};
-      this.conflictos = [];
-    },
-    horariosEnCelda(dia, slot) {
-      const aulaId = Number(this.form.aulaId || 0);
-      if (!aulaId) return [];
-      const start = slot;
-      const endMin = this.toMin(slot) + 30;
-      const end = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0');
-      return this.horariosActivos.filter(h => h.aula_id === aulaId && h.dia === dia && this.overlaps(start, end, h.hora_inicio, h.hora_fin));
-    },
-    isConflictCell(dia, slot) {
-      if (this.conflictos.length === 0) return false;
-      const start = slot;
-      const endMin = this.toMin(slot) + 30;
-      const end = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0');
-      return this.conflictos.some(c => c.dia === dia && this.overlaps(start, end, c.hora_inicio, c.hora_fin));
-    },
-    showToast(title, message, type) {
-      const root = document.getElementById('toastContainer');
-      const icon = type === 'success' ? 'check' : 'exclamation';
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      t.innerHTML = `
-        <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
-        <div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div>
-        <button class="toast-close"><i class="fas fa-times"></i></button>
-      `;
       root.appendChild(t);
       setTimeout(() => t.classList.add('show'), 10);
       const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };

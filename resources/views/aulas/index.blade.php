@@ -1,4 +1,4 @@
-{{--
+﻿{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -356,18 +356,18 @@
 document.addEventListener('DOMContentLoaded', function () {
   const $ = (id) => document.getElementById(id);
 
-  /* ── Estado ── */
+  /* â”€â”€ Estado â”€â”€ */
   let buildings      = [];   // edificios activos
   let aulas          = [];   // classrooms completos
   let levelsCache    = {};   // { buildingId: [{id, name}] }
   let state          = { edificio: '', tipo: '', q: '', editingId: null };
 
-  /* ── CSRF ── */
+  /* â”€â”€ CSRF â”€â”€ */
   function getCsrf() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
   }
 
-  /* ── API helper ── */
+  /* â”€â”€ API helper â”€â”€ */
   async function apiFetch(url, opts = {}) {
     const res = await fetch(url, {
       headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': getCsrf(), ...opts.headers },
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return json;
   }
 
-  /* ── Toast ── */
+  /* â”€â”€ Toast â”€â”€ */
   function showToast(title, message, type = 'success') {
     const wrap = $('toastContainer');
     const icon = type === 'success' ? 'check' : (type === 'warning' ? 'exclamation' : 'times');
@@ -402,11 +402,11 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  /* ── Mapeo de tipo de aula ── */
+  /* â”€â”€ Mapeo de tipo de aula â”€â”€ */
   const TIPOS = { classroom: 'Salón', computer_lab: 'Lab. Cómputo' };
   const TIPOS_API = { Salon: 'classroom', LabComputo: 'computer_lab' };
 
-  /* ── Carga inicial ── */
+  /* â”€â”€ Carga inicial â”€â”€ */
   async function loadAll() {
     $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:22px;"></i></td></tr>';
     try {
@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* ── Cargar niveles de un edificio ── */
+  /* â”€â”€ Cargar niveles de un edificio â”€â”€ */
   async function loadLevels(buildingId) {
     if (levelsCache[buildingId]) return levelsCache[buildingId];
     try {
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* ── Filtros ── */
+  /* â”€â”€ Filtros â”€â”€ */
   function populateFilters() {
     const f = $('filterEdificio');
     f.innerHTML = '<option value="">Todos los edificios</option>' +
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ── Render tabla ── */
+  /* â”€â”€ Render tabla â”€â”€ */
   function renderTable() {
     const rows = getRows();
     $('resultsInfo').textContent = `${rows.length} aula(s) encontrada(s)`;
@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
       </tr>`).join('');
   }
 
-  /* ── Panel nuevo/editar ── */
+  /* â”€â”€ Panel nuevo/editar â”€â”€ */
   async function openPanel(editId = null) {
     state.editingId = editId;
     clearErrors();
@@ -555,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function () {
       levels.map(l => `<option value="${l.id}" ${selectedId == l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
   }
 
-  /* ── Errores ── */
+  /* â”€â”€ Errores â”€â”€ */
   function clearErrors() {
     ['eEdificio','eNombre','eNivel','eTipo','eCapacidad'].forEach(id => {
       $(id).classList.remove('active');
@@ -568,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $(id).classList.add('active');
   }
 
-  /* ── Guardar ── */
+  /* â”€â”€ Guardar â”€â”€ */
   async function saveForm() {
     clearErrors();
     const buildingId = Number($('fEdificio').value);
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const saveBtn = $('btnSaveAula');
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Guardando…';
+    saveBtn.textContent = 'Guardandoâ€¦';
 
     try {
       if (state.editingId) {
@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* ── Precondición ── */
+  /* â”€â”€ Precondición â”€â”€ */
   function bootPrecondition() {
     if (buildings.length > 0) return;
     $('preconditionBox').style.display = 'block';
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btnNuevaAula').title = 'Primero registra un edificio activo';
   }
 
-  /* ── Eventos ── */
+  /* â”€â”€ Eventos â”€â”€ */
   $('filterEdificio').addEventListener('change', (e) => { state.edificio = e.target.value; renderTable(); });
   $('filterTipo').addEventListener('change',     (e) => { state.tipo     = e.target.value; renderTable(); });
   $('searchAula').addEventListener('input',      (e) => { state.q        = e.target.value; renderTable(); });
@@ -652,267 +652,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key === 'Escape' && $('panelAulas').classList.contains('open')) closePanel();
   });
 
-  /* ── Arranque ── */
+  /* â”€â”€ Arranque â”€â”€ */
   loadAll();
-});
-</script>
-@endsection
-
-  const activeBuildings = edificios.filter(e => e.estatus === 'Activo');
-  let aulas = [
-    { id: 1, edificio_id: 1, edificio: 'Edificio A', nombre: 'Aula 101', nivel: 1, tipo: 'Salon', capacidad: 35, qr_generado: true },
-    { id: 2, edificio_id: 1, edificio: 'Edificio A', nombre: 'Aula 201', nivel: 2, tipo: 'LabComputo', capacidad: 28, qr_generado: false },
-    { id: 3, edificio_id: 2, edificio: 'Edificio B', nombre: 'Aula 101', nivel: 1, tipo: 'Salon', capacidad: 40, qr_generado: true },
-    { id: 4, edificio_id: 2, edificio: 'Edificio B', nombre: 'Aula 303', nivel: 3, tipo: 'Salon', capacidad: null, qr_generado: false }
-  ];
-  let nextId = 5;
-
-  let state = { edificio: '', tipo: '', q: '', editingId: null };
-
-  function esc(v) {
-    return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function showToast(title, message, type = 'success') {
-    const wrap = $('toastContainer');
-    const icon = type === 'success' ? 'check' : (type === 'warning' ? 'exclamation' : 'times');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-      <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
-      <div class="toast-content">
-        <div class="toast-title">${esc(title)}</div>
-        <div class="toast-message">${esc(message)}</div>
-      </div>
-      <button class="toast-close"><i class="fas fa-times"></i></button>
-    `;
-    wrap.appendChild(toast);
-    setTimeout(() => toast.classList.add('show'), 10);
-    const t = setTimeout(() => rm(), 4200);
-    function rm() {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 280);
-    }
-    toast.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(t); rm(); });
-  }
-
-  function populateFilters() {
-    const f = $('filterEdificio');
-    f.innerHTML = '<option value="">Todos los edificios</option>' +
-      activeBuildings.map(e => `<option value="${e.id}">${esc(e.nombre)}</option>`).join('');
-  }
-
-  function getRows() {
-    return aulas.filter(a => {
-      const okE = !state.edificio || a.edificio_id === Number(state.edificio);
-      const okT = !state.tipo || a.tipo === state.tipo;
-      const qq = state.q.trim().toLowerCase();
-      const okQ = !qq || a.nombre.toLowerCase().includes(qq) || a.edificio.toLowerCase().includes(qq);
-      return okE && okT && okQ;
-    });
-  }
-
-  function renderTable() {
-    const rows = getRows();
-    $('resultsInfo').textContent = `${rows.length} aula(s) encontrada(s)`;
-    const body = $('aulasBody');
-    if (rows.length === 0) {
-      body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--soft-steel);padding:28px;">Sin resultados</td></tr>';
-      return;
-    }
-    body.innerHTML = rows.map((r, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${esc(r.edificio)}</td>
-        <td style="font-weight:600;color:var(--midnight);">${esc(r.nombre)}</td>
-        <td>${r.nivel}</td>
-        <td>${r.tipo === 'Salon' ? 'Salón' : 'Lab. Cómputo'}</td>
-        <td>${r.capacidad ?? '<span style="color:var(--soft-steel);">N/D</span>'}</td>
-        <td>
-          <span class="badge-qr ${r.qr_generado ? 'ok' : 'pending'}">
-            <i class="fas ${r.qr_generado ? 'fa-check-circle' : 'fa-clock'}"></i>
-            ${r.qr_generado ? 'Generado' : 'Pendiente'}
-          </span>
-        </td>
-        <td>
-          <div class="aulas-actions">
-            <button class="btn btn-secondary btn-sm btn-sm-fixed" data-edit="${r.id}">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn-sm-fixed btn-qr" data-qr="${r.id}" title="Ver QR">
-              <i class="fas fa-qrcode"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  function openPanel(editId = null) {
-    state.editingId = editId;
-    clearErrors();
-    $('formTitle').textContent = editId ? 'Editar Aula' : 'Nueva Aula';
-    $('overlayAulas').classList.add('active');
-    $('panelAulas').classList.add('open');
-    document.body.style.overflow = 'hidden';
-
-    const s = $('fEdificio');
-    s.innerHTML = '<option value="">Selecciona...</option>' + activeBuildings.map(e => `<option value="${e.id}">${esc(e.nombre)}</option>`).join('');
-
-    if (editId) {
-      const record = aulas.find(x => x.id === editId);
-      if (!record) return;
-      $('fEdificio').value = String(record.edificio_id);
-      syncNiveles(record.nivel);
-      $('fNombre').value = record.nombre;
-      $('countNombre').textContent = record.nombre.length;
-      $('fTipo').value = record.tipo;
-      $('fCapacidad').value = record.capacidad ?? '';
-    } else {
-      $('fEdificio').value = '';
-      $('fNivel').innerHTML = '<option value="">Selecciona edificio...</option>';
-      $('fNombre').value = '';
-      $('countNombre').textContent = '0';
-      $('fTipo').value = '';
-      $('fCapacidad').value = '';
-    }
-  }
-
-  function closePanel() {
-    state.editingId = null;
-    $('overlayAulas').classList.remove('active');
-    $('panelAulas').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  function syncNiveles(selected = null) {
-    const edificioId = Number($('fEdificio').value);
-    const edif = activeBuildings.find(e => e.id === edificioId);
-    const level = $('fNivel');
-    if (!edif) {
-      level.innerHTML = '<option value="">Selecciona edificio...</option>';
-      return;
-    }
-    let options = '<option value="">Selecciona...</option>';
-    for (let i = 1; i <= edif.niveles; i += 1) {
-      options += `<option value="${i}" ${selected === i ? 'selected' : ''}>Nivel ${i}</option>`;
-    }
-    level.innerHTML = options;
-  }
-
-  function clearErrors() {
-    ['eEdificio','eNombre','eNivel','eTipo','eCapacidad'].forEach(id => {
-      const el = $(id);
-      el.classList.remove('active');
-      el.textContent = '';
-    });
-  }
-
-  function setError(id, msg) {
-    const el = $(id);
-    el.textContent = msg;
-    el.classList.add('active');
-  }
-
-  function validateForm() {
-    clearErrors();
-    let ok = true;
-    const edificioId = Number($('fEdificio').value);
-    const nombre = $('fNombre').value.trim();
-    const nivel = Number($('fNivel').value);
-    const tipo = $('fTipo').value;
-    const capacidadRaw = $('fCapacidad').value.trim();
-    const capacidad = capacidadRaw ? Number(capacidadRaw) : null;
-
-    if (!edificioId) { setError('eEdificio', 'Selecciona un edificio activo.'); ok = false; }
-    if (!nombre) { setError('eNombre', 'El nombre es obligatorio.'); ok = false; }
-    else if (nombre.length > 60) { setError('eNombre', 'Máximo 60 caracteres.'); ok = false; }
-
-    const repeated = aulas.some(a =>
-      a.edificio_id === edificioId &&
-      a.nombre.toLowerCase() === nombre.toLowerCase() &&
-      a.id !== state.editingId
-    );
-    if (nombre && edificioId && repeated) {
-      setError('eNombre', 'Ya existe un aula con ese nombre en el edificio seleccionado.');
-      ok = false;
-    }
-
-    if (!nivel || nivel <= 0) { setError('eNivel', 'Selecciona un nivel válido.'); ok = false; }
-    if (!tipo) { setError('eTipo', 'Selecciona el tipo de aula.'); ok = false; }
-    if (capacidadRaw && (!Number.isInteger(capacidad) || capacidad <= 0)) {
-      setError('eCapacidad', 'La capacidad debe ser un entero positivo.');
-      ok = false;
-    }
-    return ok;
-  }
-
-  function saveForm() {
-    if (!validateForm()) return;
-    const edificioId = Number($('fEdificio').value);
-    const edificio = activeBuildings.find(e => e.id === edificioId);
-    const record = {
-      edificio_id: edificioId,
-      edificio: edificio.nombre,
-      nombre: $('fNombre').value.trim(),
-      nivel: Number($('fNivel').value),
-      tipo: $('fTipo').value,
-      capacidad: $('fCapacidad').value.trim() ? Number($('fCapacidad').value.trim()) : null
-    };
-    if (state.editingId) {
-      const idx = aulas.findIndex(a => a.id === state.editingId);
-      aulas[idx] = { ...aulas[idx], ...record };
-      showToast('Aula actualizada', 'Los cambios se guardaron correctamente.', 'success');
-    } else {
-      aulas.push({ id: nextId++, ...record, qr_generado: false });
-      showToast('Aula registrada', 'El aula fue registrada exitosamente.', 'success');
-    }
-    closePanel();
-    renderTable();
-  }
-
-  function bootPrecondition() {
-    if (activeBuildings.length > 0) return;
-    $('preconditionBox').style.display = 'block';
-    $('btnNuevaAula').disabled = true;
-    $('btnNuevaAula').title = 'Primero registra un edificio activo';
-  }
-
-  $('filterEdificio').addEventListener('change', (e) => { state.edificio = e.target.value; renderTable(); });
-  $('filterTipo').addEventListener('change', (e) => { state.tipo = e.target.value; renderTable(); });
-  $('searchAula').addEventListener('input', (e) => { state.q = e.target.value; renderTable(); });
-
-  $('btnNuevaAula').addEventListener('click', () => {
-    if (activeBuildings.length === 0) return;
-    openPanel(null);
-  });
-  $('btnClosePanelAula').addEventListener('click', closePanel);
-  $('btnCancelPanelAula').addEventListener('click', closePanel);
-  $('overlayAulas').addEventListener('click', closePanel);
-  $('btnSaveAula').addEventListener('click', saveForm);
-  $('fEdificio').addEventListener('change', () => syncNiveles());
-  $('fNombre').addEventListener('input', () => { $('countNombre').textContent = $('fNombre').value.length; });
-
-  $('aulasBody').addEventListener('click', (e) => {
-    const edit = e.target.closest('[data-edit]');
-    if (edit) {
-      openPanel(Number(edit.dataset.edit));
-      return;
-    }
-    const qr = e.target.closest('[data-qr]');
-    if (qr) {
-      const aulaId = Number(qr.dataset.qr);
-      window.location.href = `{{ route('codigosqr') }}?aula_id=${aulaId}`;
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && $('panelAulas').classList.contains('open')) closePanel();
-  });
-
-  bootPrecondition();
-  populateFilters();
-  renderTable();
 });
 </script>
 @endsection

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Codigo QR')
 
@@ -15,9 +15,9 @@
                     <nav class="breadcrumb">
                         <a href="{{ route('dashboard') }}">Administrador</a>
                         <i class="fas fa-chevron-right"></i>
-                        <a>Gestión Académica</a>
+                        <a>Gestion Academica</a>
                         <i class="fas fa-chevron-right"></i>
-                        <span class="current">Códigos QR</span>
+                        <span class="current">Codigos QR</span>
                     </nav>
                 </div>
             <!-- Page Content -->
@@ -26,8 +26,8 @@
                 <div class="page-header">
                     <div class="page-title-row">
                         <div>
-                            <h1 class="page-title">Generación de Códigos QR</h1>
-                            <p class="page-subtitle">Genere, visualice y descargue códigos QR estáticos por aula para control de asistencia. Los QR generados están listos para impresión.</p>
+                            <h1 class="page-title">Generacion de Codigos QR</h1>
+                            <p class="page-subtitle">Genere, visualice y descargue codigos QR estaticos por aula para control de asistencia. Los QR generados estan listos para impresion.</p>
                         </div>
                         <div class="header-actions">
                             <button class="btn btn-outline" id="btnPrint" title="Imprimir seleccionados">
@@ -44,11 +44,7 @@
                         <div class="filter-group">
                             <label class="filter-label" for="filtroEdificio">Edificio:</label>
                             <select class="filter-select" id="filtroEdificio">
-                                <option value="">Todos los edificios</option>
-                                <option value="A">Edificio A - Principal</option>
-                                <option value="B">Edificio B - Ciencias</option>
-                                <option value="C">Edificio C - Humanidades</option>
-                                <option value="D">Edificio D - Laboratorios</option>
+                                <option value="">Cargando edificios...</option>
                             </select>
                         </div>
                         <div class="search-box">
@@ -70,7 +66,7 @@
                         <span class="selection-count" id="selectionCount">0 aulas seleccionadas</span>
                         <button class="btn btn-ghost btn-sm" id="btnClearSelection">
                             <i class="fas fa-times"></i>
-                            Limpiar selección
+                            Limpiar seleccion
                         </button>
                     </div>
                     <div class="selection-actions">
@@ -85,213 +81,21 @@
                     </div>
                 </div>
 
-                <!-- QR Gallery -->
+                <!-- QR Gallery (dinamica) -->
                 <div class="qr-gallery" id="qrGallery">
-                    <!-- Card 1 - Con QR Activo -->
-                    <div class="qr-card" data-edificio="A" data-aula="A101">
-                        <div class="qr-card-checkbox">
-                            <input type="checkbox" id="check-A101" aria-label="Seleccionar Aula A101">
-                        </div>
-                        <div class="qr-card-header">
-                            <div>
-                                <div class="qr-card-title">Aula A101</div>
-                                <div class="qr-card-subtitle">Edificio A - Principal</div>
-                            </div>
-                            <span class="badge badge-activo">
-                                <i class="fas fa-check-circle"></i>
-                                Activo
-                            </span>
-                        </div>
-                        <div class="qr-card-body">
-                            <div class="qr-preview has-qr">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/A101&format=svg" alt="QR Aula A101">
-                            </div>
-                            <div class="qr-label">Aula A101 - Capacidad 40</div>
-                        </div>
-                        <div class="qr-card-actions">
-                            <button class="btn btn-outline btn-sm" title="Regenerar QR" data-action="regenerar" data-aula="A101">
-                                <i class="fas fa-sync-alt"></i>
-                                Regenerar
-                            </button>
-                            <button class="btn btn-secondary btn-sm" title="Descargar QR" data-action="descargar" data-aula="A101">
-                                <i class="fas fa-download"></i>
-                                Descargar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Card 2 - Con QR Activo -->
-                    <div class="qr-card" data-edificio="A" data-aula="A102">
-                        <div class="qr-card-checkbox">
-                            <input type="checkbox" id="check-A102" aria-label="Seleccionar Aula A102">
-                        </div>
-                        <div class="qr-card-header">
-                            <div>
-                                <div class="qr-card-title">Aula A102</div>
-                                <div class="qr-card-subtitle">Edificio A - Principal</div>
-                            </div>
-                            <span class="badge badge-activo">
-                                <i class="fas fa-check-circle"></i>
-                                Activo
-                            </span>
-                        </div>
-                        <div class="qr-card-body">
-                            <div class="qr-preview has-qr">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/A102&format=svg" alt="QR Aula A102">
-                            </div>
-                            <div class="qr-label">Aula A102 - Capacidad 35</div>
-                        </div>
-                        <div class="qr-card-actions">
-                            <button class="btn btn-outline btn-sm" title="Regenerar QR" data-action="regenerar" data-aula="A102">
-                                <i class="fas fa-sync-alt"></i>
-                                Regenerar
-                            </button>
-                            <button class="btn btn-secondary btn-sm" title="Descargar QR" data-action="descargar" data-aula="A102">
-                                <i class="fas fa-download"></i>
-                                Descargar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Card 3 - Pendiente -->
-                    <div class="qr-card" data-edificio="B" data-aula="B201">
-                        <div class="qr-card-checkbox">
-                            <input type="checkbox" id="check-B201" aria-label="Seleccionar Aula B201">
-                        </div>
-                        <div class="qr-card-header">
-                            <div>
-                                <div class="qr-card-title">Aula B201</div>
-                                <div class="qr-card-subtitle">Edificio B - Ciencias</div>
-                            </div>
-                            <span class="badge badge-pendiente">
-                                <i class="fas fa-clock"></i>
-                                Pendiente
-                            </span>
-                        </div>
-                        <div class="qr-card-body">
-                            <div class="qr-preview">
-                                <div class="qr-preview-placeholder">
-                                    <i class="fas fa-qrcode"></i>
-                                    <span>Sin QR generado</span>
-                                </div>
-                            </div>
-                            <div class="qr-label">Aula B201 - Capacidad 30</div>
-                        </div>
-                        <div class="qr-card-actions">
-                            <button class="btn btn-primary btn-sm" title="Generar QR" data-action="generar" data-aula="B201">
-                                <i class="fas fa-qrcode"></i>
-                                Generar QR
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Card 4 - Con QR Activo -->
-                    <div class="qr-card" data-edificio="B" data-aula="B202">
-                        <div class="qr-card-checkbox">
-                            <input type="checkbox" id="check-B202" aria-label="Seleccionar Aula B202">
-                        </div>
-                        <div class="qr-card-header">
-                            <div>
-                                <div class="qr-card-title">Aula B202</div>
-                                <div class="qr-card-subtitle">Edificio B - Ciencias</div>
-                            </div>
-                            <span class="badge badge-activo">
-                                <i class="fas fa-check-circle"></i>
-                                Activo
-                            </span>
-                        </div>
-                        <div class="qr-card-body">
-                            <div class="qr-preview has-qr">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/B202&format=svg" alt="QR Aula B202">
-                            </div>
-                            <div class="qr-label">Aula B202 - Capacidad 25</div>
-                        </div>
-                        <div class="qr-card-actions">
-                            <button class="btn btn-outline btn-sm" title="Regenerar QR" data-action="regenerar" data-aula="B202">
-                                <i class="fas fa-sync-alt"></i>
-                                Regenerar
-                            </button>
-                            <button class="btn btn-secondary btn-sm" title="Descargar QR" data-action="descargar" data-aula="B202">
-                                <i class="fas fa-download"></i>
-                                Descargar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Card 5 - Pendiente -->
-                    <div class="qr-card" data-edificio="C" data-aula="C301">
-                        <div class="qr-card-checkbox">
-                            <input type="checkbox" id="check-C301" aria-label="Seleccionar Aula C301">
-                        </div>
-                        <div class="qr-card-header">
-                            <div>
-                                <div class="qr-card-title">Aula C301</div>
-                                <div class="qr-card-subtitle">Edificio C - Humanidades</div>
-                            </div>
-                            <span class="badge badge-pendiente">
-                                <i class="fas fa-clock"></i>
-                                Pendiente
-                            </span>
-                        </div>
-                        <div class="qr-card-body">
-                            <div class="qr-preview">
-                                <div class="qr-preview-placeholder">
-                                    <i class="fas fa-qrcode"></i>
-                                    <span>Sin QR generado</span>
-                                </div>
-                            </div>
-                            <div class="qr-label">Aula C301 - Capacidad 45</div>
-                        </div>
-                        <div class="qr-card-actions">
-                            <button class="btn btn-primary btn-sm" title="Generar QR" data-action="generar" data-aula="C301">
-                                <i class="fas fa-qrcode"></i>
-                                Generar QR
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Card 6 - Laboratorio con QR -->
-                    <div class="qr-card" data-edificio="D" data-aula="D-LAB1">
-                        <div class="qr-card-checkbox">
-                            <input type="checkbox" id="check-DLAB1" aria-label="Seleccionar Laboratorio D-LAB1">
-                        </div>
-                        <div class="qr-card-header">
-                            <div>
-                                <div class="qr-card-title">Laboratorio D-LAB1</div>
-                                <div class="qr-card-subtitle">Edificio D - Laboratorios</div>
-                            </div>
-                            <span class="badge badge-activo">
-                                <i class="fas fa-check-circle"></i>
-                                Activo
-                            </span>
-                        </div>
-                        <div class="qr-card-body">
-                            <div class="qr-preview has-qr">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/D-LAB1&format=svg" alt="QR Laboratorio D-LAB1">
-                            </div>
-                            <div class="qr-label">Lab. Cómputo 1 - Capacidad 20</div>
-                        </div>
-                        <div class="qr-card-actions">
-                            <button class="btn btn-outline btn-sm" title="Regenerar QR" data-action="regenerar" data-aula="D-LAB1">
-                                <i class="fas fa-sync-alt"></i>
-                                Regenerar
-                            </button>
-                            <button class="btn btn-secondary btn-sm" title="Descargar QR" data-action="descargar" data-aula="D-LAB1">
-                                <i class="fas fa-download"></i>
-                                Descargar
-                            </button>
-                        </div>
+                    <div style="text-align:center;padding:48px;color:var(--soft-steel);width:100%;">
+                        <i class="fas fa-spinner fa-spin" style="font-size:28px;"></i>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modal de Confirmación - Regenerar QR -->
+    <!-- Modal de Confirmacion - Regenerar QR -->
     <div class="modal-overlay" id="modalRegenerar">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">Confirmar regeneración</h2>
+                <h2 class="modal-title">Confirmar regeneracion</h2>
                 <button class="modal-close" id="modalRegenerarClose" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -301,10 +105,9 @@
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <p class="modal-text">
-                    Está a punto de regenerar el código QR del aula <strong id="modalAulaName">A101</strong>. 
-                    El QR anterior dejará de ser válido y será reemplazado por uno nuevo.
-                    <br><br>
-                    ¿Desea continuar?
+                    Esta a punto de regenerar el codigo QR del aula <strong id="modalAulaName"></strong>.
+                    El QR anterior dejara de ser valido y sera reemplazado por uno nuevo.
+                    <br><br>Desea continuar?
                 </p>
             </div>
             <div class="modal-footer">
@@ -321,465 +124,56 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        
         document.addEventListener('DOMContentLoaded', function() {
-            // Referencias DOM
-            const filtroEdificio = document.getElementById('filtroEdificio');
-            const searchAula = document.getElementById('searchAula');
-            const qrGallery = document.getElementById('qrGallery');
-            const selectionBar = document.getElementById('selectionBar');
-            const selectionCount = document.getElementById('selectionCount');
-            const btnSelectAll = document.getElementById('btnSelectAll');
-            const btnClearSelection = document.getElementById('btnClearSelection');
-            const btnGenerarQRBulk = document.getElementById('btnGenerarQRBulk');
+
+            /* ---- Estado ---- */
+            let allClassrooms = [];   // { id, nombre, edificioId, edificioNombre, hasActiveQr, qrId, qrImagePath }
+            let currentRegenTarget = null;
+
+            /* ---- Refs DOM ---- */
+            const filtroEdificio  = document.getElementById('filtroEdificio');
+            const searchAula      = document.getElementById('searchAula');
+            const qrGallery       = document.getElementById('qrGallery');
+            const selectionBar    = document.getElementById('selectionBar');
+            const selectionCount  = document.getElementById('selectionCount');
+            const btnSelectAll    = document.getElementById('btnSelectAll');
+            const btnClearSel     = document.getElementById('btnClearSelection');
+            const btnGenerarBulk  = document.getElementById('btnGenerarQRBulk');
             const btnDescargarZIP = document.getElementById('btnDescargarZIP');
-            const btnPrint = document.getElementById('btnPrint');
-            const modalRegenerar = document.getElementById('modalRegenerar');
-            const modalAulaName = document.getElementById('modalAulaName');
-            const toastContainer = document.getElementById('toastContainer');
+            const btnPrint        = document.getElementById('btnPrint');
+            const modalRegenerar  = document.getElementById('modalRegenerar');
+            const modalAulaName   = document.getElementById('modalAulaName');
+            const toastContainer  = document.getElementById('toastContainer');
 
-            let currentAulaToRegenerate = null;
+            /* ---- CSRF ---- */
+            function getCsrf() {
+                return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+            }
 
-            // ========================================
-            // Filtrado por Edificio
-            // ========================================
-            filtroEdificio.addEventListener('change', function() {
-                filterCards();
-            });
-
-            // ========================================
-            // Búsqueda de Aulas
-            // ========================================
-            let searchTimeout;
-            searchAula.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(filterCards, 300);
-            });
-
-            function filterCards() {
-                const edificio = filtroEdificio.value.toLowerCase();
-                const search = searchAula.value.toLowerCase();
-                const cards = qrGallery.querySelectorAll('.qr-card');
-
-                cards.forEach(card => {
-                    const cardEdificio = card.dataset.edificio.toLowerCase();
-                    const cardAula = card.dataset.aula.toLowerCase();
-                    const cardTitle = card.querySelector('.qr-card-title').textContent.toLowerCase();
-
-                    const matchEdificio = !edificio || cardEdificio === edificio;
-                    const matchSearch = !search || cardAula.includes(search) || cardTitle.includes(search);
-
-                    card.style.display = (matchEdificio && matchSearch) ? '' : 'none';
+            /* ---- API helper ---- */
+            async function apiFetch(url, opts = {}) {
+                const res = await fetch(url, {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
+                    ...opts,
                 });
-
-                updateSelectionCount();
+                const json = await res.json();
+                if (!res.ok) throw { status: res.status, json };
+                return json;
             }
 
-            // ========================================
-            // Selección de Tarjetas
-            // ========================================
-            qrGallery.addEventListener('change', function(e) {
-                if (e.target.type === 'checkbox') {
-                    const card = e.target.closest('.qr-card');
-                    card.classList.toggle('selected', e.target.checked);
-                    updateSelectionCount();
-                }
-            });
-
-            function updateSelectionCount() {
-                const checkboxes = qrGallery.querySelectorAll('input[type="checkbox"]:checked');
-                const count = checkboxes.length;
-                selectionCount.textContent = `${count} ${count === 1 ? 'aula seleccionada' : 'aulas seleccionadas'}`;
-                selectionBar.classList.toggle('visible', count > 0);
-            }
-
-            btnSelectAll.addEventListener('click', function() {
-                const visibleCards = qrGallery.querySelectorAll('.qr-card:not([style*="display: none"])');
-                const allChecked = Array.from(visibleCards).every(card => 
-                    card.querySelector('input[type="checkbox"]').checked
-                );
-
-                visibleCards.forEach(card => {
-                    const checkbox = card.querySelector('input[type="checkbox"]');
-                    checkbox.checked = !allChecked;
-                    card.classList.toggle('selected', !allChecked);
-                });
-
-                updateSelectionCount();
-            });
-
-            btnClearSelection.addEventListener('click', function() {
-                const checkboxes = qrGallery.querySelectorAll('input[type="checkbox"]:checked');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                    checkbox.closest('.qr-card').classList.remove('selected');
-                });
-                updateSelectionCount();
-            });
-
-            // ========================================
-            // Acciones de Tarjetas (Generar, Regenerar, Descargar)
-            // ========================================
-            qrGallery.addEventListener('click', function(e) {
-                const btn = e.target.closest('button[data-action]');
-                if (!btn) return;
-
-                const action = btn.dataset.action;
-                const aula = btn.dataset.aula;
-
-                switch(action) {
-                    case 'generar':
-                        generarQR(btn, aula);
-                        break;
-                    case 'regenerar':
-                        currentAulaToRegenerate = { btn, aula };
-                        modalAulaName.textContent = aula;
-                        openModal(modalRegenerar);
-                        break;
-                    case 'descargar':
-                        descargarQR(aula);
-                        break;
-                }
-            });
-
-            function generarQR(btn, aula) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
-
-                // Simulación de generación
-                setTimeout(() => {
-                    const card = btn.closest('.qr-card');
-                    const badge = card.querySelector('.badge');
-                    badge.className = 'badge badge-activo';
-                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Activo';
-
-                    const qrPreview = card.querySelector('.qr-preview');
-                    qrPreview.classList.add('has-qr');
-                    qrPreview.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/${aula}&format=svg" alt="QR Aula ${aula}">`;
-
-                    const actionsDiv = card.querySelector('.qr-card-actions');
-                    actionsDiv.innerHTML = `
-                        <button class="btn btn-outline btn-sm" title="Regenerar QR" data-action="regenerar" data-aula="${aula}">
-                            <i class="fas fa-sync-alt"></i>
-                            Regenerar
-                        </button>
-                        <button class="btn btn-secondary btn-sm" title="Descargar QR" data-action="descargar" data-aula="${aula}">
-                            <i class="fas fa-download"></i>
-                            Descargar
-                        </button>
-                    `;
-
-                    showToast('QR generado exitosamente', `El código QR del aula ${aula} ha sido creado.`, 'success');
-                }, 1500);
-            }
-
-            function descargarQR(aula) {
-                showToast('Descarga iniciada', `Preparando QR del aula ${aula} para descarga...`, 'success');
-                
-                // Crear enlace de descarga
-                const link = document.createElement('a');
-                link.href = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://gama.edu.mx/asistencia/${aula}&format=png`;
-                link.download = `QR_${aula}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-
-            // ========================================
-            // Modal de Regeneración
-            // ========================================
-            document.getElementById('modalRegenerarClose').addEventListener('click', () => closeModal(modalRegenerar));
-            document.getElementById('btnCancelarRegenerar').addEventListener('click', () => closeModal(modalRegenerar));
-            
-            document.getElementById('btnConfirmarRegenerar').addEventListener('click', function() {
-                if (!currentAulaToRegenerate) return;
-
-                const { btn, aula } = currentAulaToRegenerate;
-                closeModal(modalRegenerar);
-
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Regenerando...';
-
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Regenerar';
-
-                    // Actualizar imagen QR con timestamp para forzar recarga
-                    const card = btn.closest('.qr-card');
-                    const img = card.querySelector('.qr-preview img');
-                    if (img) {
-                        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/${aula}&t=${Date.now()}&format=svg`;
-                    }
-
-                    showToast('QR regenerado', `El código QR del aula ${aula} ha sido regenerado exitosamente.`, 'success');
-                    currentAulaToRegenerate = null;
-                }, 1500);
-            });
-
-            modalRegenerar.addEventListener('click', function(e) {
-                if (e.target === modalRegenerar) closeModal(modalRegenerar);
-            });
-
-            // ========================================
-            // Acciones Masivas
-            // ========================================
-            btnGenerarQRBulk.addEventListener('click', function() {
-                const selectedCards = qrGallery.querySelectorAll('.qr-card.selected');
-                const pendientes = Array.from(selectedCards).filter(card => 
-                    card.querySelector('.badge-pendiente')
-                );
-
-                if (pendientes.length === 0) {
-                    showToast('Sin aulas pendientes', 'Todas las aulas seleccionadas ya tienen QR generado.', 'warning');
-                    return;
-                }
-
-                btnGenerarQRBulk.disabled = true;
-                btnGenerarQRBulk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
-
-                setTimeout(() => {
-                    pendientes.forEach(card => {
-                        const aula = card.dataset.aula;
-                        const badge = card.querySelector('.badge');
-                        badge.className = 'badge badge-activo';
-                        badge.innerHTML = '<i class="fas fa-check-circle"></i> Activo';
-
-                        const qrPreview = card.querySelector('.qr-preview');
-                        qrPreview.classList.add('has-qr');
-                        qrPreview.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://gama.edu.mx/asistencia/${aula}&format=svg" alt="QR Aula ${aula}">`;
-
-                        const actionsDiv = card.querySelector('.qr-card-actions');
-                        actionsDiv.innerHTML = `
-                            <button class="btn btn-outline btn-sm" title="Regenerar QR" data-action="regenerar" data-aula="${aula}">
-                                <i class="fas fa-sync-alt"></i>
-                                Regenerar
-                            </button>
-                            <button class="btn btn-secondary btn-sm" title="Descargar QR" data-action="descargar" data-aula="${aula}">
-                                <i class="fas fa-download"></i>
-                                Descargar
-                            </button>
-                        `;
-                    });
-
-                    btnGenerarQRBulk.disabled = false;
-                    btnGenerarQRBulk.innerHTML = '<i class="fas fa-qrcode"></i> Generar QR';
-
-                    showToast('QR generados exitosamente', `Se han generado ${pendientes.length} códigos QR.`, 'success');
-                }, 2000);
-            });
-
-            btnDescargarZIP.addEventListener('click', function() {
-                const selectedCards = qrGallery.querySelectorAll('.qr-card.selected');
-                const activos = Array.from(selectedCards).filter(card => 
-                    card.querySelector('.badge-activo')
-                );
-
-                if (activos.length === 0) {
-                    showToast('Sin QR para descargar', 'Seleccione aulas con QR activo para descargar.', 'warning');
-                    return;
-                }
-
-                btnDescargarZIP.disabled = true;
-                btnDescargarZIP.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
-
-                setTimeout(() => {
-                    btnDescargarZIP.disabled = false;
-                    btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar ZIP';
-
-                    showToast('Descarga iniciada', `Se está descargando un ZIP con ${activos.length} códigos QR.`, 'success');
-                    
-                    // En producción, aquí se generaría el ZIP real con JSZip o similar
-                }, 1500);
-            });
-
-            // ========================================
-            // Imprimir
-            // ========================================
-            btnPrint.addEventListener('click', function() {
-                const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
-                const visibleCards = Array.from(qrGallery.querySelectorAll('.qr-card')).filter(card => {
-                    const parent = card.closest('.qr-card');
-                    return parent && parent.style.display !== 'none';
-                });
-
-                const cardsToPrint = selectedCards.length > 0 ? selectedCards : visibleCards;
-
-                if (cardsToPrint.length === 0) {
-                    showToast('Sin resultados', 'No hay aulas visibles para imprimir.', 'warning');
-                    return;
-                }
-
-                printCards(cardsToPrint);
-            });
-
-            function printCards(cards) {
-                 const printWindow = window.open('', '_blank', 'width=1000,height=700');
-    if (!printWindow) {
-        showToast('Bloqueo de ventana', 'Permita ventanas emergentes para imprimir.', 'error');
-        return;
-    }
-
-    const cardsHtml = cards.map((card) => {
-        const clone = card.cloneNode(true);
-
-        // Eliminar cosas innecesarias
-        const checkbox = clone.querySelector('.qr-card-checkbox');
-        const actions = clone.querySelector('.qr-card-actions');
-
-        if (checkbox) checkbox.remove();
-        if (actions) actions.remove();
-
-        // Obtener datos
-        const titulo = clone.querySelector('.qr-card-title')?.textContent || '';
-        const subtitulo = clone.querySelector('.qr-card-subtitle')?.textContent || '';
-
-        return `
-            <div class="print-item">
-                <div class="print-header">
-                    <h2>${titulo}</h2>
-                    <p>${subtitulo}</p>
-                </div>
-                ${clone.querySelector('.qr-preview').outerHTML}
-            </div>
-        `;
-    }).join('');
-
-    printWindow.document.open();
-    printWindow.document.write(`
-        <!doctype html>
-        <html lang="es">
-        <head>
-            <meta charset="utf-8">
-            <title>Impresión QR</title>
-
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 20px;
-                }
-
-                .print-title {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-
-                .print-title h1 {
-                    margin: 0;
-                    font-size: 22px;
-                }
-
-                .print-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 20px;
-                }
-
-                .print-item {
-                    border: 1px solid #ccc;
-                    padding: 15px;
-                    text-align: center;
-                    border-radius: 8px;
-                }
-
-                .print-header h2 {
-                    margin: 0;
-                    font-size: 18px;
-                }
-
-                .print-header p {
-                    margin: 4px 0 10px;
-                    font-size: 13px;
-                    color: #555;
-                }
-
-                .qr-preview img {
-                    width: 140px;
-                    height: 140px;
-                }
-
-                @media print {
-                    body {
-                        margin: 10mm;
-                    }
-
-                    .print-grid {
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 12px;
-                    }
-
-                    .print-item {
-                        break-inside: avoid;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-
-            <div class="print-title">
-                <h1>Generación de Códigos QR - GAMA</h1>
-                <p>Horarios por Aula</p>
-            </div>
-
-            <div class="print-grid">
-                ${cardsHtml}
-            </div>
-
-        </body>
-        </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 300);
-}
-
-            // ========================================
-            // Utilidades: Modal y Toast
-            // ========================================
-            function openModal(modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeModal(modal) {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
+            /* ---- Toast ---- */
             function showToast(title, message, type = 'success') {
+                const icon = { success: 'check', error: 'times', warning: 'exclamation' }[type] ?? 'check';
                 const toast = document.createElement('div');
                 toast.className = `toast ${type}`;
-                toast.innerHTML = `
-                    <div class="toast-icon">
-                        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'exclamation'}"></i>
-                    </div>
-                    <div class="toast-content">
-                        <div class="toast-title">${title}</div>
-                        <div class="toast-message">${message}</div>
-                    </div>
-                    <button class="toast-close" aria-label="Cerrar notificación">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-
+                toast.innerHTML =
+                    `<div class="toast-icon"><i class="fas fa-${icon}"></i></div>` +
+                    `<div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div>` +
+                    `<button class="toast-close" aria-label="Cerrar notificacion"><i class="fas fa-times"></i></button>`;
                 toastContainer.appendChild(toast);
-
-                // Animación de entrada
                 setTimeout(() => toast.classList.add('show'), 10);
-
-                // Auto-cerrar
-                const autoClose = setTimeout(() => removeToast(toast), 5000);
-
-                // Cerrar manualmente
-                toast.querySelector('.toast-close').addEventListener('click', () => {
-                    clearTimeout(autoClose);
-                    removeToast(toast);
-                });
+                const ac = setTimeout(() => removeToast(toast), 5000);
+                toast.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(ac); removeToast(toast); });
             }
 
             function removeToast(toast) {
@@ -787,14 +181,377 @@
                 setTimeout(() => toast.remove(), 300);
             }
 
-            // Cerrar modal con Escape
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    if (modalRegenerar.classList.contains('active')) {
-                        closeModal(modalRegenerar);
-                    }
+            /* ---- Carga inicial ---- */
+            async function loadData() {
+                try {
+                    const [bldRes, clsRes] = await Promise.all([
+                        apiFetch('/api/v1/buildings'),
+                        apiFetch('/api/v1/classrooms'),
+                    ]);
+
+                    const buildings = (bldRes.data ?? []).filter(b => b.isActive);
+                    const classrooms = clsRes.data ?? [];
+
+                    /* Poblar select de edificios */
+                    filtroEdificio.innerHTML = '<option value="">Todos los edificios</option>' +
+                        buildings.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+
+                    /* Mapear aulas con info de QR */
+                    allClassrooms = classrooms.map(c => ({
+                        id:             c.id,
+                        nombre:         c.classroomName,
+                        edificioId:     c.buildingId,
+                        edificioNombre: c.buildingName ?? '',
+                        isActive:       c.isActive,
+                        hasActiveQr:    c.hasActiveQr ?? false,
+                        qrId:           c.activeQrId ?? null,
+                        qrImageUrl:     c.qrImageUrl  ?? null,
+                    }));
+
+                    renderGallery();
+                } catch (e) {
+                    qrGallery.innerHTML =
+                        '<div style="text-align:center;padding:48px;color:var(--status-inactive);width:100%;">Error al cargar datos desde la API.</div>';
+                    showToast('Error', 'No se pudieron cargar las aulas.', 'error');
+                }
+            }
+
+            /* ---- Render galeria ---- */
+            function getVisible() {
+                const edificioId = filtroEdificio.value;
+                const q = searchAula.value.trim().toLowerCase();
+                return allClassrooms.filter(c => {
+                    const okE = !edificioId || String(c.edificioId) === String(edificioId);
+                    const okQ = !q || c.nombre.toLowerCase().includes(q) || c.edificioNombre.toLowerCase().includes(q);
+                    return okE && okQ;
+                });
+            }
+
+            function renderGallery() {
+                const visible = getVisible();
+                if (!visible.length) {
+                    qrGallery.innerHTML =
+                        '<div style="text-align:center;padding:48px;color:var(--soft-steel);width:100%;">' +
+                        '<i class="fas fa-qrcode" style="font-size:32px;opacity:.3;display:block;margin-bottom:10px;"></i>' +
+                        'Sin aulas con los filtros aplicados.</div>';
+                    return;
+                }
+
+                qrGallery.innerHTML = visible.map(c => buildCard(c)).join('');
+                updateSelectionCount();
+            }
+
+            function qrImgHtml(c) {
+                if (c.hasActiveQr) {
+                    /* Si la API devuelve una URL de imagen, usarla; si no, generar placeholder */
+                    const src = c.qrImageUrl
+                        ? `{{ asset('') }}${c.qrImageUrl}`
+                        : `/api/v1/qr-codes/${c.qrId}/file`;
+                    return `<div class="qr-preview has-qr">
+                        <img src="${src}" alt="QR ${esc(c.nombre)}" loading="lazy">
+                    </div>`;
+                }
+                return `<div class="qr-preview">
+                    <div class="qr-preview-placeholder">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Sin QR generado</span>
+                    </div>
+                </div>`;
+            }
+
+            function buildCard(c) {
+                const badgeClass = c.hasActiveQr ? 'badge-activo' : 'badge-pendiente';
+                const badgeText  = c.hasActiveQr
+                    ? '<i class="fas fa-check-circle"></i> Activo'
+                    : '<i class="fas fa-clock"></i> Pendiente';
+
+                const actions = c.hasActiveQr
+                    ? `<button class="btn btn-outline btn-sm" data-action="regenerar" data-id="${c.id}" title="Regenerar QR">
+                           <i class="fas fa-sync-alt"></i> Regenerar
+                       </button>
+                       <button class="btn btn-secondary btn-sm" data-action="descargar" data-id="${c.id}" title="Descargar QR">
+                           <i class="fas fa-download"></i> Descargar
+                       </button>`
+                    : `<button class="btn btn-primary btn-sm" data-action="generar" data-id="${c.id}" title="Generar QR">
+                           <i class="fas fa-qrcode"></i> Generar QR
+                       </button>`;
+
+                return `<div class="qr-card" data-classroom-id="${c.id}" data-edificio-id="${c.edificioId}">
+                    <div class="qr-card-checkbox">
+                        <input type="checkbox" id="check-${c.id}" aria-label="Seleccionar ${esc(c.nombre)}">
+                    </div>
+                    <div class="qr-card-header">
+                        <div>
+                            <div class="qr-card-title">${esc(c.nombre)}</div>
+                            <div class="qr-card-subtitle">${esc(c.edificioNombre)}</div>
+                        </div>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="qr-card-body">${qrImgHtml(c)}<div class="qr-label">${esc(c.nombre)}</div></div>
+                    <div class="qr-card-actions">${actions}</div>
+                </div>`;
+            }
+
+            function esc(str) {
+                return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            /* ---- Filtros ---- */
+            filtroEdificio.addEventListener('change', renderGallery);
+            let searchTimer;
+            searchAula.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderGallery, 280); });
+
+            /* ---- Seleccion ---- */
+            qrGallery.addEventListener('change', e => {
+                if (e.target.type === 'checkbox') {
+                    e.target.closest('.qr-card').classList.toggle('selected', e.target.checked);
+                    updateSelectionCount();
                 }
             });
+
+            function updateSelectionCount() {
+                const count = qrGallery.querySelectorAll('input[type="checkbox"]:checked').length;
+                selectionCount.textContent = `${count} ${count === 1 ? 'aula seleccionada' : 'aulas seleccionadas'}`;
+                selectionBar.classList.toggle('visible', count > 0);
+            }
+
+            btnSelectAll.addEventListener('click', () => {
+                const visibleCards = qrGallery.querySelectorAll('.qr-card');
+                const allChecked = Array.from(visibleCards).every(c => c.querySelector('input[type="checkbox"]').checked);
+                visibleCards.forEach(card => {
+                    const cb = card.querySelector('input[type="checkbox"]');
+                    cb.checked = !allChecked;
+                    card.classList.toggle('selected', !allChecked);
+                });
+                updateSelectionCount();
+            });
+
+            btnClearSel.addEventListener('click', () => {
+                qrGallery.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.qr-card').classList.remove('selected');
+                });
+                updateSelectionCount();
+            });
+
+            /* ---- Acciones de tarjeta ---- */
+            qrGallery.addEventListener('click', e => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const id = Number(btn.dataset.id);
+                switch(btn.dataset.action) {
+                    case 'generar':    generarQR(id, btn);    break;
+                    case 'regenerar':  abrirConfirmRegenerar(id); break;
+                    case 'descargar':  descargarQR(id, btn);  break;
+                }
+            });
+
+            /* ---- Generar QR ---- */
+            async function generarQR(classroomId, btn) {
+                const orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+                try {
+                    const res = await apiFetch(`/api/v1/classrooms/${classroomId}/qr`, { method: 'POST' });
+                    const qr = res.data ?? {};
+                    /* Actualizar el objeto local */
+                    const c = allClassrooms.find(x => x.id === classroomId);
+                    if (c) {
+                        c.hasActiveQr  = true;
+                        c.qrId         = qr.id ?? qr.qrId ?? null;
+                        c.qrImageUrl   = qr.imagePath ?? qr.imageUrl ?? null;
+                    }
+                    renderGallery();
+                    showToast('QR generado', `Codigo QR generado exitosamente.`, 'success');
+                } catch (err) {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                    showToast('Error', err.json?.message ?? 'No se pudo generar el QR.', 'error');
+                }
+            }
+
+            /* ---- Modal regenerar ---- */
+            function abrirConfirmRegenerar(classroomId) {
+                const c = allClassrooms.find(x => x.id === classroomId);
+                currentRegenTarget = classroomId;
+                modalAulaName.textContent = c?.nombre ?? `ID ${classroomId}`;
+                modalRegenerar.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function cerrarModalRegenerar() {
+                currentRegenTarget = null;
+                modalRegenerar.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            document.getElementById('modalRegenerarClose').addEventListener('click',  cerrarModalRegenerar);
+            document.getElementById('btnCancelarRegenerar').addEventListener('click', cerrarModalRegenerar);
+            modalRegenerar.addEventListener('click', e => { if (e.target === modalRegenerar) cerrarModalRegenerar(); });
+
+            document.getElementById('btnConfirmarRegenerar').addEventListener('click', async () => {
+                if (!currentRegenTarget) return;
+                const id = currentRegenTarget;
+                cerrarModalRegenerar();
+
+                /* Reutiliza el endpoint de generacion (lo regenera si ya existe) */
+                const card = qrGallery.querySelector(`[data-classroom-id="${id}"]`);
+                const regenBtn = card?.querySelector('[data-action="regenerar"]');
+                if (regenBtn) {
+                    regenBtn.disabled = true;
+                    regenBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Regenerando...';
+                }
+                try {
+                    const res = await apiFetch(`/api/v1/classrooms/${id}/qr`, { method: 'POST' });
+                    const qr = res.data ?? {};
+                    const c = allClassrooms.find(x => x.id === id);
+                    if (c) {
+                        c.hasActiveQr = true;
+                        c.qrId        = qr.id ?? qr.qrId ?? null;
+                        c.qrImageUrl  = qr.imagePath ?? qr.imageUrl ?? null;
+                    }
+                    renderGallery();
+                    showToast('QR regenerado', 'El codigo QR fue regenerado exitosamente.', 'success');
+                } catch (err) {
+                    if (regenBtn) { regenBtn.disabled = false; regenBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Regenerar'; }
+                    showToast('Error', err.json?.message ?? 'No se pudo regenerar el QR.', 'error');
+                }
+            });
+
+            /* ---- Descargar QR individual ---- */
+            async function descargarQR(classroomId, btn) {
+                const c = allClassrooms.find(x => x.id === classroomId);
+                if (!c?.qrId) { showToast('Sin QR', 'El aula no tiene un QR generado.', 'warning'); return; }
+                const orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                try {
+                    const a = document.createElement('a');
+                    a.href = `/api/v1/qr-codes/${c.qrId}/file`;
+                    a.download = `QR_${c.nombre}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showToast('Descarga iniciada', `Preparando QR del aula ${c.nombre}.`, 'success');
+                } finally {
+                    setTimeout(() => { btn.disabled = false; btn.innerHTML = orig; }, 1500);
+                }
+            }
+
+            /* ---- Generar QR masivo ---- */
+            btnGenerarBulk.addEventListener('click', async () => {
+                const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
+                const pendientes = selectedCards.filter(card => {
+                    const id = Number(card.dataset.classroomId);
+                    return !allClassrooms.find(c => c.id === id)?.hasActiveQr;
+                });
+
+                if (!pendientes.length) {
+                    showToast('Sin pendientes', 'Todas las aulas seleccionadas ya tienen QR generado.', 'warning');
+                    return;
+                }
+
+                btnGenerarBulk.disabled = true;
+                btnGenerarBulk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+
+                let ok = 0, fail = 0;
+                for (const card of pendientes) {
+                    const id = Number(card.dataset.classroomId);
+                    try {
+                        const res = await apiFetch(`/api/v1/classrooms/${id}/qr`, { method: 'POST' });
+                        const qr = res.data ?? {};
+                        const c = allClassrooms.find(x => x.id === id);
+                        if (c) { c.hasActiveQr = true; c.qrId = qr.id ?? qr.qrId ?? null; c.qrImageUrl = qr.imagePath ?? null; }
+                        ok++;
+                    } catch (_) { fail++; }
+                }
+
+                renderGallery();
+                btnGenerarBulk.disabled = false;
+                btnGenerarBulk.innerHTML = '<i class="fas fa-qrcode"></i> Generar QR';
+
+                if (ok > 0) showToast('QR generados', `${ok} codigo(s) QR generado(s) exitosamente.`, 'success');
+                if (fail > 0) showToast('Errores parciales', `${fail} aula(s) no pudieron generarse.`, 'warning');
+            });
+
+            /* ---- Descargar ZIP ---- */
+            btnDescargarZIP.addEventListener('click', async () => {
+                const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
+                const conQr = selectedCards
+                    .map(card => Number(card.dataset.classroomId))
+                    .filter(id => allClassrooms.find(c => c.id === id)?.qrId)
+                    .map(id => allClassrooms.find(c => c.id === id).qrId);
+
+                if (!conQr.length) {
+                    showToast('Sin QR para descargar', 'Seleccione aulas con QR activo para descargar.', 'warning');
+                    return;
+                }
+
+                btnDescargarZIP.disabled = true;
+                btnDescargarZIP.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
+
+                try {
+                    const res = await fetch('/api/v1/qr-codes/download', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/octet-stream', 'X-CSRF-TOKEN': getCsrf() },
+                        body: JSON.stringify({ qr_code_ids: conQr }),
+                    });
+                    if (!res.ok) throw new Error('Error en descarga');
+                    const blob = await res.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'codigos_qr.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                    showToast('Descarga iniciada', `ZIP con ${conQr.length} codigos QR listo.`, 'success');
+                } catch (err) {
+                    showToast('Error', 'No se pudo generar el ZIP.', 'error');
+                } finally {
+                    btnDescargarZIP.disabled = false;
+                    btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar ZIP';
+                }
+            });
+
+            /* ---- Imprimir ---- */
+            btnPrint.addEventListener('click', () => {
+                const selected = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
+                const visible  = Array.from(qrGallery.querySelectorAll('.qr-card'));
+                const toPrint  = selected.length > 0 ? selected : visible;
+
+                if (!toPrint.length) { showToast('Sin resultados', 'No hay aulas para imprimir.', 'warning'); return; }
+
+                const printWin = window.open('', '_blank', 'width=1000,height=700');
+                if (!printWin) { showToast('Bloqueado', 'Permita ventanas emergentes para imprimir.', 'error'); return; }
+
+                const cardsHtml = toPrint.map(card => {
+                    const titulo    = card.querySelector('.qr-card-title')?.textContent ?? '';
+                    const subtitulo = card.querySelector('.qr-card-subtitle')?.textContent ?? '';
+                    const preview   = card.querySelector('.qr-preview')?.outerHTML ?? '';
+                    return `<div class="print-item"><div class="print-header"><h2>${titulo}</h2><p>${subtitulo}</p></div>${preview}</div>`;
+                }).join('');
+
+                printWin.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Impresion QR</title>
+                <style>body{font-family:Arial,sans-serif;margin:20px}.print-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+                .print-item{border:1px solid #ccc;padding:15px;text-align:center;border-radius:8px}
+                .print-header h2{margin:0;font-size:18px}.print-header p{margin:4px 0 10px;font-size:13px;color:#555}
+                .qr-preview img{width:140px;height:140px}@media print{body{margin:10mm}.print-item{break-inside:avoid}}</style>
+                </head><body>
+                <div style="text-align:center;margin-bottom:20px"><h1 style="margin:0;font-size:22px">Codigos QR - GAMA</h1></div>
+                <div class="print-grid">${cardsHtml}</div></body></html>`);
+                printWin.document.close();
+                printWin.focus();
+                setTimeout(() => { printWin.print(); printWin.close(); }, 300);
+            });
+
+            /* ---- Escape cierra modal ---- */
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && modalRegenerar.classList.contains('active')) cerrarModalRegenerar();
+            });
+
+            /* ---- Arranque ---- */
+            loadData();
         });
     </script>
 @endsection
