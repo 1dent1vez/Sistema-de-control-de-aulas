@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-22
  *
  * @cambios      2026-05-18 - Refactorización: compactación
+ *               2026-05-22 - Ajuste dinámico del atributo secure de la cookie sam_token según el entorno
  */
 
 declare(strict_types=1);
@@ -78,7 +79,20 @@ class AuthController extends Controller
             return $this->error($result['message'], $result['statusCode']);
         }
 
-        return $this->success(new AuthResource($result['data']), $result['message'], $result['statusCode']);
+        $accessToken = $result['data']['accessToken'] ?? null;
+        $response = $this->success(new AuthResource($result['data']), $result['message'], $result['statusCode']);
+
+        if ($accessToken) {
+            $secure = config('app.env') === 'production';
+            $response->withCookie(cookie('sam_token', $accessToken, 1440, '/', null, $secure, true, false, 'Lax'));
+        }
+
+        // Set SAM session cookie if provided by orquestarLogin (from SamService login)
+        if (isset($result['data']['sessionId'])) {
+            $response->withCookie(cookie('sam_session', $result['data']['sessionId'], 10));
+        }
+
+        return $response;
     }
 
     public function logout(Request $request): JsonResponse

@@ -1,5 +1,29 @@
 <?php
 
+/**
+ * @descripcion  Configuración de canales de log del sistema.
+ *
+ * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @version      1.0.3
+ *
+ * @creado       2026-05-17
+ *
+ * @modificado   2026-05-22
+ *
+ * @cambios      2026-05-22 - Configuración de canal sam_auth para auditoría de autenticación
+ *               2026-05-22 - Adición de canal sam_debug para depuración del protocolo SAM docente
+ *               2026-05-22 - Adición de canales de log sam y sam.debug para diagnóstico de perfiles SAM
+ */
+
+declare(strict_types=1);
+
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -127,6 +151,36 @@ return [
             'driver' => 'single',
             'path' => storage_path('logs/security.log'),
             'level' => 'warning',
+            'replace_placeholders' => true,
+        ],
+
+        'sam_auth' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/sam-auth.log'),
+            'level' => env('LOG_LEVEL_SAM_AUTH', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        'sam_debug' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/sam-debug.log'),
+            'level' => 'debug',
+            'replace_placeholders' => true,
+        ],
+
+        'sam' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sam.log'),
+            'level' => 'debug',
+            'days' => 7,
+            'replace_placeholders' => true,
+        ],
+
+        'sam.debug' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sam-debug.log'),
+            'level' => 'debug',
+            'days' => 7,
             'replace_placeholders' => true,
         ],
 

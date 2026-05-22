@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\TeacherStatus;
 
+use App\Enums\Auth\SamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TeacherStatus\StoreTeacherAbsenceRequest;
 use App\Http\Requests\TeacherStatus\UpdateTeacherAbsenceRequest;
@@ -47,7 +48,13 @@ class GamaTeacherAbsenceController extends Controller
     {
         $this->authorize('viewAny', TeacherAbsence::class);
 
-        return $this->success(TeacherAbsenceResource::collection($this->service->getAll($request->only(['teacher_external_id', 'start_date', 'end_date']))));
+        $filters = $request->only(['teacher_external_id', 'start_date', 'end_date']);
+
+        if ($request->user()->role !== SamRole::ADMIN) {
+            $filters['teacher_external_id'] = $request->user()->external_id;
+        }
+
+        return $this->success(TeacherAbsenceResource::collection($this->service->getAll($filters)));
     }
 
     public function show(int $id): JsonResponse

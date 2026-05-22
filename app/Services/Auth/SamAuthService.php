@@ -13,13 +13,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-17
+ * @modificado   2026-05-22
  *
  * @cambios      2026-05-17 - Creación inicial del servicio de autenticación SAM
+ *               2026-05-22 - Captura robusta de excepciones al obtener el perfil de SAM y validación de campos mínimos.
  */
 
 declare(strict_types=1);
@@ -128,13 +129,28 @@ class SamAuthService
                 ];
             }
 
-            $perfil = $this->samService->obtenerPerfil($tokenSam, $sistemaUrl);
-            if ($perfil === null) {
-                return [
-                    'success' => false,
-                    'statusCode' => 503,
-                    'message' => 'Error al obtener perfil de SAM.',
-                ];
+            try {
+                $perfil = $this->samService->obtenerPerfil($tokenSam, $sistemaUrl);
+            } catch (\RuntimeException $e) {
+                Log::channel('sam')->error('[SAM-AUTH] Fallo al obtener perfil post-login', [
+                    'error' => $e->getMessage(),
+                    'token_prefix' => substr($tokenSam, 0, 8).'...',
+                ]);
+                Log::channel('sam.debug')->error('[SAM-AUTH] Fallo al obtener perfil post-login', [
+                    'error' => $e->getMessage(),
+                    'token_prefix' => substr($tokenSam, 0, 8).'...',
+                ]);
+                throw new \Exception('Error al obtener perfil de SAM: '.$e->getMessage());
+            }
+
+            if (empty($perfil['cedula']) && empty($perfil['id']) && empty($perfil['codigo']) && empty($perfil['numero_empleado']) && empty($perfil['correo'])) {
+                Log::channel('sam')->warning('[SAM-AUTH] Perfil obtenido pero sin identificador principal', [
+                    'perfil_keys' => array_keys($perfil),
+                ]);
+                Log::channel('sam.debug')->warning('[SAM-AUTH] Perfil obtenido pero sin identificador principal', [
+                    'perfil_keys' => array_keys($perfil),
+                ]);
+                throw new \Exception('Perfil de SAM incompleto: sin identificador de usuario');
             }
 
             $rolLocal = $this->mapearRolLocal($perfil['rol'] ?? 'empleado');

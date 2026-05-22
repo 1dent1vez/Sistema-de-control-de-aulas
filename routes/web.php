@@ -39,39 +39,42 @@ Route::middleware('sam.auth')->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    Route::get('/dashboard/admin', function () {
-        return view('dashboard.admin');
-    })->name('dashboard.admin');
-
-    Route::get('/edificios', function () {
-        return view('edificios.index');
-    })->name('edificios');
-
-    Route::get('/aulas', function () {
-        return view('aulas.index');
-    })->name('aulas');
-
-    Route::get('/horarios/manual', function () {
-        return view('horarios.manual');
-    })->name('horarios.manual');
-
-    Route::get('/horarios/importar', function () {
-        return view('horarios.importar');
-    })->name('horarios.importar');
-
-    Route::get('/usuarios', function () {
-        return view('usuarios.index');
-    })->name('usuarios');
-
-    Route::get('/codigosqr', function () {
-        return view('qr.index');
-    })->name('codigosqr');
-
-    Route::get('/configuracion', function () {
-        return view('configuracion.index');
-    })->name('configuracion');
-
     Route::get('/docente/estatus', function () {
         return view('docente.estatus');
     })->name('docente.estatus');
+
+    // Rutas exclusivas para administradores
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/dashboard/admin', function () {
+            return view('dashboard.admin');
+        })->name('dashboard.admin');
+
+        Route::get('/edificios', function () {
+            return view('edificios.index');
+        })->name('edificios');
+
+        Route::get('/aulas', function () {
+            return view('aulas.index');
+        })->name('aulas');
+
+        Route::get('/horarios/manual', function () {
+            return view('horarios.manual');
+        })->name('horarios.manual');
+
+        Route::get('/horarios/importar', function () {
+            return view('horarios.importar');
+        })->name('horarios.importar');
+
+        Route::get('/usuarios', function () {
+            return view('usuarios.index');
+        })->name('usuarios');
+
+        Route::get('/codigosqr', function () {
+            return view('qr.index');
+        })->name('codigosqr');
+
+        Route::get('/configuracion', function () {
+            return view('configuracion.index');
+        })->name('configuracion');
+    });
 });

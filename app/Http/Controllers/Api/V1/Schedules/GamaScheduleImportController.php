@@ -27,6 +27,7 @@ namespace App\Http\Controllers\Api\V1\Schedules;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Schedules\ImportScheduleRequest;
 use App\Jobs\ProcessScheduleImportJob;
+use App\Models\ClassSchedule;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -37,6 +38,8 @@ class GamaScheduleImportController extends Controller
 
     public function __invoke(ImportScheduleRequest $request): JsonResponse
     {
+        $this->authorize('create', ClassSchedule::class);
+
         $file = $request->file('file');
         $semesterId = (int) $request->input('semester_id');
         $path = $file->store('imports');
@@ -47,6 +50,8 @@ class GamaScheduleImportController extends Controller
 
     public function report(string $batchId): JsonResponse
     {
+        $this->authorize('create', ClassSchedule::class);
+
         $path = "imports/{$batchId}.json";
         if (! Storage::disk('local')->exists($path)) {
             return $this->error('Report not found.', 404);

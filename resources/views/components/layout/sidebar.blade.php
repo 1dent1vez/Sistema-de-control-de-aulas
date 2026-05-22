@@ -1247,6 +1247,9 @@
           </div>
 
           <!-- Módulos -->
+          @php $isAdmin = Auth::user()?->role?->value === 'admin'; @endphp
+
+          @if ($isAdmin)
           <div class="nav-section">
             <span class="nav-label">GESTIÓN ACADÉMICA</span>
             <a href="{{ route('edificios') }}" class="nav-item" data-tooltip="Edificios">
@@ -1281,10 +1284,6 @@
               <i class="fas fa-users nav-icon"></i>
               <span class="nav-text">Usuarios</span>
             </a>
-            <a href="{{ route('docente.estatus') }}" class="nav-item" data-tooltip="Estatus Docente">
-              <i class="fas fa-chalkboard-teacher nav-icon"></i>
-              <span class="nav-text">Estatus Docente</span>
-            </a>
             <a href="{{ route('dashboard.admin') }}" class="nav-item" data-tooltip="Dashboard Admin">
               <i class="fas fa-user-shield nav-icon"></i>
               <span class="nav-text">Dashboard Admin</span>
@@ -1301,6 +1300,16 @@
             <a href="{{ route('configuracion') }}" class="nav-item" data-tooltip="Configuración">
               <i class="fas fa-cog nav-icon"></i>
               <span class="nav-text">Configuración</span>
+            </a>
+          </div>
+          @endif
+
+          <!-- Docente -->
+          <div class="nav-section">
+            <span class="nav-label">DOCENTE</span>
+            <a href="{{ route('docente.estatus') }}" class="nav-item" data-tooltip="Estatus Docente">
+              <i class="fas fa-chalkboard-teacher nav-icon"></i>
+              <span class="nav-text">Estatus Docente</span>
             </a>
           </div>
         </nav>
