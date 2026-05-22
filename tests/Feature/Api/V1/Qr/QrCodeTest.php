@@ -69,6 +69,7 @@ it('allows regeneration with force flag', function (): void {
 });
 
 it('can show active QR code for a classroom', function (): void {
+    $this->loginAsAdmin();
     QrCode::factory()->create([
         'classroom_id' => $this->classroom->id,
         'is_active' => true,
@@ -81,6 +82,7 @@ it('can show active QR code for a classroom', function (): void {
 });
 
 it('returns 404 when no active QR for classroom', function (): void {
+    $this->loginAsAdmin();
     $this->getJson("/api/v1/classrooms/{$this->classroom->id}/qr")
         ->assertStatus(404);
 });

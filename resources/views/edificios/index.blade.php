@@ -841,11 +841,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* â”€â”€â”€ API helpers â”€â”€â”€ */
     async function apiFetch(url, options = {}) {
+        const token = localStorage.getItem('auth_token');
         const res = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': getCsrf(),
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
                 ...options.headers,
             },
             ...options,

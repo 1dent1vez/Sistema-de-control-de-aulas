@@ -15,9 +15,9 @@
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-13 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: compactación y uso de created()
  */
 
 declare(strict_types=1);
@@ -44,58 +44,41 @@ class GamaBuildingController extends Controller
 
     public function index(): JsonResponse
     {
-        return $this->success(
-            BuildingResource::collection($this->service->getAll()),
-            'Buildings retrieved successfully.'
-        );
+        return $this->success(BuildingResource::collection($this->service->getAll()));
     }
 
     public function show(int $id): JsonResponse
     {
         $building = $this->service->getById($id);
-
         if (! $building) {
             return $this->error('Building not found.', 404);
         }
 
-        return $this->success(
-            new BuildingResource($building),
-            'Building retrieved successfully.'
-        );
+        return $this->success(new BuildingResource($building));
     }
 
     public function store(StoreBuildingRequest $request): JsonResponse
     {
         $this->authorize('create', Building::class);
-        $building = $this->service->store($request->validated());
 
-        return $this->success(
-            new BuildingResource($building),
-            'Building created successfully.',
-            201
-        );
+        return $this->created(new BuildingResource($this->service->store($request->validated())));
     }
 
     public function update(UpdateBuildingRequest $request, int $id): JsonResponse
     {
         $this->authorize('update', Building::class);
         $building = $this->service->update($id, $request->validated());
-
         if (! $building) {
             return $this->error('Building not found.', 404);
         }
 
-        return $this->success(
-            new BuildingResource($building),
-            'Building updated successfully.'
-        );
+        return $this->success(new BuildingResource($building));
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->authorize('delete', Building::class);
         $deleted = $this->service->delete($id);
-
         if (! $deleted) {
             return $this->error('Building not found.', 404);
         }
@@ -105,11 +88,6 @@ class GamaBuildingController extends Controller
 
     public function levels(int $buildingId): JsonResponse
     {
-        $levels = $this->service->getLevels($buildingId);
-
-        return $this->success(
-            LevelResource::collection($levels),
-            'Levels retrieved successfully.'
-        );
+        return $this->success(LevelResource::collection($this->service->getLevels($buildingId)));
     }
 }

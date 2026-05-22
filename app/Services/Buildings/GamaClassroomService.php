@@ -34,26 +34,49 @@ class GamaClassroomService
         private readonly ClassroomRepositoryInterface $repository
     ) {}
 
+    /**
+     * Obtiene todas las aulas activas.
+     *
+     * @return Collection<int, Classroom>
+     */
     public function getAll(): Collection
     {
         return $this->repository->all();
     }
 
+    /**
+     * Busca un aula por su ID.
+     */
     public function getById(int $id): ?Classroom
     {
         return $this->repository->findById($id);
     }
 
+    /**
+     * Busca aulas por ID de edificio.
+     *
+     * @return Collection<int, Classroom>
+     */
     public function getByBuildingId(int $buildingId): Collection
     {
         return $this->repository->findByBuildingId($buildingId);
     }
 
+    /**
+     * Crea un aula nueva.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): Classroom
     {
         return $this->repository->create($data);
     }
 
+    /**
+     * Actualiza un aula existente.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function update(int $id, array $data): ?Classroom
     {
         $classroom = $this->repository->findById($id);
@@ -65,6 +88,9 @@ class GamaClassroomService
         return $this->repository->update($classroom, $data);
     }
 
+    /**
+     * Elimina (soft delete) un aula.
+     */
     public function delete(int $id): bool
     {
         $classroom = $this->repository->findById($id);

@@ -25,7 +25,7 @@
     <p class="footer-links">
       <a href="{{ route('terms') }}">Términos y condiciones</a>
       <span class="footer-link-separator">|</span>
-      <a href="{{ url('aviso-de-privacidad') }}">Aviso de privacidad</a>
+      <a href="{{ route('privacy') }}">Aviso de privacidad</a>
     </p>
   </div>
 </footer>

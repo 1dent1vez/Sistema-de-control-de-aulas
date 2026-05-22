@@ -28,21 +28,33 @@ namespace App\Services\Auth;
 
 use App\Enums\Auth\SamRole;
 use App\Models\SamIdentity;
+use App\Repositories\Contracts\SamIdentityRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
 class SamRoleService
 {
     public function __construct(
-        private readonly SamService $samService
+        private readonly SamService $samService,
+        private readonly SamIdentityRepositoryInterface $identityRepository
     ) {}
 
+    /**
+     * Lista todas las identidades SAM registradas.
+     */
+    public function listAll(): mixed
+    {
+        return $this->identityRepository->all();
+    }
+
+    /**
+     * Busca identidades en SAM (actualmente en BD local).
+     *
+     * @return array<int, array{external_id: string, email: string, full_name: string|null, role: string}>
+     */
     public function searchInSam(string $query): array
     {
         // TODO: Buscar contra SAM real vía endpoint de SAM cuando esté disponible
-        $identities = SamIdentity::where('external_id', $query)
-            ->orWhere('email', $query)
-            ->orWhere('full_name', 'like', "%{$query}%")
-            ->get();
+        $identities = $this->identityRepository->search($query);
 
         if ($identities->isNotEmpty()) {
             return $identities->toArray();
@@ -58,20 +70,23 @@ class SamRoleService
         ];
     }
 
+    /**
+     * Asigna (o crea si no existe) un rol a una identidad en una transacción.
+     */
     public function assignRole(string $externalId, SamRole $role): SamIdentity
     {
         return DB::transaction(function () use ($externalId, $role) {
-            $identity = SamIdentity::where('external_id', $externalId)->first();
+            $identity = $this->identityRepository->findByExternalId($externalId);
 
             if ($identity === null) {
-                $identity = SamIdentity::create([
+                $identity = $this->identityRepository->create([
                     'external_id' => $externalId,
                     'email' => $externalId.'@toluca.tecnm.mx',
                     'full_name' => null,
                     'role' => $role,
                 ]);
             } else {
-                $identity->update(['role' => $role]);
+                $this->identityRepository->update($identity, ['role' => $role]);
             }
 
             return $identity;

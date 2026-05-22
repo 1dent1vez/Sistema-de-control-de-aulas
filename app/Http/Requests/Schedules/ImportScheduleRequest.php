@@ -40,4 +40,16 @@ class ImportScheduleRequest extends FormRequest
             'semester_id' => ['required', 'integer', 'exists:gama_semesters,id'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'file.required' => 'El archivo es obligatorio.',
+            'file.file' => 'Debe subir un archivo.',
+            'file.mimes' => 'El archivo debe ser CSV o XLSX.',
+            'file.max' => 'El archivo no debe exceder :max kilobytes.',
+            'semester_id.required' => 'El semestre es obligatorio.',
+            'semester_id.exists' => 'El semestre seleccionado no existe.',
+        ];
+    }
 }

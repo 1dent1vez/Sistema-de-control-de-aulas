@@ -37,16 +37,32 @@ class GamaClassScheduleService
         private readonly SemesterRepositoryInterface $semesterRepository,
     ) {}
 
+    /**
+     * Obtiene todos los horarios, opcionalmente filtrados.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, ClassSchedule>
+     */
     public function getAll(array $filters = []): Collection
     {
         return $this->repository->all($filters);
     }
 
+    /**
+     * Busca un horario por su ID.
+     */
     public function getById(int $id): ?ClassSchedule
     {
         return $this->repository->findById($id);
     }
 
+    /**
+     * Crea un horario con validación de empalme.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws \RuntimeException Si el semestre no existe o hay empalme de horario
+     */
     public function create(array $data): ClassSchedule
     {
         $semester = $this->semesterRepository->findById((int) $data['semester_id']);
@@ -67,6 +83,13 @@ class GamaClassScheduleService
         return $this->repository->create($data);
     }
 
+    /**
+     * Actualiza un horario existente con validación de empalme.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws \RuntimeException Si hay empalme de horario
+     */
     public function update(int $id, array $data): ?ClassSchedule
     {
         $schedule = $this->repository->findById($id);
@@ -87,6 +110,9 @@ class GamaClassScheduleService
         return $this->repository->update($schedule, $data);
     }
 
+    /**
+     * Elimina (soft delete) un horario.
+     */
     public function delete(int $id): bool
     {
         $schedule = $this->repository->findById($id);

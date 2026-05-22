@@ -49,4 +49,20 @@ class StoreSemesterRequest extends FormRequest
             'end_date' => ['required', 'date', 'after:start_date'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'institution_id.required' => 'La institución es obligatoria.',
+            'institution_id.exists' => 'La institución seleccionada no existe.',
+            'name.required' => 'El nombre del semestre es obligatorio.',
+            'name.unique' => 'Ya existe un semestre con ese nombre en la misma institución.',
+            'start_date.required' => 'La fecha de inicio es obligatoria.',
+            'start_date.date' => 'La fecha de inicio no es válida.',
+            'start_date.before' => 'La fecha de inicio debe ser anterior a la fecha de fin.',
+            'end_date.required' => 'La fecha de fin es obligatoria.',
+            'end_date.date' => 'La fecha de fin no es válida.',
+            'end_date.after' => 'La fecha de fin debe ser posterior a la fecha de inicio.',
+        ];
+    }
 }

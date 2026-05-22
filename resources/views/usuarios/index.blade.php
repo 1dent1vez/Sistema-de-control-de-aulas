@@ -3,14 +3,15 @@
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
  *
- * @descripcion    Usuarios y Roles - Proyecto B: Sistema de Control de Aulas
- * @autor          Rubén Alejandro Nolasco Ruiz
+ * @descripcion    Usuarios y Roles conectado a API SAM identities
+ * @autor          Rubén Alejandro Nolasco Ruiz, Equipo GAMA
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
  * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.0.0
+ * @version        1.1.0
  * @creado         07/05/2026
- * @modificado     07/05/2026
+ * @modificado     19/05/2026
+ * @cambios        19/05/2026 - Conexión a API REST, eliminación de datos mock
  */
 --}}
 
@@ -50,12 +51,14 @@
   .role-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
   .role-admin { background: rgba(19,68,116,.14); color: #134474; }
   .role-docente { background: rgba(30,90,138,.14); color: #1E5A8A; }
-  .role-lab { background: rgba(95,134,166,.18); color: #5F86A6; }
   .role-none { background: rgba(108,117,125,.15); color: #6c757d; }
   .usr-actions { display:flex; gap: 6px; align-items:center; }
   .usr-msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: var(--radius-md); display: none; }
   .usr-msg.error { display:block; background: rgba(255,0,0,.08); border:1px solid rgba(255,0,0,.35); color:#b00000; }
   .usr-empty { padding: 24px; text-align: center; color: var(--soft-steel); }
+  .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--mist-blue); border-top-color:var(--deep-blue); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-row td { text-align:center; padding:20px; color:var(--soft-steel); }
   @media (max-width: 1024px) { .usr-main { margin-left: 0; } }
   @media (max-width: 860px) { .usr-row { grid-template-columns: 1fr; } .usr-row .btn { width: 100%; justify-content: center; } }
 </style>
@@ -72,9 +75,8 @@
         <input id="searchSam" class="usr-input" placeholder="Buscar usuario en SAM (nombre o correo institucional)...">
         <select id="roleSelect" class="usr-select">
           <option value="">Selecciona rol...</option>
-          <option value="Administrador">Administrador</option>
-          <option value="Docente">Docente</option>
-          <option value="Laboratorista">Laboratorista</option>
+          <option value="admin">Administrador</option>
+          <option value="teacher">Docente</option>
         </select>
         <button id="btnAsignar" class="btn btn-primary btn-md"><i class="fas fa-user-shield"></i><span>Asignar Rol</span></button>
       </div>
@@ -106,29 +108,38 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const currentUserRole = 'Administrador';
-  const SAM_USERS = [
-    { sam_id: 'u001', nombre: 'Laura Mendez', correo: 'laura.mendez@instituto.edu', activo: true },
-    { sam_id: 'u002', nombre: 'Jose Rivera', correo: 'jose.rivera@instituto.edu', activo: true },
-    { sam_id: 'u003', nombre: 'Daniel Rojas', correo: 'daniel.rojas@instituto.edu', activo: true },
-    { sam_id: 'u004', nombre: 'Carla Ortega', correo: 'carla.ortega@instituto.edu', activo: false },
-    { sam_id: 'u005', nombre: 'Mariana Ponce', correo: 'mariana.ponce@instituto.edu', activo: true }
-  ];
+  var TOKEN = localStorage.getItem('auth_token');
+  if (!TOKEN) { window.location.href = '/'; return; }
 
-  const roleAssignments = new Map([
-    ['u001', 'Docente'],
-    ['u002', 'Administrador'],
-    ['u003', 'Laboratorista']
-  ]);
+  var roleLabels = { admin: 'Administrador', teacher: 'Docente' };
+  var allIdentities = [];
+  var displayedRows = [];
+  var selectedExternalId = null;
+  var searchTimer = null;
 
-  const $ = (id) => document.getElementById(id);
-  const body = $('usersBody');
-  const search = $('searchSam');
-  const roleSelect = $('roleSelect');
-  const msgBox = $('msgBox');
-  let selectedSamId = null;
-  let currentRows = [];
-  let timer = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var body = $('usersBody');
+  var search = $('searchSam');
+  var roleSelect = $('roleSelect');
+  var msgBox = $('msgBox');
+
+  function apiHeaders() {
+    return { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
+  }
+
+  function apiGet(url) {
+    return fetch(url, { method: 'GET', headers: apiHeaders() }).then(function (r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
+    });
+  }
+
+  function apiPost(url, body) {
+    return fetch(url, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
+    });
+  }
 
   function showError(message) {
     msgBox.className = 'usr-msg error';
@@ -138,103 +149,113 @@ document.addEventListener('DOMContentLoaded', function () {
     msgBox.className = 'usr-msg';
     msgBox.textContent = '';
   }
+
   function roleBadge(role) {
-    if (role === 'Administrador') return '<span class="role-badge role-admin">Administrador</span>';
-    if (role === 'Docente') return '<span class="role-badge role-docente">Docente</span>';
-    if (role === 'Laboratorista') return '<span class="role-badge role-lab">Laboratorista</span>';
+    if (role === 'admin') return '<span class="role-badge role-admin">Administrador</span>';
+    if (role === 'teacher') return '<span class="role-badge role-docente">Docente</span>';
     return '<span class="role-badge role-none">Sin rol</span>';
   }
+
   function toast(title, message) {
-    const t = document.createElement('div');
+    var t = document.createElement('div');
     t.className = 'toast success';
-    t.innerHTML = `<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div><button class="toast-close"><i class="fas fa-times"></i></button>`;
+    t.innerHTML = '<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-message">' + message + '</div></div><button class="toast-close"><i class="fas fa-times"></i></button>';
     $('toastContainer').appendChild(t);
-    setTimeout(() => t.classList.add('show'), 10);
-    const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };
-    const tm = setTimeout(rm, 4500);
-    t.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(tm); rm(); });
+    setTimeout(function () { t.classList.add('show'); }, 10);
+    var rm = function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 260); };
+    var tm = setTimeout(rm, 4500);
+    t.querySelector('.toast-close').addEventListener('click', function () { clearTimeout(tm); rm(); });
   }
 
-  function samSearch(query) {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return SAM_USERS.filter(u =>
-      u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q)
-    );
-  }
-
-  function isSamUserActive(samId) {
-    const user = SAM_USERS.find(u => u.sam_id === samId);
-    return !!(user && user.activo);
+  function normalizeIdentity(item) {
+    return {
+      externalId: item.externalId || item.external_id || '',
+      fullName: item.fullName || item.full_name || 'Sin nombre',
+      email: item.email || '',
+      role: item.role || null
+    };
   }
 
   function renderRows(rows) {
-    currentRows = rows;
+    displayedRows = rows;
     if (!rows.length) {
       body.innerHTML = '<tr><td colspan="4" class="usr-empty">Sin resultados en SAM</td></tr>';
       return;
     }
-    body.innerHTML = rows.map(u => {
-      const role = roleAssignments.get(u.sam_id) || '';
-      return `
-        <tr data-select="${u.sam_id}" class="${selectedSamId === u.sam_id ? 'selected' : ''}">
-          <td>${u.nombre}</td>
-          <td>${u.correo}</td>
-          <td>${roleBadge(role)}</td>
-          <td>
-            <div class="usr-actions">
-              <button class="btn btn-secondary btn-sm" data-revoke="${u.sam_id}" ${!role ? 'disabled' : ''}>
-                <i class="fas fa-user-minus"></i>
-              </button>
-            </div>
-          </td>
-        </tr>`;
+    body.innerHTML = rows.map(function (u) {
+      var hasRole = u.role ? true : false;
+      return '<tr data-select="' + u.externalId + '" class="' + (selectedExternalId === u.externalId ? 'selected' : '') + '">' +
+        '<td>' + u.fullName + '</td>' +
+        '<td>' + u.email + '</td>' +
+        '<td>' + roleBadge(u.role) + '</td>' +
+        '<td><div class="usr-actions">' +
+        '<button class="btn btn-secondary btn-sm" data-revoke="' + u.externalId + '" ' + (!hasRole ? 'disabled' : '') + '>' +
+        '<i class="fas fa-user-minus"></i></button></div></td></tr>';
     }).join('');
+  }
+
+  function loadAll() {
+    body.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Cargando usuarios...</td></tr>';
+    apiGet('/api/v1/sam-identities').then(function (resp) {
+      var raw = (resp.data && resp.data.data) ? resp.data.data : (Array.isArray(resp.data) ? resp.data : []);
+      allIdentities = raw.map(normalizeIdentity);
+      renderRows(allIdentities);
+    })['catch'](function (err) {
+      body.innerHTML = '<tr><td colspan="4" class="usr-empty">Error al cargar usuarios.</td></tr>';
+      if (err && err.message) showError(err.message);
+    });
   }
 
   function doSearch() {
     clearError();
-    const rows = samSearch(search.value);
-    if (!rows.some(r => r.sam_id === selectedSamId)) selectedSamId = null;
-    renderRows(rows);
+    var q = search.value.trim();
+    if (!q) {
+      renderRows(allIdentities);
+      return;
+    }
+    body.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Buscando...</td></tr>';
+    apiGet('/api/v1/sam-identities/search?q=' + encodeURIComponent(q)).then(function (resp) {
+      var raw = Array.isArray(resp.data) ? resp.data : [];
+      var results = raw.map(normalizeIdentity);
+      if (!results.some(function (r) { return r.externalId === selectedExternalId; })) selectedExternalId = null;
+      renderRows(results);
+    })['catch'](function (err) {
+      body.innerHTML = '<tr><td colspan="4" class="usr-empty">Error en la búsqueda.</td></tr>';
+      if (err && err.message) showError(err.message);
+    });
   }
 
-  search.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(doSearch, 300);
+  search.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(doSearch, 300);
   });
 
-  body.addEventListener('click', (e) => {
-    const row = e.target.closest('[data-select]');
+  body.addEventListener('click', function (e) {
+    var row = e.target.closest('[data-select]');
     if (row) {
-      selectedSamId = row.dataset.select;
-      renderRows(currentRows);
+      selectedExternalId = row.dataset.select;
+      renderRows(displayedRows);
       clearError();
       return;
     }
-    const revoke = e.target.closest('[data-revoke]');
+    var revoke = e.target.closest('[data-revoke]');
     if (revoke) {
-      if (currentUserRole !== 'Administrador') {
-        showError('Solo el rol Administrador puede asignar o revocar roles.');
-        return;
-      }
-      const target = revoke.dataset.revoke;
-      const user = SAM_USERS.find(u => u.sam_id === target);
-      const ok = window.confirm(`Confirma revocar rol de ${user ? user.nombre : 'usuario'}?`);
-      if (!ok) return;
-      roleAssignments.delete(target);
-      renderRows(currentRows);
-      toast('Rol revocado', 'La asignación de rol fue eliminada correctamente.');
+      var target = revoke.dataset.revoke;
+      var user = displayedRows.find(function (u) { return u.externalId === target; });
+      if (!window.confirm('Confirma revocar rol de ' + (user ? user.fullName : 'usuario') + '?')) return;
+      apiPost('/api/v1/sam-identities/' + encodeURIComponent(target) + '/assign-role', { role: 'teacher' }).then(function () {
+        if (user) user.role = 'teacher';
+        renderRows(displayedRows);
+        toast('Rol revocado', 'El rol se ha restablecido a Docente.');
+      })['catch'](function (err) {
+        if (err && err.message) showError(err.message);
+      });
     }
   });
 
-  $('btnAsignar').addEventListener('click', () => {
+  $('btnAsignar').addEventListener('click', function () {
     clearError();
-    if (currentUserRole !== 'Administrador') {
-      showError('Solo el rol Administrador puede asignar o revocar roles.');
-      return;
-    }
-    if (!selectedSamId) {
+    if (!selectedExternalId) {
       showError('Selecciona un usuario de la tabla para asignar rol.');
       return;
     }
@@ -242,16 +263,17 @@ document.addEventListener('DOMContentLoaded', function () {
       showError('Selecciona un rol antes de asignar.');
       return;
     }
-    if (!isSamUserActive(selectedSamId)) {
-      showError('SAM indica que el usuario no está activo. No se puede asignar rol.');
-      return;
-    }
-    roleAssignments.set(selectedSamId, roleSelect.value);
-    renderRows(currentRows);
-    toast('Rol asignado', 'Asignación confirmada. Permisos aplicados correctamente.');
+    apiPost('/api/v1/sam-identities/' + encodeURIComponent(selectedExternalId) + '/assign-role', { role: roleSelect.value }).then(function () {
+      var user = displayedRows.find(function (u) { return u.externalId === selectedExternalId; });
+      if (user) user.role = roleSelect.value;
+      renderRows(displayedRows);
+      toast('Rol asignado', 'Rol ' + (roleLabels[roleSelect.value] || roleSelect.value) + ' asignado correctamente.');
+    })['catch'](function (err) {
+      if (err && err.message) showError(err.message);
+    });
   });
 
-  renderRows([]);
+  loadAll();
 });
 </script>
 @endsection

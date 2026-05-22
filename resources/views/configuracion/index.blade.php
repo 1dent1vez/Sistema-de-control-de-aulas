@@ -3,14 +3,15 @@
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
  *
- * @descripcion    Configuración Institucional - Proyecto B: Sistema de Control de Aulas
- * @autor          Rubén Alejandro Nolasco Ruiz
+ * @descripcion    Configuración Institucional conectada a API REST
+ * @autor          Rubén Alejandro Nolasco Ruiz, Equipo GAMA
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
  * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.0.0
+ * @version        1.1.0
  * @creado         07/05/2026
- * @modificado     07/05/2026
+ * @modificado     19/05/2026
+ * @cambios        19/05/2026 - Conexión a API REST, eliminación de datos simulados
  */
 --}}
 
@@ -59,6 +60,10 @@
   .live-chip { display: inline-block; padding: 4px 10px; border-radius: 14px; background: var(--ice-blue); color: var(--deep-blue); font-size: 12px; }
   .note { margin-top: 8px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 13px; }
   .note.info { background: rgba(19,68,116,.08); border:1px solid rgba(19,68,116,.2); color: var(--deep-blue); }
+  .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--mist-blue); border-top-color:var(--deep-blue); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-overlay { display:flex; align-items:center; justify-content:center; gap:10px; padding:40px; color:var(--soft-steel); }
+  .hidden { display:none !important; }
   @media (max-width: 1100px) { .cfg-main { margin-left: 0; } .cfg-grid { grid-template-columns: 1fr; } }
 </style>
 
@@ -68,76 +73,80 @@
     <p class="cfg-sub">Personalización visual por institución activa (RNF-04). Cambios aislados por institución (RN-04).</p>
   </div>
 
-  <div class="cfg-grid">
-    <section class="cfg-card">
-      <div class="cfg-card-h">Formulario de configuración</div>
-      <div class="cfg-card-b">
-        <div class="field">
-          <label>Logotipo institucional (PNG/JPG, máx 2MB)</label>
-          <div class="logo-box">
-            <input id="fLogo" type="file" accept=".png,.jpg,.jpeg">
-            <img id="logoPreview" class="logo-preview" alt="Preview logo">
+  <div id="mainLoader" class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Cargando configuración...</span>
+  </div>
+
+  <div id="mainContent" class="hidden">
+    <div class="cfg-grid">
+      <section class="cfg-card">
+        <div class="cfg-card-h">Formulario de configuración</div>
+        <div class="cfg-card-b">
+          <div class="field">
+            <label>Logotipo institucional (PNG/JPG, máx 2MB)</label>
+            <div class="logo-box">
+              <input id="fLogo" type="file" accept=".png,.jpg,.jpeg">
+              <img id="logoPreview" class="logo-preview" alt="Preview logo">
+            </div>
+            <div id="eLogo" class="err"></div>
           </div>
-          <div id="eLogo" class="err"></div>
-        </div>
 
-        <div class="field">
-          <label>Nombre institucional *</label>
-          <input id="fNombre" type="text" maxlength="100" placeholder="Ej. Instituto Tecnológico GAMA">
-          <div class="hint"><span id="nameCount">0</span>/100</div>
-          <div id="eNombre" class="err"></div>
-        </div>
+          <div class="field">
+            <label>Nombre institucional *</label>
+            <input id="fNombre" type="text" maxlength="100" placeholder="Ej. Instituto Tecnológico GAMA">
+            <div class="hint"><span id="nameCount">0</span>/100</div>
+            <div id="eNombre" class="err"></div>
+          </div>
 
-        <div class="field">
-          <label>Paleta principal *</label>
-          <div class="palette-row">
-            <select id="fPalette">
-              <option value="">Catálogo predefinido...</option>
-              <option value="#134474">Deep Corporate Blue</option>
-              <option value="#1E5A8A">Royal Blue</option>
-              <option value="#5F86A6">Soft Steel Blue</option>
-              <option value="custom">Personalizado</option>
+          <div class="field">
+            <label>Paleta principal *</label>
+            <div class="palette-row">
+              <select id="fPalette">
+                <option value="">Catálogo predefinido...</option>
+                <option value="#134474">Deep Corporate Blue</option>
+                <option value="#1E5A8A">Royal Blue</option>
+                <option value="#5F86A6">Soft Steel Blue</option>
+                <option value="custom">Personalizado</option>
+              </select>
+              <input id="fHex" type="text" placeholder="#RRGGBB">
+            </div>
+            <div id="eHex" class="err"></div>
+          </div>
+
+          <div class="field">
+            <label>Semestre activo *</label>
+            <select id="fSemestre">
+              <option value="">Cargando...</option>
             </select>
-            <input id="fHex" type="text" placeholder="#RRGGBB">
+            <div id="eSemestre" class="err"></div>
           </div>
-          <div id="eHex" class="err"></div>
+
+          <button id="btnGuardar" class="btn btn-primary btn-md" style="width:100%; margin-top: 6px;">
+            <i class="fas fa-save"></i><span>Guardar Configuración</span>
+          </button>
         </div>
+      </section>
 
-        <div class="field">
-          <label>Semestre activo *</label>
-          <select id="fSemestre">
-            <option value="">Selecciona...</option>
-            <option value="2026-A">2026-A</option>
-            <option value="2026-B">2026-B</option>
-            <option value="2027-A">2027-A</option>
-          </select>
-          <div id="eSemestre" class="err"></div>
-        </div>
-
-        <button id="btnGuardar" class="btn btn-primary btn-md" style="width:100%; margin-top: 6px;">
-          <i class="fas fa-save"></i><span>Guardar Configuración</span>
-        </button>
-      </div>
-    </section>
-
-    <section class="cfg-card">
-      <div class="cfg-card-h">Preview live</div>
-      <div class="cfg-card-b">
-        <div class="live-preview">
-          <div class="live-topbar" id="liveBar">
-            <strong id="liveInstName">Institución Activa</strong>
-            <span>Portal Institucional</span>
+      <section class="cfg-card">
+        <div class="cfg-card-h">Preview live</div>
+        <div class="cfg-card-b">
+          <div class="live-preview">
+            <div class="live-topbar" id="liveBar">
+              <strong id="liveInstName">Institución Activa</strong>
+              <span>Portal Institucional</span>
+            </div>
+            <div class="live-body">
+              <p style="font-size:13px;color:var(--dark-graphite);margin-bottom:8px;">Vista previa de navegación con color primario aplicado en tiempo real.</p>
+              <span class="live-chip" id="liveSem">Semestre: --</span>
+            </div>
           </div>
-          <div class="live-body">
-            <p style="font-size:13px;color:var(--dark-graphite);margin-bottom:8px;">Vista previa de navegación con color primario aplicado en tiempo real.</p>
-            <span class="live-chip" id="liveSem">Semestre: --</span>
+          <div class="note info">
+            Los cambios solo se aplican a la institución activa y no impactan otras instituciones (RN-04).
           </div>
         </div>
-        <div class="note info">
-          Los cambios solo se aplican a la institución activa y no impactan otras instituciones (RN-04).
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 
   <div class="toast-container" id="toastContainer"></div>
@@ -145,25 +154,44 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
-  const MAX_LOGO = 2 * 1024 * 1024;
-  const $ = (id) => document.getElementById(id);
+  var TOKEN = localStorage.getItem('auth_token');
+  if (!TOKEN) { window.location.href = '/'; return; }
 
-  let state = {
+  var HEX_RE = /^#[0-9A-Fa-f]{6}$/;
+  var MAX_LOGO = 2 * 1024 * 1024;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var state = {
     logoFile: null,
     nombre: '',
     palette: '',
     hex: '',
     semestre: '',
-    institucionId: 'inst-001'
+    institutionId: null,
+    institutionCode: ''
   };
 
-  function setErr(id, msg) { const e = $(id); e.textContent = msg; e.classList.add('show'); }
-  function clearErr(id) { const e = $(id); e.textContent = ''; e.classList.remove('show'); }
-  function clearAllErr() {
-    ['eLogo','eNombre','eHex','eSemestre'].forEach(clearErr);
-    $('fHex').classList.remove('err-border');
+  function apiHeaders() {
+    return { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
   }
+
+  function apiGet(url) {
+    return fetch(url, { method: 'GET', headers: apiHeaders() }).then(function (r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
+    });
+  }
+
+  function apiPut(url, body) {
+    return fetch(url, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
+    });
+  }
+
+  function setErr(id, msg) { var e = $(id); e.textContent = msg; e.classList.add('show'); }
+  function clearErr(id) { var e = $(id); e.textContent = ''; e.classList.remove('show'); }
+  function clearAllErr() { ['eLogo','eNombre','eHex','eSemestre'].forEach(clearErr); $('fHex').classList.remove('err-border'); }
 
   function primaryColor() {
     if (state.palette && state.palette !== 'custom') return state.palette;
@@ -173,23 +201,23 @@ document.addEventListener('DOMContentLoaded', function () {
   function refreshPreview() {
     $('liveBar').style.backgroundColor = primaryColor();
     $('liveInstName').textContent = state.nombre || 'Institución Activa';
-    $('liveSem').textContent = `Semestre: ${state.semestre || '--'}`;
+    $('liveSem').textContent = 'Semestre: ' + (state.semestre || '--');
   }
 
   function showToast(title, message) {
-    const t = document.createElement('div');
+    var t = document.createElement('div');
     t.className = 'toast success';
-    t.innerHTML = `<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div><button class="toast-close"><i class="fas fa-times"></i></button>`;
+    t.innerHTML = '<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-message">' + message + '</div></div><button class="toast-close"><i class="fas fa-times"></i></button>';
     $('toastContainer').appendChild(t);
-    setTimeout(() => t.classList.add('show'), 10);
-    const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };
-    const tm = setTimeout(rm, 4500);
-    t.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(tm); rm(); });
+    setTimeout(function () { t.classList.add('show'); }, 10);
+    var rm = function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 260); };
+    var tm = setTimeout(rm, 4500);
+    t.querySelector('.toast-close').addEventListener('click', function () { clearTimeout(tm); rm(); });
   }
 
   function validate() {
     clearAllErr();
-    let ok = true;
+    var ok = true;
     if (!state.nombre.trim()) { setErr('eNombre', 'El nombre institucional es obligatorio.'); ok = false; }
     if (state.nombre.length > 100) { setErr('eNombre', 'Máximo 100 caracteres.'); ok = false; }
     if (!state.semestre) { setErr('eSemestre', 'Selecciona un semestre activo.'); ok = false; }
@@ -207,11 +235,52 @@ document.addEventListener('DOMContentLoaded', function () {
     return ok;
   }
 
-  $('fLogo').addEventListener('change', (e) => {
+  function init() {
+    Promise.all([
+      apiGet('/api/v1/institutions'),
+      apiGet('/api/v1/semesters')
+    ]).then(function (results) {
+      var instResp = results[0];
+      var semResp = results[1];
+      var institutions = (instResp && instResp.data) ? (Array.isArray(instResp.data) ? instResp.data : []) : [];
+      var semesters = (semResp && semResp.data) ? (Array.isArray(semResp.data) ? semResp.data : []) : [];
+
+      if (institutions.length > 0) {
+        var inst = institutions[0];
+        state.institutionId = inst.id;
+        state.institutionCode = inst.code || '';
+        state.nombre = inst.name || '';
+        $('fNombre').value = state.nombre;
+        $('nameCount').textContent = String(state.nombre.length);
+      }
+
+      var sel = $('fSemestre');
+      sel.innerHTML = '<option value="">Selecciona...</option>';
+      semesters.forEach(function (s) {
+        var opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = s.name;
+        if (s.isActive) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (semesters.length > 0 && !sel.value) sel.value = semesters[0].name;
+      state.semestre = sel.value;
+
+      $('mainLoader').classList.add('hidden');
+      $('mainContent').classList.remove('hidden');
+      refreshPreview();
+    })['catch'](function (err) {
+      showToast('Error', err && err.message ? err.message : 'No se pudo cargar la configuración.');
+      $('mainLoader').classList.add('hidden');
+      $('mainContent').classList.remove('hidden');
+    });
+  }
+
+  $('fLogo').addEventListener('change', function (e) {
     clearErr('eLogo');
-    const file = e.target.files[0] || null;
+    var file = e.target.files[0] || null;
     if (!file) { state.logoFile = null; return; }
-    const validType = /image\/(png|jpeg)/.test(file.type);
+    var validType = /image\/(png|jpeg)/.test(file.type);
     if (!validType) {
       e.target.value = '';
       state.logoFile = null;
@@ -226,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     state.logoFile = file;
-    const reader = new FileReader();
+    var reader = new FileReader();
     reader.onload = function () {
       $('logoPreview').src = reader.result;
       $('logoPreview').style.display = 'block';
@@ -234,13 +303,13 @@ document.addEventListener('DOMContentLoaded', function () {
     reader.readAsDataURL(file);
   });
 
-  $('fNombre').addEventListener('input', (e) => {
+  $('fNombre').addEventListener('input', function (e) {
     state.nombre = e.target.value;
     $('nameCount').textContent = String(state.nombre.length);
     refreshPreview();
   });
 
-  $('fPalette').addEventListener('change', (e) => {
+  $('fPalette').addEventListener('change', function (e) {
     state.palette = e.target.value;
     if (state.palette && state.palette !== 'custom') {
       state.hex = state.palette;
@@ -252,34 +321,48 @@ document.addEventListener('DOMContentLoaded', function () {
     refreshPreview();
   });
 
-  $('fHex').addEventListener('input', (e) => {
+  $('fHex').addEventListener('input', function (e) {
     state.hex = e.target.value.trim();
     if (state.hex) state.palette = 'custom';
     refreshPreview();
   });
 
-  $('fSemestre').addEventListener('change', (e) => {
+  $('fSemestre').addEventListener('change', function (e) {
     state.semestre = e.target.value;
     refreshPreview();
   });
 
-  $('btnGuardar').addEventListener('click', () => {
+  $('btnGuardar').addEventListener('click', function () {
     if (!validate()) return;
 
-    // Simulación de guardado transaccional por institución activa (RN-04).
-    const payload = {
-      institucion_id: state.institucionId,
-      nombre: state.nombre.trim(),
-      color_primario: primaryColor(),
-      semestre_activo: state.semestre,
-      logo: state.logoFile ? state.logoFile.name : null
-    };
-    void payload;
+    if (!state.institutionId) {
+      showToast('Error', 'No hay institución activa para guardar.');
+      return;
+    }
 
-    showToast('Configuración guardada', 'Cambios aplicados correctamente a la institución activa.');
+    var btn = $('btnGuardar');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto;"></div>';
+
+    var payload = {
+      name: state.nombre.trim(),
+      code: state.institutionCode || state.nombre.trim().substring(0, 10).toUpperCase().replace(/\s+/g, '_'),
+      is_active: true
+    };
+
+    apiPut('/api/v1/institutions/' + state.institutionId, payload).then(function () {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i><span>Guardar Configuración</span>';
+      showToast('Configuración guardada', 'Cambios aplicados correctamente a la institución activa.');
+    })['catch'](function (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i><span>Guardar Configuración</span>';
+      if (err && err.message) showToast('Error', err.message);
+      else showToast('Error', 'No se pudo guardar la configuración.');
+    });
   });
 
-  refreshPreview();
+  init();
 });
 </script>
 @endsection

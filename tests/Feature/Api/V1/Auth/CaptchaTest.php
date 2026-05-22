@@ -16,7 +16,9 @@ it('returns a png captcha', function () {
     $samServiceMock = Mockery::mock(SamService::class);
     $samServiceMock->shouldReceive('obtenerCaptcha')
         ->once()
-        ->andReturn('fake-png-bytes');
+        ->andReturn(['png' => 'fake-png-bytes', 'sessionId' => 'test-session']);
+    $samServiceMock->shouldReceive('getSessionCookieName')
+        ->andReturn('sam_session');
 
     $this->instance(SamService::class, $samServiceMock);
 
@@ -31,7 +33,7 @@ it('returns 503 when sam is down', function () {
     $samServiceMock = Mockery::mock(SamService::class);
     $samServiceMock->shouldReceive('obtenerCaptcha')
         ->once()
-        ->andReturn(null);
+        ->andReturn(['png' => null, 'sessionId' => null]);
 
     $this->instance(SamService::class, $samServiceMock);
 

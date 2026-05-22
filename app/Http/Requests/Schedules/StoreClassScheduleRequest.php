@@ -50,6 +50,29 @@ class StoreClassScheduleRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'semester_id.required' => 'El semestre es obligatorio.',
+            'semester_id.exists' => 'El semestre seleccionado no existe.',
+            'classroom_id.required' => 'El aula es obligatoria.',
+            'classroom_id.exists' => 'El aula seleccionada no existe.',
+            'teacher_external_id.required' => 'El identificador del docente es obligatorio.',
+            'subject_name.required' => 'El nombre de la materia es obligatorio.',
+            'subject_name.max' => 'El nombre de la materia no debe exceder :max caracteres.',
+            'group_name.required' => 'El nombre del grupo es obligatorio.',
+            'group_name.max' => 'El nombre del grupo no debe exceder :max caracteres.',
+            'weekday.required' => 'El día de la semana es obligatorio.',
+            'weekday.in' => 'El día de la semana no es válido.',
+            'start_time.required' => 'La hora de inicio es obligatoria.',
+            'start_time.date_format' => 'La hora de inicio debe tener formato HH:MM.',
+            'start_time.before' => 'La hora de inicio debe ser anterior a la hora de fin.',
+            'end_time.required' => 'La hora de fin es obligatoria.',
+            'end_time.date_format' => 'La hora de fin debe tener formato HH:MM.',
+            'end_time.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         // Acepta group_label (alias del frontend) como group_name

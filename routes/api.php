@@ -30,7 +30,9 @@ use App\Http\Controllers\Api\V1\Catalogs\GamaAbsenceTypeController;
 use App\Http\Controllers\Api\V1\Catalogs\GamaInstitutionController;
 use App\Http\Controllers\Api\V1\Qr\GamaQrCodeController;
 use App\Http\Controllers\Api\V1\Schedules\GamaClassScheduleController;
+use App\Http\Controllers\Api\V1\Schedules\GamaScheduleImportController;
 use App\Http\Controllers\Api\V1\Schedules\GamaSemesterController;
+use App\Http\Controllers\Api\V1\TeacherStatus\GamaCheckOverlapController;
 use App\Http\Controllers\Api\V1\TeacherStatus\GamaTeacherAbsenceController;
 use Illuminate\Support\Facades\Route;
 
@@ -85,11 +87,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::prefix('class-schedules')->name('class-schedules.')->group(function () {
         Route::get('/', [GamaClassScheduleController::class, 'index'])->name('index');
         Route::post('/', [GamaClassScheduleController::class, 'store'])->name('store')->middleware('auth:sanctum');
-        Route::post('/import', [GamaClassScheduleController::class, 'import'])->name('import')->middleware('auth:sanctum');
+        Route::post('/import', [GamaScheduleImportController::class, '__invoke'])->name('import')->middleware('auth:sanctum');
+        Route::get('/import/{batchId}/report', [GamaScheduleImportController::class, 'report'])->name('report');
         Route::get('/{scheduleId}', [GamaClassScheduleController::class, 'show'])->name('show');
         Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update')->middleware('auth:sanctum');
         Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
-        Route::get('/import/{batchId}/report', [GamaClassScheduleController::class, 'report'])->name('report');
     });
 
     // QR Codes
@@ -104,7 +106,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     });
 
     // Auth — público (rate limit: auth)
-    Route::post('auth/captcha', [AuthController::class, 'captcha'])->name('auth.captcha')->middleware('throttle:auth');
+    Route::match(['get', 'post'], 'auth/captcha', [AuthController::class, 'captcha'])->name('auth.captcha')->middleware('throttle:auth');
     Route::post('auth/validate-captcha', [AuthController::class, 'validateCaptcha'])->name('auth.validate-captcha')->middleware('throttle:auth');
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login')->middleware('throttle:auth');
 
@@ -114,7 +116,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::prefix('teacher-absences')->name('teacher-absences.')->group(function () {
             Route::get('/', [GamaTeacherAbsenceController::class, 'index'])->name('index');
             Route::post('/', [GamaTeacherAbsenceController::class, 'store'])->name('store');
-            Route::get('/check-overlap', [GamaTeacherAbsenceController::class, 'checkOverlap'])->name('check-overlap');
+            Route::get('/check-overlap', [GamaCheckOverlapController::class, '__invoke'])->name('check-overlap');
             Route::get('/{absenceId}', [GamaTeacherAbsenceController::class, 'show'])->name('show');
             Route::put('/{absenceId}', [GamaTeacherAbsenceController::class, 'update'])->name('update');
             Route::delete('/{absenceId}', [GamaTeacherAbsenceController::class, 'destroy'])->name('destroy');

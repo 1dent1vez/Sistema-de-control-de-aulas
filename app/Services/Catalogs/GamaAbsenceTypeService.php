@@ -34,11 +34,19 @@ class GamaAbsenceTypeService
         private readonly AbsenceTypeRepositoryInterface $repository
     ) {}
 
+    /**
+     * Obtiene todos los tipos de ausencia activos.
+     *
+     * @return Collection<int, AbsenceType>
+     */
     public function getAll(): Collection
     {
         return $this->repository->all();
     }
 
+    /**
+     * Busca un tipo de ausencia por su ID.
+     */
     public function getById(int $id): ?AbsenceType
     {
         return $this->repository->findById($id);

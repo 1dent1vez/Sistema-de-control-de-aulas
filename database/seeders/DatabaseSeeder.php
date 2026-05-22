@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AbsenceTypeSeeder::class,
-            TestingDataSeeder::class,
+            // TestingDataSeeder::class, // Descomentar solo para desarrollo con datos de prueba
         ]);
     }
 }

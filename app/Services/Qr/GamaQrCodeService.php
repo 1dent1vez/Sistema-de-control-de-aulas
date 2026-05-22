@@ -1,29 +1,57 @@
 <?php
 
+/**
+ * @descripcion  Service con lógica de negocio para generación, consulta y descarga de QR.
+ *
+ * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @version      1.1.0
+ *
+ * @creado       2026-05-14
+ *
+ * @modificado   2026-05-18
+ *
+ * @cambios      2026-05-18 - Unificación de prólogo; agregado findById
+ */
+
 declare(strict_types=1);
 
 namespace App\Services\Qr;
 
-use App\Models\Classroom;
 use App\Models\QrCode;
+use App\Repositories\Contracts\ClassroomRepositoryInterface;
 use App\Repositories\Contracts\QrCodeRepositoryInterface;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class GamaQrCodeService
 {
     public function __construct(
-        private readonly QrCodeRepositoryInterface $repository
+        private readonly QrCodeRepositoryInterface $repository,
+        private readonly ClassroomRepositoryInterface $classroomRepository
     ) {}
 
+    /**
+     * Genera un código QR para un aula, opcionalmente forzando regeneración.
+     *
+     *
+     * @throws \RuntimeException Si el aula no existe o ya tiene QR activo sin force
+     */
     public function generateForClassroom(int $classroomId, bool $force = false): QrCode
     {
-        $classroom = Classroom::with('building')->find($classroomId);
+        $classroom = $this->classroomRepository->findById($classroomId);
 
         if (! $classroom) {
             throw new \RuntimeException('El aula seleccionada no existe.', 404);
@@ -35,53 +63,74 @@ class GamaQrCodeService
             throw new \RuntimeException('Ya existe un código QR activo para esta aula. Utiliza forceRegenerate para reemplazarlo.', 409);
         }
 
-        if ($active && $force) {
-            $this->repository->update($active, [
-                'is_active' => false,
-                'invalidated_at' => now(),
+        return DB::transaction(function () use ($classroomId, $classroom, $active, $force) {
+            if ($active && $force) {
+                $this->repository->update($active, [
+                    'is_active' => false,
+                    'invalidated_at' => now(),
+                ]);
+            }
+
+            $token = (string) Str::uuid();
+            $payload = [
+                'classroomId' => $classroom->id,
+                'classroomName' => $classroom->classroom_name,
+                'buildingName' => $classroom->building?->name ?? '',
+                'token' => $token,
+            ];
+
+            $qrDir = 'qr';
+            if (! Storage::disk('local')->exists($qrDir)) {
+                Storage::disk('local')->makeDirectory($qrDir);
+            }
+
+            $fileName = "{$token}.png";
+            $filePath = "{$qrDir}/{$fileName}";
+
+            $renderer = new ImageRenderer(
+                new RendererStyle(300, 2),
+                new SvgImageBackEnd
+            );
+            $writer = new Writer($renderer);
+            $qrImage = $writer->writeString(json_encode($payload));
+
+            Storage::disk('local')->put($filePath, $qrImage);
+
+            return $this->repository->create([
+                'classroom_id' => $classroomId,
+                'token' => $token,
+                'payload' => $payload,
+                'file_path' => $filePath,
+                'is_active' => true,
+                'generated_at' => now(),
             ]);
-        }
-
-        $token = (string) Str::uuid();
-        $payload = [
-            'classroomId' => $classroom->id,
-            'classroomName' => $classroom->classroom_name,
-            'buildingName' => $classroom->building?->name ?? '',
-            'token' => $token,
-        ];
-
-        $qrDir = 'qr';
-        if (! Storage::disk('local')->exists($qrDir)) {
-            Storage::disk('local')->makeDirectory($qrDir);
-        }
-
-        $fileName = "{$token}.png";
-        $filePath = "{$qrDir}/{$fileName}";
-
-        $renderer = new ImageRenderer(
-            new RendererStyle(300, 2),
-            new SvgImageBackEnd
-        );
-        $writer = new Writer($renderer);
-        $qrImage = $writer->writeString(json_encode($payload));
-
-        Storage::disk('local')->put($filePath, $qrImage);
-
-        return $this->repository->create([
-            'classroom_id' => $classroomId,
-            'token' => $token,
-            'payload' => $payload,
-            'file_path' => $filePath,
-            'is_active' => true,
-            'generated_at' => now(),
-        ]);
+        });
     }
 
+    /**
+     * Obtiene el QR activo de un aula.
+     */
     public function getActiveQr(int $classroomId): ?QrCode
     {
         return $this->repository->findActiveByClassroom($classroomId);
     }
 
+    /**
+     * Busca un QR por su ID.
+     */
+    public function findById(int $id): ?QrCode
+    {
+        return $this->repository->findById($id);
+    }
+
+    /**
+     * Descarga lote de QRs en ZIP o PDF.
+     *
+     * @param  array<int, int>  $classroomIds
+     * @return string Ruta del archivo generado
+     *
+     * @throws \RuntimeException Si no hay QRs activos o formato inválido
+     */
     public function downloadBatch(array $classroomIds, string $format): string
     {
         $qrCodes = $this->repository->getActiveByClassroomIds($classroomIds);

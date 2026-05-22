@@ -43,6 +43,14 @@ class Semester extends Model
         'end_date',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+        ];
+    }
+
     public function classSchedules(): HasMany
     {
         return $this->hasMany(ClassSchedule::class);

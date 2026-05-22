@@ -32,6 +32,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/gama-login.css">
     <script src="js/auth-tabs.js" defer></script>
+    <script>
+        // If already authenticated, redirect to dashboard
+        (function() {
+            if (localStorage.getItem('auth_token')) {
+                window.location.href = '/dashboard';
+            }
+        })();
+    </script>
 </head>
 <body class="auth-page">
     <!-- Left Side - Branding -->
@@ -76,19 +84,13 @@
                 <p>Ingresa tus credenciales para acceder a tu cuenta</p>
             </div>
 
-            <!-- Tab Switcher -->
-            <div class="auth-tabs">
-                <button class="auth-tab active" data-form="login">Iniciar sesión</button>
-                <button class="auth-tab" data-form="register">Registrarse</button>
-            </div>
-
             <!-- Login Form -->
             <form class="auth-form active" id="loginForm">
                 <div class="form-group">
-                    <label class="form-label">Dirección de correo electrónico</label>
+                    <label class="form-label">Número de empleado</label>
                     <div class="form-input-wrapper">
-                        <i class="fas fa-envelope input-icon"></i>
-                        <input type="email" class="form-input" placeholder="Ingresa tu correo electrónico" required>
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" class="form-input" id="loginUsername" placeholder="Ingresa tu número de empleado" required>
                     </div>
                 </div>
 
@@ -103,107 +105,21 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="checkbox-wrapper" onclick="toggleCheckbox(this)">
-                        <div class="checkbox">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <span class="checkbox-label">Recordarme</span>
+                <div class="form-group">
+                    <label class="form-label">Código de verificación</label>
+                    <div class="form-input-wrapper">
+                        <i class="fas fa-shield-alt input-icon"></i>
+                        <input type="text" class="form-input" id="captchaCode" placeholder="Ingresa el código" required>
                     </div>
-                    <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                    <img id="captchaImage" src="" alt="CAPTCHA" style="margin-top:8px;cursor:pointer;border:1px solid var(--gama-gris-300);border-radius:4px;max-width:200px;" onclick="loadCaptcha()">
                 </div>
+
+                <div id="loginError" class="form-error" style="display:none;color:var(--gama-rojo-500, #dc2626);font-size:13px;margin-bottom:12px;text-align:center;"></div>
 
                 <button type="submit" class="btn btn-primary btn-lg">Iniciar sesión</button>
 
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <span class="divider-text">o continúa con</span>
-                    <div class="divider-line"></div>
-                </div>
-
-                <div class="social-buttons">
-                    <button type="button" class="social-btn">
-                        <i class="fab fa-google"></i>
-                        <span>Google</span>
-                    </button>
-                    
-                </div>
-
-                <p class="form-footer">
-                    ¿No tienes una cuenta? <a href="#" id="switchToRegister">Regístrate gratis</a>
-                </p>
             </form>
 
-            <!-- Register Form -->
-            <form class="auth-form" id="registerForm">
-                <div class="form-group">
-                    <label class="form-label">Nombre completo</label>
-                    <div class="form-input-wrapper">
-                        <i class="fas fa-user input-icon"></i>
-                        <input type="text" class="form-input" placeholder="Ingresa tu nombre completo" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Dirección de correo electrónico</label>
-                    <div class="form-input-wrapper">
-                        <i class="fas fa-envelope input-icon"></i>
-                        <input type="email" class="form-input" placeholder="Ingresa tu correo electrónico" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Contraseña</label>
-                    <div class="form-input-wrapper">
-                        <i class="fas fa-lock input-icon"></i>
-                        <input type="password" class="form-input" id="registerPassword" placeholder="Crea una contraseña" required>
-                        <button type="button" class="password-toggle" onclick="togglePassword('registerPassword')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="password-strength">
-                        <div class="strength-bar"></div>
-                        <div class="strength-bar"></div>
-                        <div class="strength-bar"></div>
-                        <div class="strength-bar"></div>
-                    </div>
-                    <p class="strength-text">Usa 8+ caracteres con una mezcla de letras, números y símbolos</p>
-                </div>
-
-                <div class="form-group">
-                    <div class="checkbox-wrapper" onclick="toggleCheckbox(this)">
-                        <div class="checkbox">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <span class="checkbox-label">
-                            Acepto los <a href="#">Términos de Servicio</a> y la <a href="#">Política de Privacidad</a>
-                        </span>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-lg">Crear cuenta</button>
-
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <span class="divider-text">o continúa con</span>
-                    <div class="divider-line"></div>
-                </div>
-
-                <div class="social-buttons">
-                    <button type="button" class="social-btn">
-                        <i class="fab fa-google"></i>
-                        <span>Google</span>
-                    </button>
-                    <button type="button" class="social-btn">
-                        <i class="fab fa-apple"></i>
-                        <span>Apple</span>
-                    </button>
-                </div>
-
-                <p class="form-footer">
-                    ¿Ya tienes una cuenta? <a href="#" id="switchToLogin">Inicia sesión</a>
-                </p>
-            </form>
         </div>
 
         <p class="copyright">
@@ -214,8 +130,8 @@
     <script>
         // Toggle password visibility
         function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const icon = input.parentElement.querySelector('.password-toggle i');
+            var input = document.getElementById(inputId);
+            var icon = input.parentElement.querySelector('.password-toggle i');
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');
@@ -229,75 +145,87 @@
 
         // Calculate password strength
         function calculatePasswordStrength(password) {
-            let strength = 0;
-            
-            // Mínimo 8 caracteres
+            var strength = 0;
             if (password.length >= 8) strength++;
             if (password.length >= 12) strength++;
-            
-            // Tiene letras mayúsculas
             if (/[A-Z]/.test(password)) strength++;
-            
-            // Tiene letras minúsculas
             if (/[a-z]/.test(password)) strength++;
-            
-            // Tiene números
             if (/\d/.test(password)) strength++;
-            
-            // Tiene caracteres especiales
             if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
-            
             return strength;
         }
 
-        // Update password strength bars
         function updatePasswordStrength(inputId) {
-            const input = document.getElementById(inputId);
-            const passwordStrength = input.parentElement.parentElement.querySelector('.password-strength');
-            
+            var input = document.getElementById(inputId);
+            var passwordStrength = input.parentElement.parentElement.querySelector('.password-strength');
             if (!passwordStrength) return;
-            
-            const bars = passwordStrength.querySelectorAll('.strength-bar');
-            const strength = calculatePasswordStrength(input.value);
-            
-            // Reset all bars
-            bars.forEach(bar => {
-                bar.classList.remove('weak', 'medium', 'strong');
-            });
-            
-            // Fill bars based on strength
-            let className = '';
-            let filledBars = 0;
-            
-            if (strength <= 2) {
-                className = 'weak';
-                filledBars = Math.min(strength, 2);
-            } else if (strength <= 4) {
-                className = 'medium';
-                filledBars = strength - 2;
-            } else {
-                className = 'strong';
-                filledBars = 4;
-            }
-            
-            for (let i = 0; i < filledBars; i++) {
-                bars[i].classList.add(className);
-            }
+            var bars = passwordStrength.querySelectorAll('.strength-bar');
+            var strength = calculatePasswordStrength(input.value);
+            bars.forEach(function(bar) { bar.classList.remove('weak', 'medium', 'strong'); });
+            var className = strength <= 2 ? 'weak' : strength <= 4 ? 'medium' : 'strong';
+            var filledBars = strength <= 2 ? Math.min(strength, 2) : strength <= 4 ? strength - 2 : 4;
+            for (var i = 0; i < filledBars; i++) bars[i].classList.add(className);
         }
 
-        // Toggle checkbox
         function toggleCheckbox(wrapper) {
-            const checkbox = wrapper.querySelector('.checkbox');
-            checkbox.classList.toggle('checked');
+            wrapper.querySelector('.checkbox').classList.toggle('checked');
         }
 
-        // Add password strength listener to register password field
-        const registerPasswordInput = document.getElementById('registerPassword');
-        if (registerPasswordInput) {
-            registerPasswordInput.addEventListener('input', function() {
-                updatePasswordStrength('registerPassword');
-            });
+        // Password strength listener
+        var registerPw = document.getElementById('registerPassword');
+        if (registerPw) {
+            registerPw.addEventListener('input', function() { updatePasswordStrength('registerPassword'); });
         }
+
+        // === Login handler ===
+        function loadCaptcha() {
+            var img = document.getElementById('captchaImage');
+            img.src = '/api/v1/auth/captcha?' + Date.now();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCaptcha();
+
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var username = document.getElementById('loginUsername').value;
+                var password = document.getElementById('loginPassword').value;
+                var captchaCode = document.getElementById('captchaCode').value;
+                document.getElementById('loginError').style.display = 'none';
+                var btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                btn.textContent = 'Ingresando...';
+
+                fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '' },
+                    body: JSON.stringify({ username: username, password: password, captchaCode: captchaCode })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success && data.data && data.data.accessToken) {
+                        localStorage.setItem('auth_token', data.data.accessToken);
+                        localStorage.setItem('auth_user', JSON.stringify(data.data.user || {}));
+                        document.cookie = 'sam_token=' + data.data.accessToken + '; path=/; max-age=86400; SameSite=Lax';
+                        window.location.href = data.data.redirectUrl || '/dashboard';
+                    } else {
+                        document.getElementById('captchaCode').value = '';
+                        document.getElementById('loginError').textContent = data.message || 'Error al iniciar sesión';
+                        document.getElementById('loginError').style.display = 'block';
+                        loadCaptcha();
+                    }
+                })
+                .catch(function() {
+                    document.getElementById('loginError').textContent = 'Error de conexión con el servidor.';
+                    document.getElementById('loginError').style.display = 'block';
+                    loadCaptcha();
+                })
+                .finally(function() {
+                    btn.disabled = false;
+                    btn.textContent = 'Iniciar sesión';
+                });
+            });
+        });
     </script>
 </body>
 </html>

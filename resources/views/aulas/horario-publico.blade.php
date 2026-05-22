@@ -3,14 +3,15 @@
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
  *
- * @descripcion    Horario Público QR - Proyecto B: Sistema de Control de Aulas
- * @autor          Rubén Alejandro Nolasco Ruiz
+ * @descripcion    Horario Público QR - Vista conectada a API REST
+ * @autor          Equipo GAMA
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
  * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.0.0
+ * @version        1.1.0
  * @creado         07/05/2026
- * @modificado     07/05/2026
+ * @modificado     19/05/2026
+ * @cambios        19/05/2026 - Conexión a API REST, eliminación de datos hardcodeados
  */
 --}}
 
@@ -33,6 +34,9 @@
   .hp-table tbody tr:nth-child(odd){ background:var(--light-blue);} .hp-table tbody tr:nth-child(even){background:#fff;}
   .hp-table tbody tr:hover{ background:var(--light-orange);}
   .hp-table td{ padding:12px 14px; border-bottom:1px solid var(--mist-blue); }
+  .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--mist-blue); border-top-color:var(--deep-blue); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-overlay { display:flex; align-items:center; justify-content:center; gap:10px; padding:40px; color:var(--soft-steel); }
   @media (max-width:1024px){ .hp-main{ margin-left:0; } }
 </style>
 
@@ -46,9 +50,13 @@
 
   <section class="hp-card">
     <div class="hp-toolbar">
-      <select id="fAula"></select>
+      <select id="fAula"><option value="">Cargando aulas...</option></select>
       <input id="fDia" placeholder="Filtrar por día (LUN, MAR...)">
       <span id="hpCount" style="margin-left:auto;font-size:12px;color:var(--soft-steel);"></span>
+    </div>
+    <div id="hpLoader" class="loading-overlay hidden">
+      <div class="spinner"></div>
+      <span>Cargando horario...</span>
     </div>
     <div class="hp-table-wrap">
       <table class="hp-table">
@@ -63,26 +71,79 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const aulas = ['Aula 101', 'Aula 201', 'Lab C-1'];
-  const horarios = [
-    { hora: '08:00-09:30', dia: 'LUN', materia: 'Matematicas I', docente: 'Laura Mendez', grupo: '1A', aula: 'Aula 101' },
-    { hora: '10:00-11:30', dia: 'MIE', materia: 'Programacion Web', docente: 'Jose Rivera', grupo: '3B', aula: 'Aula 101' },
-    { hora: '09:00-10:30', dia: 'MAR', materia: 'Bases de Datos', docente: 'Daniel Rojas', grupo: '5A', aula: 'Aula 201' }
-  ];
-  const $ = (id) => document.getElementById(id);
-  const fAula = $('fAula'), fDia = $('fDia'), body = $('hpBody'), cnt = $('hpCount');
-  fAula.innerHTML = '<option value="">Todas las aulas</option>' + aulas.map(a => `<option value="${a}">${a}</option>`).join('');
+  var API_BASE = '/api/v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var fAula = $('fAula'), fDia = $('fDia'), body = $('hpBody'), cnt = $('hpCount'), loader = $('hpLoader');
+
+  var state = { classroomId: '', schedules: [], classroomMap: {} };
+
+  function loadClassrooms() {
+    fetch(API_BASE + '/classrooms', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var classrooms = (res && res.data && Array.isArray(res.data)) ? res.data : [];
+        state.classroomMap = {};
+        fAula.innerHTML = '<option value="">Selecciona un aula</option>';
+        classrooms.forEach(function (c) {
+          state.classroomMap[c.id] = c.classroomName;
+          var opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.classroomName + (c.buildingName ? ' (' + c.buildingName + ')' : '');
+          fAula.appendChild(opt);
+        });
+      })
+      ['catch'](function () {
+        fAula.innerHTML = '<option value="">Error al cargar aulas</option>';
+      });
+  }
+
+  function loadSchedules(classroomId) {
+    if (!classroomId) {
+      state.schedules = [];
+      render();
+      return;
+    }
+    loader.classList.remove('hidden');
+    state.classroomId = classroomId;
+    fetch(API_BASE + '/class-schedules?classroom_id=' + classroomId, { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        state.schedules = (res && res.data && Array.isArray(res.data)) ? res.data : [];
+        loader.classList.add('hidden');
+        render();
+      })
+      ['catch'](function () {
+        state.schedules = [];
+        loader.classList.add('hidden');
+        cnt.textContent = 'Error al cargar';
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#b00000;padding:26px;">Error al cargar horario</td></tr>';
+      });
+  }
 
   function render() {
-    const qDia = fDia.value.trim().toUpperCase();
-    const rows = horarios.filter(r => (!fAula.value || r.aula === fAula.value) && (!qDia || r.dia.includes(qDia)));
-    cnt.textContent = `${rows.length} registro(s)`;
-    body.innerHTML = rows.length ? rows.map(r => `<tr><td>${r.hora}</td><td>${r.dia}</td><td>${r.materia}</td><td>${r.docente}</td><td>${r.grupo}</td><td>${r.aula}</td></tr>`).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:var(--soft-steel);padding:26px;">Sin resultados</td></tr>';
+    var qDia = fDia.value.trim().toUpperCase();
+    var rows = state.schedules.filter(function (s) {
+      return !qDia || (s.weekday && s.weekday.toUpperCase().includes(qDia));
+    });
+    cnt.textContent = rows.length + ' registro(s)';
+    if (rows.length === 0) {
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--soft-steel);padding:26px;">' +
+        (state.schedules.length > 0 ? 'Sin resultados para el filtro aplicado' : (state.classroomId ? 'No hay horarios registrados para esta aula' : 'Selecciona un aula')) +
+        '</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function (s) {
+      var hora = (s.startTime ? s.startTime.substring(0, 5) : '--') + '-' + (s.endTime ? s.endTime.substring(0, 5) : '--');
+      var aula = state.classroomMap[s.classroomId] || 'Aula #' + s.classroomId;
+      return '<tr><td>' + hora + '</td><td>' + (s.weekday || '--') + '</td><td>' + (s.subjectName || '--') + '</td><td>' + (s.teacherExternalId || '--') + '</td><td>' + (s.groupName || '--') + '</td><td>' + aula + '</td></tr>';
+    }).join('');
   }
-  fAula.addEventListener('change', render);
+
+  fAula.addEventListener('change', function () { loadSchedules(fAula.value); });
   fDia.addEventListener('input', render);
-  render();
+
+  loadClassrooms();
+  loadSchedules('');
 });
 </script>
 @endsection

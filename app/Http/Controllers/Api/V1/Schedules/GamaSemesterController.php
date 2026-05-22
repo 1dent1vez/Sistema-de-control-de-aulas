@@ -15,9 +15,9 @@
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-13 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: compactado a 100 líneas
  */
 
 declare(strict_types=1);
@@ -42,51 +42,33 @@ class GamaSemesterController extends Controller
 
     public function index(): JsonResponse
     {
-        return $this->success(
-            SemesterResource::collection($this->service->getAll()),
-            'Semesters retrieved successfully.'
-        );
+        return $this->success(SemesterResource::collection($this->service->getAll()));
     }
 
     public function current(): JsonResponse
     {
         $semester = $this->service->getCurrent();
 
-        if (! $semester) {
-            return $this->error('No active semester found.', 404);
-        }
-
-        return $this->success(
-            new SemesterResource($semester),
-            'Current semester retrieved successfully.'
-        );
+        return $semester
+            ? $this->success(new SemesterResource($semester))
+            : $this->error('No active semester found.', 404);
     }
 
     public function show(int $id): JsonResponse
     {
         $semester = $this->service->getById($id);
 
-        if (! $semester) {
-            return $this->error('Semester not found.', 404);
-        }
-
-        return $this->success(
-            new SemesterResource($semester),
-            'Semester retrieved successfully.'
-        );
+        return $semester
+            ? $this->success(new SemesterResource($semester))
+            : $this->error('Semester not found.', 404);
     }
 
     public function store(StoreSemesterRequest $request): JsonResponse
     {
         $this->authorize('create', Semester::class);
-        try {
-            $semester = $this->service->create($request->validated());
 
-            return $this->success(
-                new SemesterResource($semester),
-                'Semester created successfully.',
-                201
-            );
+        try {
+            return $this->created(new SemesterResource($this->service->create($request->validated())));
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -95,17 +77,13 @@ class GamaSemesterController extends Controller
     public function update(StoreSemesterRequest $request, int $id): JsonResponse
     {
         $this->authorize('update', Semester::class);
+
         try {
             $semester = $this->service->update($id, $request->validated());
 
-            if (! $semester) {
-                return $this->error('Semester not found.', 404);
-            }
-
-            return $this->success(
-                new SemesterResource($semester),
-                'Semester updated successfully.'
-            );
+            return $semester
+                ? $this->success(new SemesterResource($semester))
+                : $this->error('Semester not found.', 404);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -114,12 +92,9 @@ class GamaSemesterController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $this->authorize('delete', Semester::class);
-        $deleted = $this->service->delete($id);
 
-        if (! $deleted) {
-            return $this->error('Semester not found.', 404);
-        }
-
-        return $this->success(null, 'Semester deleted successfully.');
+        return $this->service->delete($id)
+            ? $this->success(null, 'Semester deleted successfully.')
+            : $this->error('Semester not found.', 404);
     }
 }

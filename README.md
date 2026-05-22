@@ -16,10 +16,11 @@ Sólo el Líder del Departamento y Desarrollador UX/UI tiene permitido hacer cam
 ---
 ## Stack Tecnológico (Web)
 
-- **Backend:** Laravel (API + Web)  
-- **Frontend:** Blade + Vue.js  
-- **Estilos:** CSS basado en Design System GAMA  
-- **Autenticación:** JWT (integración con servicios externos)  
+- **Backend:** Laravel 12 + PHP 8.3 (API RESTful)  
+- **Frontend:** Blade + Alpine.js + Vite  
+- **Estilos:** CSS basado en Design System GAMA + Tailwind 4  
+- **Autenticación:** SAM (SSO institucional) + Laravel Sanctum (tokens API)  
+- **Testing:** Pest PHP (Feature + Unit + Integration)  
 ---
 
 ## Design System
@@ -50,10 +51,10 @@ Sólo el Líder del Departamento y Desarrollador UX/UI tiene permitido hacer cam
 
 ```bash
 # Clonar repositorio
-git clone https://github.com/tu-repo/interfazbase.git
+git clone https://github.com/GAMA-Solutions/control-aulas.git
 
 # Entrar al proyecto
-cd interfazbase
+cd control-aulas
 
 # Instalar dependencias
 composer install
@@ -66,6 +67,37 @@ php artisan key:generate
 # Ejecutar migraciones
 php artisan migrate
 
-# Levantar servidor
-php artisan serve
+# Levantar servidor (desarrollo)
+composer dev
+
+## 🧪 Testing
+
+```bash
+# Ejecutar suite completa
+./vendor/bin/pest
+
+# Con coverage (requiere Xdebug/PCOV)
+./vendor/bin/pest --coverage
+```
+
+## 🗄️ Base de datos
+
+Soporta MySQL 8+ y PostgreSQL 15+. Las tablas usan prefijo `gama_` con SoftDeletes en entidades principales.
+
+| Comando | Descripción |
+|---------|-------------|
+| `php artisan migrate` | Ejecuta migraciones |
+| `php artisan migrate:fresh --seed` | Reinicia BD con seeders |
+| `php artisan db:seed --class=GamaCatalogSeeder` | Catálogos fijos |
+
+## 📚 Módulos
+
+| Módulo | Docs | Estado |
+|--------|------|--------|
+| Catálogos base | `docs/modules/01-catalogs.md` | ✅ |
+| Edificios y Aulas | `docs/modules/02-buildings.md` | ✅ |
+| Horarios | `docs/modules/03-schedules.md` | ✅ |
+| Estatus Docente | `docs/modules/04-teacher-status.md` | ✅ |
+| QR | `docs/modules/05-qr.md` | ✅ |
+| Auth + SAM | `docs/modules/06-auth.md` | ✅ |
 

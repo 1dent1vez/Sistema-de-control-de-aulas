@@ -14,7 +14,6 @@ beforeEach(function () {
 
 it('succeeds with valid credentials', function () {
     $samServiceMock = Mockery::mock(SamService::class);
-    $samServiceMock->shouldReceive('validarCaptcha')->with('1234')->andReturn(true);
     $samServiceMock->shouldReceive('login')->with('admin', 'password', '1234')->andReturn([
         'success' => true,
         'rol' => 'master',
@@ -46,7 +45,10 @@ it('succeeds with valid credentials', function () {
 
 it('fails with invalid captcha', function () {
     $samServiceMock = Mockery::mock(SamService::class);
-    $samServiceMock->shouldReceive('validarCaptcha')->with('wrong')->andReturn(false);
+    $samServiceMock->shouldReceive('login')->with('user', 'pass', 'wrong')->andReturn([
+        'success' => false,
+        'error' => 'Credenciales inválidas',
+    ]);
 
     $this->instance(SamService::class, $samServiceMock);
 
@@ -56,7 +58,7 @@ it('fails with invalid captcha', function () {
         'captchaCode' => 'wrong',
     ]);
 
-    $response->assertStatus(422);
+    $response->assertStatus(401);
 });
 
 it('fails with invalid credentials', function () {

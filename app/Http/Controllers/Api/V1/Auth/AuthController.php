@@ -2,7 +2,6 @@
 
 /**
  * @descripcion  Controlador API para autenticación SAM.
- *              Métodos: captcha, validateCaptcha, login, logout, me.
  *
  * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
@@ -16,9 +15,9 @@
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-17
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-17 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: compactación
  */
 
 declare(strict_types=1);
@@ -27,6 +26,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\ValidateCaptchaRequest;
 use App\Http\Resources\Auth\AuthResource;
 use App\Http\Resources\Auth\SamProfileResource;
 use App\Services\Auth\SamAuthService;
@@ -47,19 +47,25 @@ class AuthController extends Controller
 
     public function captcha(): Response|JsonResponse
     {
-        $png = $this->samService->obtenerCaptcha();
+        if (config('sam.mock_enabled')) {
+            $pixel = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
 
-        if ($png === null) {
+            return response($pixel, 200)->header('Content-Type', 'image/png');
+        }
+        $result = $this->samService->obtenerCaptcha();
+        if ($result['png'] === null) {
             return $this->error('Servicio SAM no disponible.', 503);
         }
 
-        return response($png, 200)->header('Content-Type', 'image/png');
+        return response($result['png'], 200)
+            ->header('Content-Type', 'image/png')
+            ->withCookie(
+                cookie($this->samService->getSessionCookieName(), $result['sessionId'], 10)
+            );
     }
 
-    public function validateCaptcha(Request $request): JsonResponse
+    public function validateCaptcha(ValidateCaptchaRequest $request): JsonResponse
     {
-        $request->validate(['captchaCode' => 'required|string']);
-
         $valido = $this->samService->validarCaptcha($request->input('captchaCode'));
 
         return $this->success(['valid' => $valido], $valido ? 'CAPTCHA válido.' : 'CAPTCHA incorrecto.', $valido ? 200 : 422);
@@ -67,21 +73,12 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $result = $this->samAuthService->orquestarLogin(
-            $request->input('username'),
-            $request->input('password'),
-            $request->input('captchaCode')
-        );
-
+        $result = $this->samAuthService->orquestarLogin($request->input('username'), $request->input('password'), $request->input('captchaCode'));
         if (! $result['success']) {
             return $this->error($result['message'], $result['statusCode']);
         }
 
-        return $this->success(
-            new AuthResource($result['data']),
-            $result['message'],
-            $result['statusCode'],
-        );
+        return $this->success(new AuthResource($result['data']), $result['message'], $result['statusCode']);
     }
 
     public function logout(Request $request): JsonResponse
@@ -93,9 +90,6 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return $this->success(
-            new SamProfileResource($request->user()),
-            'Perfil obtenido exitosamente.'
-        );
+        return $this->success(new SamProfileResource($request->user()), 'Perfil obtenido exitosamente.');
     }
 }

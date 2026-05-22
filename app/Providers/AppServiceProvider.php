@@ -40,6 +40,7 @@ use App\Policies\QrCodePolicy;
 use App\Policies\SamIdentityPolicy;
 use App\Policies\SemesterPolicy;
 use App\Policies\TeacherAbsencePolicy;
+use App\Repositories\Auth\GamaSamIdentityRepository;
 use App\Repositories\Buildings\GamaBuildingRepository;
 use App\Repositories\Buildings\GamaClassroomRepository;
 use App\Repositories\Buildings\GamaLevelRepository;
@@ -52,13 +53,17 @@ use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use App\Repositories\Contracts\InstitutionRepositoryInterface;
 use App\Repositories\Contracts\LevelRepositoryInterface;
 use App\Repositories\Contracts\QrCodeRepositoryInterface;
+use App\Repositories\Contracts\SamIdentityRepositoryInterface;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
 use App\Repositories\Contracts\TeacherAbsenceRepositoryInterface;
 use App\Repositories\Qr\GamaQrCodeRepository;
 use App\Repositories\Schedules\GamaClassScheduleRepository;
 use App\Repositories\Schedules\GamaSemesterRepository;
 use App\Repositories\TeacherStatus\GamaTeacherAbsenceRepository;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -74,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ClassScheduleRepositoryInterface::class, GamaClassScheduleRepository::class);
         $this->app->bind(TeacherAbsenceRepositoryInterface::class, GamaTeacherAbsenceRepository::class);
         $this->app->bind(QrCodeRepositoryInterface::class, GamaQrCodeRepository::class);
+        $this->app->bind(SamIdentityRepositoryInterface::class, GamaSamIdentityRepository::class);
     }
 
     public function boot(): void
@@ -86,5 +92,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(TeacherAbsence::class, TeacherAbsencePolicy::class);
         Gate::policy(QrCode::class, QrCodePolicy::class);
         Gate::policy(SamIdentity::class, SamIdentityPolicy::class);
+
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute((int) env('API_RATE_LIMIT', 60))
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute((int) env('AUTH_RATE_LIMIT', 10))
+                ->by($request->ip());
+        });
     }
 }

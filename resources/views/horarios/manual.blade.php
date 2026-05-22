@@ -278,11 +278,10 @@
   <div class="toast-container" id="toastContainer"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
 function pant05HorarioManual() {
   return {
-    /* â”€â”€ Catálogos cargados desde API â”€â”€ */
+    /* Catálogos cargados desde API */
     diasCatalogo: [
       { key: 'monday',    label: 'Lun' },
       { key: 'tuesday',   label: 'Mar' },
@@ -294,8 +293,9 @@ function pant05HorarioManual() {
     aulas: [],
     semesterActivo: null,
     horariosActivos: [],
+    authToken: localStorage.getItem('auth_token'),
 
-    /* â”€â”€ Formulario â”€â”€ */
+    /* Formulario */
     form: {
       edificioId: '', aulaId: '', docenteExterno: '',
       subjectName: '', grupo: '', dias: [], horaInicio: '', horaFin: ''
@@ -312,6 +312,10 @@ function pant05HorarioManual() {
 
     /* â”€â”€ Inicialización â”€â”€ */
     async init() {
+      if (!this.authToken) {
+        window.location.href = '/';
+        return;
+      }
       await this.loadCatalogos();
     },
 
@@ -325,10 +329,27 @@ function pant05HorarioManual() {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-CSRF-TOKEN': this.getCsrf(),
+          'Authorization': `Bearer ${this.authToken}`,
           ...(opts.headers ?? {}),
         },
         ...opts,
       });
+      if (res.status === 401) {
+        localStorage.clear();
+        window.location.href = '/';
+        return;
+      }
+      const json = await res.json();
+      if (!res.ok) throw { status: res.status, json };
+      return json;
+    },
+        ...opts,
+      });
+      if (res.status === 401) {
+        localStorage.clear();
+        window.location.href = '/';
+        return;
+      }
       const json = await res.json();
       if (!res.ok) throw { status: res.status, json };
       return json;
@@ -477,7 +498,7 @@ function pant05HorarioManual() {
               classroom_id:         Number(this.form.aulaId),
               teacher_external_id:  this.form.docenteExterno.trim(),
               subject_name:         this.form.subjectName.trim(),
-              group_label:          this.form.grupo.trim(),
+              group_name:          this.form.grupo.trim(),
               weekday:              dia,
               start_time:           this.form.horaInicio,
               end_time:             this.form.horaFin,

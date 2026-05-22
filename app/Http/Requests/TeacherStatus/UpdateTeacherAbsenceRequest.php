@@ -44,4 +44,18 @@ class UpdateTeacherAbsenceRequest extends FormRequest
             'is_confirmed' => ['sometimes', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'teacher_external_id.max' => 'El identificador del docente no debe exceder :max caracteres.',
+            'absence_type_id.exists' => 'El tipo de ausencia seleccionado no existe.',
+            'start_date.date' => 'La fecha de inicio no es válida.',
+            'start_date.before_or_equal' => 'La fecha de inicio debe ser igual o anterior a la fecha de fin.',
+            'end_date.date' => 'La fecha de fin no es válida.',
+            'end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
+            'observations.max' => 'Las observaciones no deben exceder :max caracteres.',
+            'is_confirmed.boolean' => 'La confirmación debe ser verdadero o falso.',
+        ];
+    }
 }

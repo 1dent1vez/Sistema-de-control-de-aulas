@@ -1228,10 +1228,10 @@
 
         <!-- User Info -->
         <div class="sidebar-user">
-          <div class="user-avatar">US</div>
+          <div class="user-avatar" id="sidebarAvatar">US</div>
           <div class="user-info">
-            <span class="user-name">Usuario name</span>
-            <span class="user-role">Administrador</span>
+            <span class="user-name" id="sidebarName">Cargando...</span>
+            <span class="user-role" id="sidebarRole">--</span>
           </div>
         </div>
 
@@ -1312,8 +1312,9 @@
             <span class="nav-text">Mi Perfil</span>
           </a>
           <a
-            href="{{ route('login') }}"
+            href="#"
             class="nav-item logout"
+            id="logoutBtn"
             data-tooltip="Cerrar sesión"
           >
             <i class="fas fa-sign-out-alt nav-icon"></i>
@@ -1339,4 +1340,30 @@
           sidebarOverlay.classList.remove("active");
           mobileMenuToggle.classList.remove("active");
         });
+
+        // Logout handler
+        document.getElementById("logoutBtn").addEventListener("click", function(e) {
+          e.preventDefault();
+          var btn = this;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin nav-icon"></i><span class="nav-text">Cerrando sesión...</span>';
+          apiFetch('/api/v1/auth/logout', { method: 'POST' })
+            .then(function() { clearSession(); window.location.href = '/'; })
+            ['catch'](function() { clearSession(); window.location.href = '/'; });
+        });
+
+        // Load real user info
+        apiFetch('/api/v1/auth/me')
+          .then(function(res) {
+            if (res && res.data) {
+              var u = res.data;
+              document.getElementById('sidebarName').textContent = u.fullName || u.externalId || 'Usuario';
+              document.getElementById('sidebarRole').textContent = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : '--';
+              var initials = (u.fullName || u.externalId || 'U').substring(0, 2).toUpperCase();
+              document.getElementById('sidebarAvatar').textContent = initials;
+            }
+          })
+          ['catch'](function() {
+            document.getElementById('sidebarName').textContent = 'Sesión';
+            document.getElementById('sidebarRole').textContent = '--';
+          });
       </script>

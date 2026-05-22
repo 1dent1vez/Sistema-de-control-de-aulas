@@ -168,17 +168,50 @@
 document.addEventListener('DOMContentLoaded', function () {
   const $ = (id) => document.getElementById(id);
 
-  /* -- CSRF -- */
+  /* Auth guard */
+  const authToken = localStorage.getItem('auth_token');
+  if (!authToken) {
+    window.location.href = '/';
+    return;
+  }
+
+  /* CSRF */
   function getCsrf() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
   }
 
-  /* -- API helper generico -- */
+  /* API helper */
   async function apiFetch(url, opts = {}) {
     const res = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${authToken}`, 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
       ...opts,
     });
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = '/';
+      return;
+    }
+    const json = await res.json();
+    if (!res.ok) throw { status: res.status, json };
+    return json;
+  }
+
+  /* CSRF */
+  function getCsrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+  }
+
+  /* API helper */
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${authToken}`, 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
+      ...opts,
+    });
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = '/';
+      return;
+    }
     const json = await res.json();
     if (!res.ok) throw { status: res.status, json };
     return json;
@@ -281,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
       /* No incluir Content-Type: el navegador agrega el boundary correcto */
       const res = await fetch('/api/v1/class-schedules/import', {
         method: 'POST',
-        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${authToken}`, 'X-CSRF-TOKEN': getCsrf() },
         body: formData,
       });
       const json = await res.json();

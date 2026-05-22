@@ -15,9 +15,9 @@
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-14
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-14 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: compactación
  */
 
 declare(strict_types=1);
@@ -46,52 +46,29 @@ class GamaTeacherAbsenceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', TeacherAbsence::class);
-        $filters = $request->only(['teacher_external_id', 'start_date', 'end_date']);
 
-        return $this->success(
-            TeacherAbsenceResource::collection($this->service->getAll($filters)),
-            'Teacher absences retrieved successfully.'
-        );
+        return $this->success(TeacherAbsenceResource::collection($this->service->getAll($request->only(['teacher_external_id', 'start_date', 'end_date']))));
     }
 
     public function show(int $id): JsonResponse
     {
         $absence = $this->service->getById($id);
-
         if (! $absence) {
             return $this->error('Teacher absence not found.', 404);
         }
-
         $this->authorize('view', $absence);
 
-        return $this->success(
-            new TeacherAbsenceResource($absence),
-            'Teacher absence retrieved successfully.'
-        );
+        return $this->success(new TeacherAbsenceResource($absence));
     }
 
     public function store(StoreTeacherAbsenceRequest $request): JsonResponse
     {
         $this->authorize('create', TeacherAbsence::class);
-        try {
-            $data = array_merge($request->validated(), [
-                'teacher_external_id' => $request->user()->external_id,
-            ]);
-            $absence = $this->service->store($data);
 
-            return $this->success(
-                new TeacherAbsenceResource($absence),
-                'Teacher absence created successfully.',
-                201
-            );
+        try {
+            return $this->created(new TeacherAbsenceResource($this->service->store(array_merge($request->validated(), ['teacher_external_id' => $request->user()->external_id]))));
         } catch (OverlapRequiredException $e) {
-            return response()->json([
-                'success' => false,
-                'statusCode' => 422,
-                'message' => $e->getMessage(),
-                'data' => null,
-                'errors' => ['overlap' => $e->getOverlapDetails()],
-            ], 422);
+            return $this->error($e->getMessage(), 422, ['overlap' => $e->getOverlapDetails()]);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -99,33 +76,16 @@ class GamaTeacherAbsenceController extends Controller
 
     public function update(UpdateTeacherAbsenceRequest $request, int $id): JsonResponse
     {
-        $absenceModel = $this->service->getById($id);
-        if (! $absenceModel) {
+        $absence = $this->service->getById($id);
+        if (! $absence) {
             return $this->error('Teacher absence not found.', 404);
         }
-        $this->authorize('update', $absenceModel);
+        $this->authorize('update', $absence);
+
         try {
-            $data = array_merge($request->validated(), [
-                'teacher_external_id' => $absenceModel->teacher_external_id,
-            ]);
-            $absence = $this->service->update($id, $data);
-
-            if (! $absence) {
-                return $this->error('Teacher absence not found.', 404);
-            }
-
-            return $this->success(
-                new TeacherAbsenceResource($absence),
-                'Teacher absence updated successfully.'
-            );
+            return $this->success(new TeacherAbsenceResource($this->service->update($id, array_merge($request->validated(), ['teacher_external_id' => $absence->teacher_external_id]))), 'Teacher absence updated successfully.');
         } catch (OverlapRequiredException $e) {
-            return response()->json([
-                'success' => false,
-                'statusCode' => 422,
-                'message' => $e->getMessage(),
-                'data' => null,
-                'errors' => ['overlap' => $e->getOverlapDetails()],
-            ], 422);
+            return $this->error($e->getMessage(), 422, ['overlap' => $e->getOverlapDetails()]);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -138,32 +98,8 @@ class GamaTeacherAbsenceController extends Controller
             return $this->error('Teacher absence not found.', 404);
         }
         $this->authorize('delete', $absence);
-        $deleted = $this->service->delete($id);
-
-        if (! $deleted) {
-            return $this->error('Teacher absence not found.', 404);
-        }
+        $this->service->delete($id);
 
         return $this->success(null, 'Teacher absence deleted successfully.');
-    }
-
-    public function checkOverlap(Request $request): JsonResponse
-    {
-        $request->validate([
-            'teacher_external_id' => 'required|string|max:50',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
-
-        $overlaps = $this->service->checkOverlap(
-            $request->input('teacher_external_id'),
-            $request->input('start_date'),
-            $request->input('end_date'),
-        );
-
-        return $this->success([
-            'hasOverlap' => $overlaps->isNotEmpty(),
-            'overlaps' => TeacherAbsenceResource::collection($overlaps),
-        ], 'Overlap check completed.');
     }
 }

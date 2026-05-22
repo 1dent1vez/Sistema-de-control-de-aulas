@@ -29,6 +29,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class OverlapRequiredException extends \RuntimeException
 {
+    /**
+     * @param  Collection<int, TeacherAbsence>  $overlaps  Ausencias con las que se traslapa
+     */
     public function __construct(
         string $message,
         private readonly Collection $overlaps,
@@ -36,11 +39,21 @@ class OverlapRequiredException extends \RuntimeException
         parent::__construct($message);
     }
 
+    /**
+     * Obtiene la colección de ausencias traslapadas.
+     *
+     * @return Collection<int, TeacherAbsence>
+     */
     public function getOverlaps(): Collection
     {
         return $this->overlaps;
     }
 
+    /**
+     * Obtiene los detalles de traslape como array de strings legibles.
+     *
+     * @return array<int, string>
+     */
     public function getOverlapDetails(): array
     {
         return $this->overlaps->map(function (TeacherAbsence $absence): string {

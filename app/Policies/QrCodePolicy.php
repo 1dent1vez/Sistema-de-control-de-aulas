@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @descripcion  Policy para autorización de operaciones sobre códigos QR (admin-only para writes).
+ * @descripcion  Policy para autorización de operaciones sobre códigos QR.
  *
  * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
@@ -13,11 +13,11 @@
  *
  * @version      1.0.0
  *
- * @creado       2026-05-17
+ * @creado       2026-05-14
  *
- * @modificado   2026-05-17
+ * @modificado   2026-05-19
  *
- * @cambios      2026-05-17 - Creación inicial de la policy
+ * @cambios      2026-05-19 - Estandarización de prólogo según formato GAMA
  */
 
 declare(strict_types=1);

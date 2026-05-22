@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace App\Services\Buildings;
 
 use App\Models\Building;
+use App\Models\Level;
 use App\Repositories\Contracts\BuildingRepositoryInterface;
 use App\Repositories\Contracts\LevelRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -37,16 +38,29 @@ class GamaBuildingService
         private readonly LevelRepositoryInterface $levelRepository,
     ) {}
 
+    /**
+     * Obtiene todos los edificios activos.
+     *
+     * @return Collection<int, Building>
+     */
     public function getAll(): Collection
     {
         return $this->buildingRepository->all();
     }
 
+    /**
+     * Busca un edificio por su ID.
+     */
     public function getById(int $id): ?Building
     {
         return $this->buildingRepository->findById($id);
     }
 
+    /**
+     * Crea un edificio y sus niveles asociados en una transacción.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function store(array $data): Building
     {
         return DB::transaction(function () use ($data): Building {
@@ -69,6 +83,11 @@ class GamaBuildingService
         });
     }
 
+    /**
+     * Actualiza un edificio existente.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function update(int $id, array $data): ?Building
     {
         $building = $this->buildingRepository->findById($id);
@@ -80,6 +99,9 @@ class GamaBuildingService
         return $this->buildingRepository->update($building, $data);
     }
 
+    /**
+     * Elimina (soft delete) un edificio.
+     */
     public function delete(int $id): bool
     {
         $building = $this->buildingRepository->findById($id);
@@ -91,6 +113,11 @@ class GamaBuildingService
         return $this->buildingRepository->delete($building);
     }
 
+    /**
+     * Obtiene los niveles de un edificio.
+     *
+     * @return Collection<int, Level>
+     */
     public function getLevels(int $buildingId): Collection
     {
         return $this->levelRepository->findByBuildingId($buildingId);

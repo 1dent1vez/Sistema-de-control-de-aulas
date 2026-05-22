@@ -34,21 +34,43 @@ class GamaTeacherAbsenceService
         private readonly TeacherAbsenceRepositoryInterface $repository
     ) {}
 
+    /**
+     * Obtiene todas las ausencias, opcionalmente filtradas.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, TeacherAbsence>
+     */
     public function getAll(array $filters = []): Collection
     {
         return $this->repository->all($filters);
     }
 
+    /**
+     * Busca una ausencia por su ID.
+     */
     public function getById(int $id): ?TeacherAbsence
     {
         return $this->repository->findById($id);
     }
 
+    /**
+     * Verifica si hay traslapes de ausencias para un docente en un rango.
+     *
+     * @return Collection<int, TeacherAbsence>
+     */
     public function checkOverlap(string $teacherExternalId, string $startDate, string $endDate, ?int $excludeId = null): Collection
     {
         return $this->repository->findOverlappingAbsences($teacherExternalId, $startDate, $endDate, $excludeId);
     }
 
+    /**
+     * Registra una nueva ausencia con validación de traslape.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws OverlapRequiredException Si hay traslape y no está confirmado
+     * @throws \RuntimeException Si la ausencia está en el pasado
+     */
     public function store(array $data): TeacherAbsence
     {
         $startDate = $data['start_date'];
@@ -75,6 +97,14 @@ class GamaTeacherAbsenceService
         return $this->repository->create($data);
     }
 
+    /**
+     * Actualiza una ausencia existente con validación de traslape.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws OverlapRequiredException Si hay traslape y no está confirmado
+     * @throws \RuntimeException Si la ausencia ya inició
+     */
     public function update(int $id, array $data): ?TeacherAbsence
     {
         $absence = $this->repository->findById($id);
@@ -104,6 +134,9 @@ class GamaTeacherAbsenceService
         return $this->repository->update($absence, $data);
     }
 
+    /**
+     * Elimina (soft delete) una ausencia.
+     */
     public function delete(int $id): bool
     {
         $absence = $this->repository->findById($id);

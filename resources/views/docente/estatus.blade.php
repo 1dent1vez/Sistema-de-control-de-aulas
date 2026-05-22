@@ -3,14 +3,15 @@
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
  *
- * @descripcion    Estatus Docente - Proyecto B: Sistema de Control de Aulas
- * @autor          Rubén Alejandro Nolasco Ruiz
+ * @descripcion    Estatus Docente - Registro de Ausencias conectado a API REST
+ * @autor          Rubén Alejandro Nolasco Ruiz, Equipo GAMA
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
  * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.0.0
+ * @version        1.1.0
  * @creado         07/05/2026
- * @modificado     07/05/2026
+ * @modificado     19/05/2026
+ * @cambios        19/05/2026 - Conexión a API REST, eliminación de datos mock
  */
 --}}
 
@@ -41,6 +42,8 @@
   .cal-day.disabled { opacity: 0.45; cursor: not-allowed; background: #f3f5f7; }
   .cal-day.start, .cal-day.end { background: var(--deep-blue); color: #fff; border-color: var(--deep-blue); font-weight: 700; }
   .cal-day.in-range { background: rgba(19,68,116,0.1); border-color: rgba(19,68,116,0.2); }
+  .cal-day.absence { background: rgba(242,139,44,0.2); border-color: var(--corp-orange); color: var(--corp-orange); font-weight: 700; }
+  .cal-day.absence:hover { background: rgba(242,139,44,0.3); }
   .field { margin-bottom: 12px; }
   .field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--midnight); }
   .field select, .field input, .field textarea {
@@ -58,8 +61,7 @@
     display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px;
     background: rgba(242,139,44,0.16); color: #F28B2C; font-weight: 700; font-size: 11px;
   }
-  .note { margin-top: 10px; padding: 9px 11px; border-radius: var(--radius-md); font-size: 13px; display: none; }
-  .note.show { display: block; }
+  .note { margin-top: 10px; padding: 9px 11px; border-radius: var(--radius-md); font-size: 13px; }
   .note.info { background: rgba(19,68,116,.08); border:1px solid rgba(19,68,116,.2); color: var(--deep-blue); }
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(19,68,116,0.4); display: none; align-items: center; justify-content: center; z-index: 2000;
@@ -71,78 +73,99 @@
   .modal-h { padding: 14px 16px; border-bottom: 1px solid var(--mist-blue); font-weight: 700; color: var(--midnight); }
   .modal-b { padding: 16px; font-size: 14px; color: var(--dark-graphite); }
   .modal-f { padding: 12px 16px 16px; display: flex; justify-content: flex-end; gap: 8px; }
+  .history-list { display: grid; gap: 8px; max-height: 300px; overflow-y: auto; margin-top: 10px; }
+  .history-item { border: 1px solid var(--mist-blue); border-radius: var(--radius-md); padding: 10px; background: #fff; font-size: 13px; line-height: 1.5; }
+  .history-item .h-date { font-weight: 600; color: var(--midnight); }
+  .history-item .h-type { color: var(--corp-orange); font-weight: 600; }
+  .history-empty { text-align: center; padding: 24px; color: var(--soft-steel); font-size: 14px; }
+  .spinner {
+    display: inline-block; width: 24px; height: 24px; border: 3px solid var(--mist-blue);
+    border-top-color: var(--deep-blue); border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--soft-steel); }
+  .hidden { display: none !important; }
   @media (max-width: 1120px) { .doc-main { margin-left: 0; } .doc-grid { grid-template-columns: 1fr; } }
 </style>
 
 <div class="doc-main">
   <div class="doc-head">
     <h1 class="doc-title">Estatus Docente - Registro de Ausencias</h1>
-    <p class="doc-sub">Pantalla exclusiva para rol Docente (RN-01). Selecciona rango y confirma clases afectadas.</p>
+    <p class="doc-sub" id="docSub">Cargando datos del docente...</p>
   </div>
 
-  <div class="doc-grid">
-    <section class="doc-card">
-      <div class="doc-card-h">Calendario mensual (selección visual de rango)</div>
-      <div class="doc-card-b">
-        <div class="cal-header">
-          <button class="btn btn-outline btn-sm" id="btnPrevMonth"><i class="fas fa-chevron-left"></i></button>
-          <span class="cal-month" id="calMonthLabel"></span>
-          <button class="btn btn-outline btn-sm" id="btnNextMonth"><i class="fas fa-chevron-right"></i></button>
-        </div>
-        <div class="cal-grid" id="calWeekDays"></div>
-        <div class="cal-grid" id="calDays"></div>
-      </div>
-    </section>
+  <div id="mainLoader" class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Cargando información...</span>
+  </div>
 
-    <section class="doc-card">
-      <div class="doc-card-h">Formulario + Clases afectadas</div>
-      <div class="doc-card-b">
-        <div class="field">
-          <label>Tipo de ausencia *</label>
-          <select id="fTipo">
-            <option value="">Selecciona...</option>
-            <option value="Comision">Comisión</option>
-            <option value="Junta">Junta</option>
-            <option value="Incapacidad">Incapacidad</option>
-            <option value="PermisoEconomico">Permiso Económico</option>
-            <option value="Otro">Otro</option>
-          </select>
-          <div class="err" id="eTipo"></div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field">
-            <label>Fecha inicio *</label>
-            <input id="fInicio" type="date">
-            <div class="err" id="eInicio"></div>
+  <div id="mainContent" class="hidden">
+    <div class="doc-grid">
+      <section class="doc-card">
+        <div class="doc-card-h">Calendario mensual</div>
+        <div class="doc-card-b">
+          <div class="cal-header">
+            <button class="btn btn-outline btn-sm" id="btnPrevMonth"><i class="fas fa-chevron-left"></i></button>
+            <span class="cal-month" id="calMonthLabel"></span>
+            <button class="btn btn-outline btn-sm" id="btnNextMonth"><i class="fas fa-chevron-right"></i></button>
           </div>
+          <div class="cal-grid" id="calWeekDays"></div>
+          <div class="cal-grid" id="calDays"></div>
+        </div>
+      </section>
+
+      <section class="doc-card">
+        <div class="doc-card-h">Formulario + Clases afectadas</div>
+        <div class="doc-card-b">
           <div class="field">
-            <label>Fecha fin *</label>
-            <input id="fFin" type="date">
-            <div class="err" id="eFin"></div>
+            <label>Tipo de ausencia *</label>
+            <select id="fTipo">
+              <option value="">Cargando...</option>
+            </select>
+            <div class="err" id="eTipo"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field">
+              <label>Fecha inicio *</label>
+              <input id="fInicio" type="date">
+              <div class="err" id="eInicio"></div>
+            </div>
+            <div class="field">
+              <label>Fecha fin *</label>
+              <input id="fFin" type="date">
+              <div class="err" id="eFin"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Notas (opcional)</label>
+            <textarea id="fNotas" placeholder="Detalle de la ausencia..."></textarea>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 8px;">
+            <strong style="font-size:13px;color:var(--midnight);">Clases afectadas</strong>
+            <span id="affectedCount" style="font-size:12px;color:var(--soft-steel);">0 clases</span>
+          </div>
+          <div class="class-list" id="affectedList"></div>
+
+          <div style="margin-top:12px;">
+            <button id="btnRegistrar" class="btn btn-primary btn-md" style="width:100%;">
+              <i class="fas fa-save"></i><span>Registrar Ausencia</span>
+            </button>
           </div>
         </div>
+      </section>
+    </div>
 
-        <div class="field">
-          <label>Notas (opcional)</label>
-          <textarea id="fNotas" placeholder="Detalle de la ausencia..."></textarea>
+    <section class="doc-card" style="margin-top:14px;">
+      <div class="doc-card-h">Historial de ausencias</div>
+      <div class="doc-card-b">
+        <div id="historyLoader" class="loading-overlay hidden">
+          <div class="spinner"></div>
+          <span>Cargando historial...</span>
         </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 8px;">
-          <strong style="font-size:13px;color:var(--midnight);">Clases afectadas</strong>
-          <span id="affectedCount" style="font-size:12px;color:var(--soft-steel);">0 clases</span>
-        </div>
-        <div class="class-list" id="affectedList"></div>
-
-        <div class="note info show">
-          Al registrarse, RF-11 mostrará badge de ausencia <span class="badge-ausencia">#F28B2C</span> en consultas de aula/docente durante el período activo.
-        </div>
-
-        <div style="margin-top:12px;">
-          <button id="btnRegistrar" class="btn btn-primary btn-md" style="width:100%;">
-            <i class="fas fa-save"></i><span>Registrar Ausencia</span>
-          </button>
-        </div>
+        <div class="history-list" id="historyList"></div>
       </div>
     </section>
   </div>
@@ -156,89 +179,166 @@
     <div class="modal-b">
       <p style="margin-bottom:10px;">El rango seleccionado se traslapa con una ausencia existente:</p>
       <div id="conflictDetail" style="background:var(--ice-blue);border:1px solid var(--mist-blue);border-radius:8px;padding:10px;"></div>
-      <p style="margin-top:10px;">¿Deseas sobrescribir el registro existente?</p>
+      <p style="margin-top:10px;">¿Deseas registrar de todas formas?</p>
     </div>
     <div class="modal-f">
       <button class="btn btn-outline btn-sm" id="btnCancelConflict">Cancelar</button>
-      <button class="btn btn-primary btn-sm" id="btnConfirmConflict">Confirmar sobrescritura</button>
+      <button class="btn btn-primary btn-sm" id="btnConfirmConflict">Confirmar registro</button>
     </div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const CURRENT_USER = { id: 77, nombre: 'Mtra. Laura Mendez', rol: 'Docente' };
-  const DIAS = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
-  const DOCENTE_CLASSES = [
-    { id: 1, materia: 'Matematicas I', aula: 'Aula 101', dia: 'LUN', hora: '08:00-09:30' },
-    { id: 2, materia: 'Matematicas I', aula: 'Aula 101', dia: 'MIE', hora: '08:00-09:30' },
-    { id: 3, materia: 'Programacion Web', aula: 'Aula 201', dia: 'VIE', hora: '10:00-11:30' },
-    { id: 4, materia: 'Algebra', aula: 'Aula 102', dia: 'MAR', hora: '11:30-13:00' }
-  ];
-  const ausencias = [
-    { id: 1, docente_id: 77, tipo: 'Junta', inicio: plusDays(2), fin: plusDays(3), notas: 'Reunion institucional' }
-  ];
+  var TOKEN = localStorage.getItem('auth_token');
+  if (!TOKEN) { window.location.href = '/'; return; }
 
-  const $ = (id) => document.getElementById(id);
-  const today = new Date(); today.setHours(0,0,0,0);
-  let viewYear = today.getFullYear();
-  let viewMonth = today.getMonth();
-  let selectedStart = null;
-  let selectedEnd = null;
-  let pendingOverwrite = null;
+  var DIAS = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+  var DIAS_EN = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 
-  if (CURRENT_USER.rol !== 'Docente') {
-    $('btnRegistrar').disabled = true;
-    showToast('Acceso restringido', 'Esta pantalla es exclusiva del rol Docente.');
+  var absenceTypes = [];
+  var schedules = [];
+  var absences = [];
+
+  var today = new Date(); today.setHours(0,0,0,0);
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth();
+  var selectedStart = null;
+  var selectedEnd = null;
+  var pendingConfirmed = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function apiHeaders() {
+    return {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + TOKEN
+    };
   }
 
-  const fInicio = $('fInicio');
-  const fFin = $('fFin');
+  function apiGet(url) {
+    return fetch(url, { method: 'GET', headers: apiHeaders() }).then(function (r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
+    });
+  }
+
+  function apiPost(url, body) {
+    return fetch(url, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
+    });
+  }
+
+  function init() {
+    $('calWeekDays').innerHTML = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'].map(function (w) { return '<div class="cal-wd">' + w + '</div>'; }).join('');
+
+    Promise.all([
+      apiGet('/api/v1/auth/me'),
+      apiGet('/api/v1/absence-types'),
+    ]).then(function (results) {
+      var meResp = results[0];
+      var typesResp = results[1];
+      var me = meResp.data;
+      absenceTypes = typesResp.data || [];
+
+      if (me.role !== 'teacher' && me.role !== 'admin') {
+        $('btnRegistrar').disabled = true;
+        showToast('Acceso restringido', 'Esta pantalla es exclusiva del rol Docente.');
+      }
+
+      $('docSub').textContent = 'Docente: ' + (me.fullName || me.email) + ' (' + (me.externalId || '') + ')';
+
+      populateTypeDropdown();
+
+      var extId = me.externalId || '';
+      return apiGet('/api/v1/class-schedules?teacher_external_id=' + encodeURIComponent(extId));
+    }).then(function (schedResp) {
+      schedules = schedResp.data || [];
+      return apiGet('/api/v1/teacher-absences');
+    }).then(function (absResp) {
+      absences = absResp.data || [];
+      $('mainLoader').classList.add('hidden');
+      $('mainContent').classList.remove('hidden');
+      renderCalendar();
+      renderHistory();
+      refreshAffectedClasses();
+    })['catch'](function (err) {
+      if (err && err.message) {
+        showToast('Error', err.message);
+      } else {
+        showToast('Error', 'No se pudieron cargar los datos.');
+      }
+      $('mainLoader').classList.add('hidden');
+      $('mainContent').classList.remove('hidden');
+    });
+  }
+
+  function populateTypeDropdown() {
+    var sel = $('fTipo');
+    sel.innerHTML = '<option value="">Selecciona...</option>';
+    (absenceTypes || []).forEach(function (t) {
+      var opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  var fInicio = $('fInicio');
+  var fFin = $('fFin');
   fInicio.min = toIso(today);
   fFin.min = toIso(today);
 
-  $('calWeekDays').innerHTML = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'].map(w => `<div class="cal-wd">${w}</div>`).join('');
-
-  function plusDays(offset) {
-    const d = new Date();
-    d.setHours(0,0,0,0);
-    d.setDate(d.getDate() + offset);
-    return toIso(d);
+  function toIso(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
   }
-  function toIso(d) { return d.toISOString().slice(0,10); }
-  function parseIso(str) { const d = new Date(str + 'T00:00:00'); d.setHours(0,0,0,0); return d; }
-  function sameDate(a,b){ return a && b && a.getTime() === b.getTime(); }
-  function inRange(d, a, b){ return a && b && d >= a && d <= b; }
+
+  function parseIso(str) { var d = new Date(str + 'T00:00:00'); d.setHours(0,0,0,0); return d; }
+  function sameDate(a, b) { return a && b && a.getTime() === b.getTime(); }
+  function inRange(d, a, b) { return a && b && d >= a && d <= b; }
+
+  function hasAbsenceOn(dateIso) {
+    return (absences || []).some(function (a) {
+      return a.startDate <= dateIso && a.endDate >= dateIso;
+    });
+  }
 
   function renderCalendar() {
-    const monthDate = new Date(viewYear, viewMonth, 1);
-    const monthName = monthDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+    var monthDate = new Date(viewYear, viewMonth, 1);
+    var monthName = monthDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
     $('calMonthLabel').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-    const firstDay = new Date(viewYear, viewMonth, 1);
-    const lastDay = new Date(viewYear, viewMonth + 1, 0);
-    const totalCells = Math.ceil((firstDay.getDay() + lastDay.getDate()) / 7) * 7;
-    let html = '';
-    for (let i = 0; i < totalCells; i += 1) {
-      const dayNum = i - firstDay.getDay() + 1;
-      const d = new Date(viewYear, viewMonth, dayNum);
-      const isCurrent = d.getMonth() === viewMonth;
-      const disabled = d < today;
-      const cls = [
+    var firstDay = new Date(viewYear, viewMonth, 1);
+    var lastDay = new Date(viewYear, viewMonth + 1, 0);
+    var totalCells = Math.ceil((firstDay.getDay() + lastDay.getDate()) / 7) * 7;
+    var html = '';
+    for (var i = 0; i < totalCells; i += 1) {
+      var dayNum = i - firstDay.getDay() + 1;
+      var d = new Date(viewYear, viewMonth, dayNum);
+      var isCurrent = d.getMonth() === viewMonth;
+      var disabled = d < today;
+      var dateIso = toIso(d);
+      var cls = [
         'cal-day',
         !isCurrent ? 'muted' : '',
         disabled ? 'disabled' : '',
         sameDate(d, selectedStart) ? 'start' : '',
         sameDate(d, selectedEnd) ? 'end' : '',
-        inRange(d, selectedStart, selectedEnd) && !sameDate(d, selectedStart) && !sameDate(d, selectedEnd) ? 'in-range' : ''
+        inRange(d, selectedStart, selectedEnd) && !sameDate(d, selectedStart) && !sameDate(d, selectedEnd) ? 'in-range' : '',
+        isCurrent && !disabled && hasAbsenceOn(dateIso) ? 'absence' : ''
       ].filter(Boolean).join(' ');
-      html += `<button type="button" class="${cls}" data-date="${toIso(d)}" ${disabled ? 'disabled' : ''}>${d.getDate()}</button>`;
+      html += '<button type="button" class="' + cls + '" data-date="' + dateIso + '" ' + (disabled ? 'disabled' : '') + '>' + d.getDate() + '</button>';
     }
     $('calDays').innerHTML = html;
   }
 
   function updateRangeFromCalendar(dateIso) {
-    const d = parseIso(dateIso);
+    var d = parseIso(dateIso);
     if (!selectedStart || (selectedStart && selectedEnd)) {
       selectedStart = d; selectedEnd = null;
     } else if (d < selectedStart) {
@@ -264,40 +364,45 @@ document.addEventListener('DOMContentLoaded', function () {
     return dateObj >= selectedStart && dateObj <= selectedEnd;
   }
 
+  function getWeekdayNameAbbr(dateObj) {
+    return DIAS[dateObj.getDay()];
+  }
+
+  function getApiWeekdayName(dateObj) {
+    return DIAS_EN[dateObj.getDay()];
+  }
+
   function refreshAffectedClasses() {
-    const list = $('affectedList');
+    var list = $('affectedList');
     if (!selectedStart || !selectedEnd) {
       list.innerHTML = '<div class="class-item">Define fecha inicio y fin para visualizar clases afectadas.</div>';
       $('affectedCount').textContent = '0 clases';
       return;
     }
-    const affected = [];
-    for (let d = new Date(selectedStart); d <= selectedEnd; d.setDate(d.getDate() + 1)) {
-      const key = DIAS[d.getDay()];
-      DOCENTE_CLASSES.filter(c => c.dia === key).forEach(c => {
-        affected.push({ ...c, fecha: toIso(new Date(d)) });
+    var affected = [];
+    for (var d = new Date(selectedStart); d <= selectedEnd; d.setDate(d.getDate() + 1)) {
+      var apiDay = getApiWeekdayName(d);
+      (schedules || []).forEach(function (c) {
+        if (c.weekday === apiDay) {
+          affected.push({ materia: c.subjectName || 'N/A', aula: 'Aula #' + (c.classroomId || ''), dia: getWeekdayNameAbbr(d), hora: (c.startTime || '') + '-' + (c.endTime || ''), fecha: toIso(new Date(d)) });
+        }
       });
     }
-    $('affectedCount').textContent = `${affected.length} clase(s)`;
+    $('affectedCount').textContent = affected.length + ' clase(s)';
     if (!affected.length) {
       list.innerHTML = '<div class="class-item">No hay clases programadas del docente en ese período.</div>';
       return;
     }
-    list.innerHTML = affected.map(a => `
-      <div class="class-item">
-        <b>${a.materia}</b><br>
-        ${a.aula} · ${a.dia} · ${a.hora}<br>
-        Fecha: ${a.fecha}
-      </div>`).join('');
+    list.innerHTML = affected.map(function (a) {
+      return '<div class="class-item"><b>' + a.materia + '</b><br>' + a.aula + ' \u00B7 ' + a.dia + ' \u00B7 ' + a.hora + '<br>Fecha: ' + a.fecha + '</div>';
+    }).join('');
   }
 
-  function setErr(id, msg) { const e = $(id); e.textContent = msg; e.classList.add('show'); }
-  function clearErrs() { ['eTipo','eInicio','eFin'].forEach(id => { $(id).classList.remove('show'); $(id).textContent=''; }); }
+  function clearErrs() { ['eTipo','eInicio','eFin'].forEach(function (id) { $(id).classList.remove('show'); $(id).textContent = ''; }); }
 
   function validate() {
     clearErrs();
-    let ok = true;
-    if (CURRENT_USER.rol !== 'Docente') { showToast('Acceso restringido', 'RN-01: solo Docente puede registrar su ausencia.'); return false; }
+    var ok = true;
     if (!$('fTipo').value) { setErr('eTipo', 'Selecciona un tipo de ausencia.'); ok = false; }
     if (!fInicio.value) { setErr('eInicio', 'Define fecha inicio.'); ok = false; }
     if (!fFin.value) { setErr('eFin', 'Define fecha fin.'); ok = false; }
@@ -307,86 +412,119 @@ document.addEventListener('DOMContentLoaded', function () {
     return ok;
   }
 
-  function findConflict() {
-    const start = parseIso(fInicio.value);
-    const end = parseIso(fFin.value);
-    return ausencias.find(a =>
-      a.docente_id === CURRENT_USER.id &&
-      parseIso(a.inicio) <= end &&
-      parseIso(a.fin) >= start
-    );
-  }
+  function setErr(id, msg) { var e = $(id); e.textContent = msg; e.classList.add('show'); }
 
-  function registerAbsence(overwriteId = null) {
-    const start = fInicio.value;
-    const end = fFin.value;
-    if (overwriteId) {
-      const idx = ausencias.findIndex(a => a.id === overwriteId);
-      if (idx >= 0) ausencias.splice(idx, 1);
-    }
-    ausencias.push({
-      id: Date.now(),
-      docente_id: CURRENT_USER.id,
-      tipo: $('fTipo').value,
-      inicio: start,
-      fin: end,
-      notas: $('fNotas').value.trim()
+  function registerAbsence(isConfirmed) {
+    var btn = $('btnRegistrar');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto;"></div>';
+
+    var body = {
+      absence_type_id: parseInt($('fTipo').value, 10),
+      start_date: fInicio.value,
+      end_date: fFin.value,
+      observations: $('fNotas').value.trim() || null
+    };
+    if (isConfirmed) { body.is_confirmed = true; }
+
+    apiPost('/api/v1/teacher-absences', body).then(function () {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i><span>Registrar Ausencia</span>';
+      var countText = $('affectedCount').textContent.split(' ')[0] || '0';
+      showToast('Ausencia registrada', 'Ausencia registrada exitosamente. ' + countText + ' clases marcadas.');
+      $('fNotas').value = '';
+      return apiGet('/api/v1/teacher-absences');
+    }).then(function (absResp) {
+      absences = absResp.data || [];
+      renderCalendar();
+      renderHistory();
+    })['catch'](function (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i><span>Registrar Ausencia</span>';
+
+      if (err && err.errors && err.errors.overlap && !isConfirmed) {
+        var overlap = err.errors.overlap;
+        showConflictModal(overlap);
+        return;
+      }
+
+      if (err && err.errors && typeof err.errors === 'object' && !Array.isArray(err.errors)) {
+        showFieldErrors(err.errors);
+      } else if (err && err.message) {
+        showToast('Error', err.message);
+      } else {
+        showToast('Error', 'No se pudo registrar la ausencia.');
+      }
     });
-    const countText = $('affectedCount').textContent.split(' ')[0] || '0';
-    showToast('Ausencia registrada', `Ausencia registrada. ${countText} clases marcadas`);
   }
 
-  function showConflictModal(conflict) {
-    $('conflictDetail').innerHTML = `
-      <strong>Tipo:</strong> ${conflict.tipo}<br>
-      <strong>Rango:</strong> ${conflict.inicio} al ${conflict.fin}<br>
-      <strong>Notas:</strong> ${conflict.notas || 'Sin notas'}
-    `;
-    pendingOverwrite = conflict.id;
+  function showFieldErrors(errors) {
+    if (errors.absence_type_id) { setErr('eTipo', errors.absence_type_id.join('; ')); }
+    if (errors.start_date) { setErr('eInicio', errors.start_date.join('; ')); }
+    if (errors.end_date) { setErr('eFin', errors.end_date.join('; ')); }
+    if (errors.observations) { showToast('Error', errors.observations.join('; ')); }
+  }
+
+  function showConflictModal(overlap) {
+    var detail = 'Tipo: ' + (overlap.absenceTypeName || overlap.absence_type_name || 'N/A') + '<br>';
+    detail += 'Rango: ' + (overlap.startDate || overlap.start_date || '') + ' al ' + (overlap.endDate || overlap.end_date || '') + '<br>';
+    if (overlap.observations) { detail += 'Notas: ' + overlap.observations; }
+    $('conflictDetail').innerHTML = detail;
+    pendingConfirmed = true;
     $('conflictModal').classList.add('show');
   }
-  function hideConflictModal() {
-    pendingOverwrite = null;
-    $('conflictModal').classList.remove('show');
+
+  function hideConflictModal() { pendingConfirmed = false; $('conflictModal').classList.remove('show'); }
+
+  function renderHistory() {
+    var list = $('historyList');
+    if (!absences || absences.length === 0) {
+      list.innerHTML = '<div class="history-empty">Sin ausencias registradas.</div>';
+      return;
+    }
+    list.innerHTML = absences.map(function (a) {
+      var typeName = a.absenceType ? a.absenceType.name : 'Tipo #' + a.absenceTypeId;
+      return '<div class="history-item">' +
+        '<div><span class="h-type">' + typeName + '</span> <span class="h-date">' + a.startDate + ' al ' + a.endDate + '</span></div>' +
+        (a.observations ? '<div style="margin-top:3px;color:var(--dark-graphite);">' + a.observations + '</div>' : '') +
+        '</div>';
+    }).join('');
   }
 
   function showToast(title, message) {
-    const t = document.createElement('div');
+    var t = document.createElement('div');
     t.className = 'toast success';
-    t.innerHTML = `<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div><button class="toast-close"><i class="fas fa-times"></i></button>`;
+    t.innerHTML = '<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-message">' + message + '</div></div><button class="toast-close"><i class="fas fa-times"></i></button>';
     $('toastContainer').appendChild(t);
-    setTimeout(() => t.classList.add('show'), 10);
-    const rm = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 260); };
-    const tm = setTimeout(rm, 4500);
-    t.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(tm); rm(); });
+    setTimeout(function () { t.classList.add('show'); }, 10);
+    var rm = function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 260); };
+    var tm = setTimeout(rm, 4500);
+    t.querySelector('.toast-close').addEventListener('click', function () { clearTimeout(tm); rm(); });
   }
 
-  $('btnPrevMonth').addEventListener('click', () => { viewMonth -= 1; if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; } renderCalendar(); });
-  $('btnNextMonth').addEventListener('click', () => { viewMonth += 1; if (viewMonth > 11) { viewMonth = 0; viewYear += 1; } renderCalendar(); });
-  $('calDays').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-date]');
+  $('btnPrevMonth').addEventListener('click', function () { viewMonth -= 1; if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; } renderCalendar(); });
+  $('btnNextMonth').addEventListener('click', function () { viewMonth += 1; if (viewMonth > 11) { viewMonth = 0; viewYear += 1; } renderCalendar(); });
+  $('calDays').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-date]');
     if (!btn || btn.disabled) return;
     updateRangeFromCalendar(btn.dataset.date);
   });
   fInicio.addEventListener('change', refreshFromInputs);
   fFin.addEventListener('change', refreshFromInputs);
 
-  $('btnRegistrar').addEventListener('click', () => {
+  $('btnRegistrar').addEventListener('click', function () {
     if (!validate()) return;
-    const conflict = findConflict();
-    if (conflict) { showConflictModal(conflict); return; }
-    registerAbsence(null);
+    registerAbsence(false);
   });
 
   $('btnCancelConflict').addEventListener('click', hideConflictModal);
-  $('btnConfirmConflict').addEventListener('click', () => {
-    if (pendingOverwrite) registerAbsence(pendingOverwrite);
+  $('btnConfirmConflict').addEventListener('click', function () {
+    if (pendingConfirmed) registerAbsence(true);
     hideConflictModal();
   });
-  $('conflictModal').addEventListener('click', (e) => { if (e.target.id === 'conflictModal') hideConflictModal(); });
+  $('conflictModal').addEventListener('click', function (e) { if (e.target.id === 'conflictModal') hideConflictModal(); });
 
-  renderCalendar();
-  refreshAffectedClasses();
+  init();
 });
 </script>
 @endsection

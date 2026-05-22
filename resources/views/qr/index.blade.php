@@ -1,9 +1,9 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Codigo QR')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/qr-screen.css') }}">
+@vite(['resources/css/qr-screen.css'])
 @endpush
 
 @section('content')
@@ -152,10 +152,12 @@
 
             /* ---- API helper ---- */
             async function apiFetch(url, opts = {}) {
+                const token = localStorage.getItem('auth_token');
                 const res = await fetch(url, {
-                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf(), 'Authorization': token ? 'Bearer ' + token : '', ...(opts.headers ?? {}) },
                     ...opts,
                 });
+                if (res.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
                 const json = await res.json();
                 if (!res.ok) throw { status: res.status, json };
                 return json;
@@ -494,7 +496,7 @@
                     const res = await fetch('/api/v1/qr-codes/download', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/octet-stream', 'X-CSRF-TOKEN': getCsrf() },
-                        body: JSON.stringify({ qr_code_ids: conQr }),
+                        body: JSON.stringify({ classroom_ids: conQr }),
                     });
                     if (!res.ok) throw new Error('Error en descarga');
                     const blob = await res.blob();

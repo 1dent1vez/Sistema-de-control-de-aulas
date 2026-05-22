@@ -15,9 +15,9 @@
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-13 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: extraído import/report a GamaScheduleImportController
  */
 
 declare(strict_types=1);
@@ -25,16 +25,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Schedules;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Schedules\ImportScheduleRequest;
 use App\Http\Requests\Schedules\StoreClassScheduleRequest;
 use App\Http\Resources\Schedules\ClassScheduleResource;
-use App\Jobs\ProcessScheduleImportJob;
 use App\Models\ClassSchedule;
 use App\Services\Schedules\GamaClassScheduleService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class GamaClassScheduleController extends Controller
 {
@@ -48,37 +45,24 @@ class GamaClassScheduleController extends Controller
     {
         $filters = $request->only(['semester_id', 'classroom_id', 'teacher_external_id']);
 
-        return $this->success(
-            ClassScheduleResource::collection($this->service->getAll($filters)),
-            'Class schedules retrieved successfully.'
-        );
+        return $this->success(ClassScheduleResource::collection($this->service->getAll($filters)));
     }
 
     public function show(int $id): JsonResponse
     {
         $schedule = $this->service->getById($id);
-
         if (! $schedule) {
             return $this->error('Class schedule not found.', 404);
         }
 
-        return $this->success(
-            new ClassScheduleResource($schedule),
-            'Class schedule retrieved successfully.'
-        );
+        return $this->success(new ClassScheduleResource($schedule));
     }
 
     public function store(StoreClassScheduleRequest $request): JsonResponse
     {
         $this->authorize('create', ClassSchedule::class);
         try {
-            $schedule = $this->service->create($request->validated());
-
-            return $this->success(
-                new ClassScheduleResource($schedule),
-                'Class schedule created successfully.',
-                201
-            );
+            return $this->success(new ClassScheduleResource($this->service->create($request->validated())), 'Class schedule created successfully.', 201);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -89,15 +73,11 @@ class GamaClassScheduleController extends Controller
         $this->authorize('update', ClassSchedule::class);
         try {
             $schedule = $this->service->update($id, $request->validated());
-
             if (! $schedule) {
                 return $this->error('Class schedule not found.', 404);
             }
 
-            return $this->success(
-                new ClassScheduleResource($schedule),
-                'Class schedule updated successfully.'
-            );
+            return $this->success(new ClassScheduleResource($schedule), 'Class schedule updated successfully.');
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -107,39 +87,10 @@ class GamaClassScheduleController extends Controller
     {
         $this->authorize('delete', ClassSchedule::class);
         $deleted = $this->service->delete($id);
-
         if (! $deleted) {
             return $this->error('Class schedule not found.', 404);
         }
 
         return $this->success(null, 'Class schedule deleted successfully.');
-    }
-
-    public function import(ImportScheduleRequest $request): JsonResponse
-    {
-        $file = $request->file('file');
-        $semesterId = (int) $request->input('semester_id');
-
-        $path = $file->store('imports');
-
-        ProcessScheduleImportJob::dispatch($path, $file->getClientOriginalName(), $semesterId);
-
-        return $this->success(
-            ['file' => $path],
-            'Import scheduled successfully. Check logs for results.'
-        );
-    }
-
-    public function report(string $batchId): JsonResponse
-    {
-        $path = "imports/{$batchId}.json";
-
-        if (! Storage::disk('local')->exists($path)) {
-            return $this->error('Report not found.', 404);
-        }
-
-        $content = json_decode(Storage::disk('local')->get($path), true);
-
-        return $this->success($content, 'Import report retrieved successfully.');
     }
 }

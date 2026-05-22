@@ -46,7 +46,7 @@ class SamIdentityController extends Controller
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', SamIdentity::class);
-        $identities = SamIdentity::paginate(20);
+        $identities = $this->samRoleService->listAll();
 
         return $this->success(
             SamProfileResource::collection($identities),

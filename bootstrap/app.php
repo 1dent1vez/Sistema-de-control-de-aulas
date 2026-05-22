@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\SamAuthMiddleware;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -8,9 +9,11 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'sam.auth' => SamAuthMiddleware::class,
         ]);
+
+        $middleware->append(SecurityHeadersMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
@@ -38,6 +43,14 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (AuthorizationException $e, Request $request) {
+            Log::channel('security')->warning('Acceso denegado (403)', [
+                'ip' => $request->ip(),
+                'endpoint' => $request->fullUrl(),
+                'method' => $request->method(),
+                'user' => $request->user()?->external_id ?? 'guest',
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -50,6 +63,13 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (AuthenticationException $e, Request $request) {
+            Log::channel('security')->warning('Intento de acceso sin autenticar', [
+                'ip' => $request->ip(),
+                'endpoint' => $request->fullUrl(),
+                'method' => $request->method(),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -62,6 +82,13 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (ValidationException $e, Request $request) {
+            Log::channel('security')->info('Error de validación', [
+                'ip' => $request->ip(),
+                'endpoint' => $request->fullUrl(),
+                'fields' => array_keys($e->errors()),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -70,6 +97,24 @@ return Application::configure(basePath: dirname(__DIR__))
                     'data' => null,
                     'errors' => $e->errors(),
                 ], 422);
+            }
+        });
+
+        $exceptions->render(function (TooManyRequestsHttpException $e, Request $request) {
+            Log::channel('security')->error('Rate limit excedido', [
+                'ip' => $request->ip(),
+                'endpoint' => $request->fullUrl(),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 429,
+                    'message' => 'Too many requests.',
+                    'data' => null,
+                    'errors' => [],
+                ], 429);
             }
         });
 
@@ -85,13 +130,3 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
     })->create();
-
-RateLimiter::for('api', function (Request $request) {
-    return Limit::perMinute((int) env('API_RATE_LIMIT', 60))
-        ->by($request->user()?->id ?: $request->ip());
-});
-
-RateLimiter::for('auth', function (Request $request) {
-    return Limit::perMinute((int) env('AUTH_RATE_LIMIT', 10))
-        ->by($request->ip());
-});

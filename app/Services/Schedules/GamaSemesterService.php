@@ -35,21 +35,39 @@ class GamaSemesterService
         private readonly SemesterRepositoryInterface $repository
     ) {}
 
+    /**
+     * Obtiene todos los semestres activos.
+     *
+     * @return Collection<int, Semester>
+     */
     public function getAll(): Collection
     {
         return $this->repository->all();
     }
 
+    /**
+     * Busca un semestre por su ID.
+     */
     public function getById(int $id): ?Semester
     {
         return $this->repository->findById($id);
     }
 
+    /**
+     * Obtiene el semestre activo más reciente.
+     */
     public function getCurrent(): ?Semester
     {
         return $this->repository->getCurrent();
     }
 
+    /**
+     * Crea un semestre con validación de solapamiento.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws \RuntimeException Si el rango de fechas se solapa con otro semestre
+     */
     public function create(array $data): Semester
     {
         if ($this->repository->hasOverlap($data['institution_id'], $data['start_date'], $data['end_date'])) {
@@ -59,6 +77,13 @@ class GamaSemesterService
         return $this->repository->create($data);
     }
 
+    /**
+     * Actualiza un semestre existente con validación de solapamiento.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws \RuntimeException Si el nuevo rango se solapa con otro semestre
+     */
     public function update(int $id, array $data): ?Semester
     {
         $semester = $this->repository->findById($id);
@@ -79,6 +104,9 @@ class GamaSemesterService
         return $this->repository->update($semester, $data);
     }
 
+    /**
+     * Elimina (soft delete) un semestre.
+     */
     public function delete(int $id): bool
     {
         $semester = $this->repository->findById($id);

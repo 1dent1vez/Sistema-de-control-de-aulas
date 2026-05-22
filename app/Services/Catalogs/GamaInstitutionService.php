@@ -34,21 +34,39 @@ class GamaInstitutionService
         private readonly InstitutionRepositoryInterface $repository
     ) {}
 
+    /**
+     * Obtiene todas las instituciones activas.
+     *
+     * @return Collection<int, Institution>
+     */
     public function getAll(): Collection
     {
         return $this->repository->all();
     }
 
+    /**
+     * Busca una institución por su ID.
+     */
     public function getById(int $id): ?Institution
     {
         return $this->repository->findById($id);
     }
 
+    /**
+     * Crea una nueva institución.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): Institution
     {
         return $this->repository->create($data);
     }
 
+    /**
+     * Actualiza una institución existente.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function update(int $id, array $data): ?Institution
     {
         $institution = $this->repository->findById($id);
@@ -60,6 +78,9 @@ class GamaInstitutionService
         return $this->repository->update($institution, $data);
     }
 
+    /**
+     * Elimina (soft delete) una institución.
+     */
     public function delete(int $id): bool
     {
         $institution = $this->repository->findById($id);

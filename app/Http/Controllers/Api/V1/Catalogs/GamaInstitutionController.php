@@ -15,9 +15,9 @@
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-13 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: compactación y uso de created()
  */
 
 declare(strict_types=1);
@@ -43,60 +43,41 @@ class GamaInstitutionController extends Controller
 
     public function index(): JsonResponse
     {
-        $institutions = $this->service->getAll();
-
-        return $this->success(
-            InstitutionResource::collection($institutions),
-            'Institutions retrieved successfully.'
-        );
+        return $this->success(InstitutionResource::collection($this->service->getAll()));
     }
 
     public function show(int $id): JsonResponse
     {
         $institution = $this->service->getById($id);
-
         if (! $institution) {
             return $this->error('Institution not found.', 404);
         }
 
-        return $this->success(
-            new InstitutionResource($institution),
-            'Institution retrieved successfully.'
-        );
+        return $this->success(new InstitutionResource($institution));
     }
 
     public function store(StoreInstitutionRequest $request): JsonResponse
     {
         $this->authorize('create', Institution::class);
-        $institution = $this->service->create($request->validated());
 
-        return $this->success(
-            new InstitutionResource($institution),
-            'Institution created successfully.',
-            201
-        );
+        return $this->created(new InstitutionResource($this->service->create($request->validated())));
     }
 
     public function update(UpdateInstitutionRequest $request, int $id): JsonResponse
     {
         $this->authorize('update', Institution::class);
         $institution = $this->service->update($id, $request->validated());
-
         if (! $institution) {
             return $this->error('Institution not found.', 404);
         }
 
-        return $this->success(
-            new InstitutionResource($institution),
-            'Institution updated successfully.'
-        );
+        return $this->success(new InstitutionResource($institution));
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->authorize('delete', Institution::class);
         $deleted = $this->service->delete($id);
-
         if (! $deleted) {
             return $this->error('Institution not found.', 404);
         }

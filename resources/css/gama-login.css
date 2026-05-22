@@ -1,0 +1,657 @@
+/*
+==========================================================================
+G.A.M.A Solutions - Login Page Styles
+Paleta Institucional Azul Corporativo
+==========================================================================
+*/
+
+/* ========================================
+   CSS Variables - Paleta Institucional
+======================================== */
+:root {
+    /* Paleta Primaria - Gama Azul Corporativa */
+    --deep-blue: #134474;           /* Deep Corporate Blue - Primario */
+    --royal-blue: #1E5A8A;          /* Royal Blue - Secundario */
+    --soft-steel: #5F86A6;          /* Soft Steel Blue - Terciario */
+    --ice-blue: #F2F7FB;            /* Ice Blue - Neutro Claro */
+    --mist-blue: #E3EDF5;           /* Mist Blue - Soporte */
+    --light-blue: #E8F1F8;          /* Neutro Azulado */
+    
+    /* Colores de Texto */
+    --dark-graphite: #545454;       /* Texto Principal */
+    --midnight: #1F2A35;            /* Texto Alto Contraste */
+    
+    /* Acentos Funcionales de Interacción */
+    --corp-orange: #F28B2C;         /* Corporate Orange - Hover */
+    --deep-orange: #D96A10;         /* Deep Orange - Activo */
+    --light-orange: #FFE8D6;        /* Light Orange - Hover Suave */
+    
+    /* Tipografía */
+    --font-main: 'Instrument Sans', sans-serif;
+    
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+/* ========================================
+   CSS Reset & Base
+======================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--dark-graphite);
+    background-color: var(--ice-blue);
+    min-height: 100vh;
+}
+
+body.auth-page {
+    display: flex;
+}
+
+/* ========================================
+   Auth Branding (Left Side)
+======================================== */
+.auth-branding {
+    flex: 1;
+    background: var(--deep-blue);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-branding::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    animation: float 15s ease-in-out infinite;
+}
+
+.auth-branding::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    right: -30%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 70% 30%, rgba(0,0,0,0.1) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(30px, 30px) rotate(5deg); }
+}
+
+.branding-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: white;
+}
+
+.branding-logo {
+    max-width: 300px;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+
+.branding-logo .logo-image {
+     width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.branding-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: white;
+}
+
+.branding-subtitle {
+    font-size: 18px;
+    opacity: 0.85;
+    max-width: 400px;
+    margin: 0 auto 48px;
+    font-weight: 400;
+}
+
+.branding-features {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+}
+
+.branding-feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.feature-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feature-icon i {
+    color: white;
+    font-size: 18px;
+}
+
+/* ========================================
+   Auth Form Container (Right Side)
+======================================== */
+.auth-form-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px;
+    position: relative;
+    background-color: white;
+}
+
+.auth-form-wrapper {
+    width: 100%;
+    max-width: 420px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.form-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--midnight);
+}
+
+.form-header p {
+    font-size: 16px;
+    color: var(--soft-steel);
+    font-weight: 400;
+}
+
+/* ========================================
+   Auth Tabs
+======================================== */
+.auth-tabs {
+    display: flex;
+    background-color: var(--ice-blue);
+    border-radius: var(--radius-lg);
+    padding: 6px;
+    margin-bottom: 32px;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    background: none;
+    font-family: var(--font-main);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--soft-steel);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.auth-tab:hover {
+    color: var(--deep-blue);
+}
+
+.auth-tab.active {
+    background: var(--deep-blue);
+    color: white;
+}
+
+/* ========================================
+   Auth Form
+======================================== */
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--midnight);
+    margin-bottom: 8px;
+}
+
+.form-input-wrapper {
+    position: relative;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 18px 14px 50px;
+    background-color: var(--ice-blue);
+    border: 1px solid var(--mist-blue);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-main);
+    font-size: 16px;
+    color: var(--dark-graphite);
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--corp-orange);
+    box-shadow: 0 0 0 3px rgba(242, 139, 44, 0.15);
+}
+
+.form-input::placeholder {
+    color: var(--soft-steel);
+}
+
+.input-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--soft-steel);
+    font-size: 16px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--soft-steel);
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: var(--corp-orange);
+}
+
+/* ========================================
+   Form Row & Checkbox
+======================================== */
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--mist-blue);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.checkbox i {
+    font-size: 10px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.checkbox.checked {
+    background: var(--deep-blue);
+    border-color: var(--deep-blue);
+}
+
+.checkbox.checked i {
+    opacity: 1;
+}
+
+.checkbox-label {
+    font-size: 14px;
+    color: var(--dark-graphite);
+}
+
+.checkbox-label a {
+    color: var(--corp-orange);
+    text-decoration: none;
+}
+
+.checkbox-label a:hover {
+    text-decoration: underline;
+}
+
+.forgot-link {
+    font-size: 14px;
+    color: var(--corp-orange);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+    color: var(--deep-orange);
+}
+
+/* ========================================
+   Buttons - Sistema de Botones
+======================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: var(--font-main);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+/* Tamaños de botones */
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 18px;
+    height: 52px;
+}
+
+.btn-md {
+    padding: 12px 24px;
+    font-size: 16px;
+    height: 44px;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 14px;
+    height: 36px;
+}
+
+/* Botón Primario */
+.btn-primary {
+    background-color: var(--deep-blue);
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: var(--corp-orange);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    background-color: var(--deep-orange);
+}
+
+/* Botón Secundario */
+.btn-secondary {
+    background-color: var(--royal-blue);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: var(--corp-orange);
+}
+
+/* Botón Outline */
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--deep-blue);
+    color: var(--deep-blue);
+}
+
+.btn-outline:hover {
+    border-color: var(--corp-orange);
+    color: var(--corp-orange);
+}
+
+/* ========================================
+   Divider
+======================================== */
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--mist-blue);
+}
+
+.divider-text {
+    font-size: 14px;
+    color: var(--soft-steel);
+}
+
+/* ========================================
+   Social Buttons
+======================================== */
+.social-buttons {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.social-btn {
+    flex: 1;
+    padding: 14px;
+    background-color: var(--ice-blue);
+    border: 1px solid var(--mist-blue);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: var(--font-main);
+    color: var(--midnight);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.social-btn:hover {
+    background-color: var(--light-orange);
+    border-color: var(--corp-orange);
+}
+
+.social-btn i {
+    font-size: 18px;
+}
+
+/* ========================================
+   Password Strength
+======================================== */
+.password-strength {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 6px;
+    background-color: var(--mist-blue);
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+}
+
+.strength-bar.weak {
+    background-color: #e74c3c;
+}
+
+.strength-bar.medium {
+    background-color: var(--corp-orange);
+}
+
+.strength-bar.strong {
+    background-color: #27ae60;
+}
+
+.strength-text {
+    font-size: 12px;
+    color: var(--soft-steel);
+    margin-top: 8px;
+}
+
+/* ========================================
+   Form Footer
+======================================== */
+.form-footer {
+    text-align: center;
+    font-size: 14px;
+    color: var(--dark-graphite);
+}
+
+.form-footer a {
+    color: var(--corp-orange);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.form-footer a:hover {
+    color: var(--deep-orange);
+}
+
+/* ========================================
+   Copyright
+======================================== */
+.copyright {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: var(--soft-steel);
+    text-align: center;
+}
+
+.copyright a {
+    color: var(--corp-orange);
+    text-decoration: none;
+}
+
+.copyright a:hover {
+    text-decoration: underline;
+}
+
+/* ========================================
+   Responsive - Tablet
+======================================== */
+@media (max-width: 1024px) {
+    body.auth-page {
+        flex-direction: column;
+    }
+
+    .auth-branding {
+        padding: 40px 24px;
+        min-height: auto;
+    }
+
+    .branding-title {
+        font-size: 28px;
+    }
+
+    .branding-features {
+        display: none;
+    }
+
+    .auth-form-container {
+        padding: 40px 24px 80px;
+    }
+}
+
+/* ========================================
+   Responsive - Mobile
+======================================== */
+@media (max-width: 640px) {
+    .auth-branding {
+        padding: 32px 20px;
+    }
+
+    .branding-logo .logo-image {
+        height: 32px;
+        max-width: 150px;
+    }
+
+    .branding-title {
+        font-size: 22px;
+    }
+
+    .branding-subtitle {
+        font-size: 14px;
+        margin-bottom: 0;
+    }
+
+    .auth-form-container {
+        padding: 32px 20px 80px;
+    }
+
+    .form-header h1 {
+        font-size: 26px;
+    }
+
+    .social-buttons {
+        flex-direction: column;
+    }
+
+    .btn-lg {
+        padding: 14px 24px;
+        font-size: 16px;
+        height: 48px;
+    }
+}

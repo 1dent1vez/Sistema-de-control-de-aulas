@@ -28,29 +28,73 @@ namespace App\Services\Auth;
 
 use App\Enums\Auth\SamRole;
 use App\Models\SamIdentity;
+use App\Repositories\Contracts\SamIdentityRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SamAuthService
 {
     public function __construct(
-        private readonly SamService $samService
+        private readonly SamService $samService,
+        private readonly SamIdentityRepositoryInterface $identityRepository
     ) {}
 
+    /**
+     * Orquesta el flujo completo de login (mock o SAM real).
+     *
+     * @return array{success: bool, statusCode: int, message: string, data?: array<string, mixed>}
+     */
     public function orquestarLogin(string $username, string $password, string $captcha): array
     {
-        $captchaValido = $this->samService->validarCaptcha($captcha);
-        if (! $captchaValido) {
+        // @todo Reemplazar por SamService::mock() cuando se implemente factory.
+        // @see docs/modules/06-auth.md — Sección "SAM — Modo Mock / Modo Producción"
+        if (config('sam.mock_enabled')) {
+            $identity = $this->identityRepository->findByEmail($username);
+            if ($identity === null) {
+                $identity = $this->identityRepository->create([
+                    'external_id' => $username,
+                    'email' => $username,
+                    'full_name' => $username,
+                    'role' => SamRole::ADMIN,
+                    'last_login_at' => now(),
+                ]);
+            } else {
+                $this->identityRepository->update($identity, ['last_login_at' => now()]);
+            }
+
+            $abilities = $identity->role === SamRole::ADMIN ? ['*'] : ['teacher'];
+            $token = $identity->createToken('sam-token', $abilities);
+            $expiresAt = $token->accessToken->expires_at;
+
             return [
-                'success' => false,
-                'statusCode' => 422,
-                'message' => 'Código de verificación incorrecto.',
+                'success' => true,
+                'statusCode' => 200,
+                'message' => 'Login exitoso (mock).',
+                'data' => [
+                    'accessToken' => $token->plainTextToken,
+                    'tokenType' => 'Bearer',
+                    'expiresAt' => $expiresAt?->toIso8601String(),
+                    'role' => $identity->role->value,
+                    'redirectUrl' => '/dashboard/admin',
+                    'user' => [
+                        'externalId' => $identity->external_id,
+                        'fullName' => $identity->full_name,
+                        'email' => $identity->email,
+                        'position' => 'Administrador Mock',
+                        'department' => 'TI',
+                        'building' => null,
+                        'role' => $identity->role->value,
+                    ],
+                ],
             ];
         }
 
         $loginResult = $this->samService->login($username, $password, $captcha);
         if (! $loginResult['success']) {
-            $statusCode = $loginResult['error'] === 'Credenciales inválidas' ? 401 : 503;
+            $statusCode = match ($loginResult['error']) {
+                'Credenciales inválidas' => 401,
+                default => 503,
+            };
 
             return [
                 'success' => false,
@@ -109,7 +153,7 @@ class SamAuthService
         $token = $identity->createToken('sam-token', $abilities);
         $expiresAt = $token->accessToken->expires_at;
 
-        $redirectUrl = $rolLocal === SamRole::ADMIN ? '/admin/dashboard' : '/teacher/dashboard';
+        $redirectUrl = $rolLocal === SamRole::ADMIN ? '/dashboard/admin' : '/dashboard';
 
         $fullName = trim(
             ($perfil['nombre'] ?? '')
@@ -140,6 +184,9 @@ class SamAuthService
         ];
     }
 
+    /**
+     * Cierra sesión en SAM y revoca el token Sanctum actual.
+     */
     public function logout(Request $request): void
     {
         $this->samService->logout();
@@ -166,10 +213,10 @@ class SamAuthService
         $externalId = $perfil['numero_empleado'] ?? $correo;
 
         return DB::transaction(function () use ($externalId, $correo, $nombre, $rolSam, $rolLocal) {
-            $identity = SamIdentity::where('external_id', $externalId)->first();
+            $identity = $this->identityRepository->findByExternalId($externalId);
 
             if ($identity === null) {
-                $identity = SamIdentity::create([
+                $identity = $this->identityRepository->create([
                     'external_id' => $externalId,
                     'email' => $correo,
                     'full_name' => $nombre ?: null,
@@ -177,7 +224,7 @@ class SamAuthService
                     'last_login_at' => now(),
                 ]);
             } else {
-                $identity->update([
+                $this->identityRepository->update($identity, [
                     'email' => $correo,
                     'full_name' => $nombre ?: $identity->full_name,
                     'last_login_at' => now(),

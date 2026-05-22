@@ -356,15 +356,65 @@
 document.addEventListener('DOMContentLoaded', function () {
   const $ = (id) => document.getElementById(id);
 
-  /* â”€â”€ Estado â”€â”€ */
+  /* Verificar token */
+  const authToken = localStorage.getItem('auth_token');
+  if (!authToken) {
+    window.location.href = '/';
+    return;
+  }
+
+  /* Estado */
   let buildings      = [];   // edificios activos
   let aulas          = [];   // classrooms completos
   let levelsCache    = {};   // { buildingId: [{id, name}] }
   let state          = { edificio: '', tipo: '', q: '', editingId: null };
 
-  /* â”€â”€ CSRF â”€â”€ */
+  /* CSRF */
   function getCsrf() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+  }
+
+  /* API helper */
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, {
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': getCsrf(), 'Authorization': `Bearer ${authToken}`, ...opts.headers },
+      ...opts,
+    });
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = '/';
+      return;
+    }
+    const json = await res.json();
+    if (!res.ok) throw { status: res.status, json };
+    return json;
+  }
+
+  /* Estado */
+  let buildings      = [];   // edificios activos
+  let aulas          = [];   // classrooms completos
+  let levelsCache    = {};   // { buildingId: [{id, name}] }
+  let state          = { edificio: '', tipo: '', q: '', editingId: null };
+
+  /* CSRF */
+  function getCsrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+  }
+
+  /* API helper */
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, {
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': getCsrf(), 'Authorization': `Bearer ${authToken}`, ...opts.headers },
+      ...opts,
+    });
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = '/';
+      return;
+    }
+    const json = await res.json();
+    if (!res.ok) throw { status: res.status, json };
+    return json;
   }
 
   /* â”€â”€ API helper â”€â”€ */

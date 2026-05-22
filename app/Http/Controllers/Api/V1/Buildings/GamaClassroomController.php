@@ -15,9 +15,9 @@
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-18
  *
- * @cambios      2026-05-13 - Creación inicial del controlador
+ * @cambios      2026-05-18 - Refactorización: compactación y uso de created()
  */
 
 declare(strict_types=1);
@@ -43,58 +43,41 @@ class GamaClassroomController extends Controller
 
     public function index(): JsonResponse
     {
-        return $this->success(
-            ClassroomResource::collection($this->service->getAll()),
-            'Classrooms retrieved successfully.'
-        );
+        return $this->success(ClassroomResource::collection($this->service->getAll()));
     }
 
     public function show(int $id): JsonResponse
     {
         $classroom = $this->service->getById($id);
-
         if (! $classroom) {
             return $this->error('Classroom not found.', 404);
         }
 
-        return $this->success(
-            new ClassroomResource($classroom),
-            'Classroom retrieved successfully.'
-        );
+        return $this->success(new ClassroomResource($classroom));
     }
 
     public function store(StoreClassroomRequest $request): JsonResponse
     {
         $this->authorize('create', Classroom::class);
-        $classroom = $this->service->create($request->validated());
 
-        return $this->success(
-            new ClassroomResource($classroom),
-            'Classroom created successfully.',
-            201
-        );
+        return $this->created(new ClassroomResource($this->service->create($request->validated())));
     }
 
     public function update(UpdateClassroomRequest $request, int $id): JsonResponse
     {
         $this->authorize('update', Classroom::class);
         $classroom = $this->service->update($id, $request->validated());
-
         if (! $classroom) {
             return $this->error('Classroom not found.', 404);
         }
 
-        return $this->success(
-            new ClassroomResource($classroom),
-            'Classroom updated successfully.'
-        );
+        return $this->success(new ClassroomResource($classroom));
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->authorize('delete', Classroom::class);
         $deleted = $this->service->delete($id);
-
         if (! $deleted) {
             return $this->error('Classroom not found.', 404);
         }
@@ -104,9 +87,6 @@ class GamaClassroomController extends Controller
 
     public function byBuilding(int $buildingId): JsonResponse
     {
-        return $this->success(
-            ClassroomResource::collection($this->service->getByBuildingId($buildingId)),
-            'Classrooms retrieved successfully.'
-        );
+        return $this->success(ClassroomResource::collection($this->service->getByBuildingId($buildingId)));
     }
 }

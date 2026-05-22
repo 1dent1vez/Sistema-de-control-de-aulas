@@ -48,6 +48,7 @@ class UpdateBuildingRequest extends FormRequest
                     ->ignore($buildingId),
             ],
             'status' => ['boolean'],
+            'description' => ['nullable', 'string', 'max:500'],
         ];
     }
 

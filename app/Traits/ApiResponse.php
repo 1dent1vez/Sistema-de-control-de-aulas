@@ -54,4 +54,26 @@ trait ApiResponse
             'errors' => $errors,
         ], $code);
     }
+
+    /**
+     * Respuesta de creación (201).
+     */
+    protected function created(mixed $data = null, string $message = 'Recurso creado exitosamente.'): JsonResponse
+    {
+        return $this->success($data, $message, 201);
+    }
+
+    /**
+     * Respuesta sin contenido (204).
+     */
+    protected function noContent(string $message = 'Sin contenido.'): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'statusCode' => 204,
+            'message' => $message,
+            'data' => null,
+            'errors' => [],
+        ], 204);
+    }
 }

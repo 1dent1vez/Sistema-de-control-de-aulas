@@ -24,7 +24,8 @@ declare(strict_types=1);
 
 namespace App\Services\Schedules;
 
-use App\Models\Classroom;
+use App\Repositories\Contracts\ClassroomRepositoryInterface;
+use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,11 @@ class GamaScheduleImportService
 {
     private const CHUNK_SIZE = 50;
 
+    public function __construct(
+        private readonly ClassroomRepositoryInterface $classroomRepository,
+        private readonly ClassScheduleRepositoryInterface $scheduleRepository
+    ) {}
+
     private const REQUIRED_COLUMNS = [
         'classroom_id', 'teacher_external_id', 'subject_name',
         'group_name', 'weekday', 'start_time', 'end_time',
@@ -48,6 +54,12 @@ class GamaScheduleImportService
         'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
     ];
 
+    /**
+     * Importa horarios desde un archivo CSV/XLSX en chunks transaccionales.
+     *
+     * @param  int  $semesterId  ID del semestre al que asignar los horarios
+     * @return array{imported: int, errors: array<int, array{row: int, error: string}>, report_path: string|null}
+     */
     public function import(UploadedFile $file, int $semesterId): array
     {
         $errors = [];
@@ -111,7 +123,7 @@ class GamaScheduleImportService
                     $subjectName = trim($rowData['subject_name'] ?? '');
                     $groupName = trim($rowData['group_name'] ?? '');
 
-                    if (! $classroomId || ! Classroom::find($classroomId)) {
+                    if (! $classroomId || ! $this->classroomRepository->findById($classroomId)) {
                         $rowErrors[] = "classroom_id '$classroomId' no existe.";
                     }
 
@@ -159,7 +171,7 @@ class GamaScheduleImportService
                 }
 
                 if (! empty($toInsert)) {
-                    ClassSchedule::insert($toInsert);
+                    $this->scheduleRepository->insertMultiple($toInsert);
                     $imported += count($toInsert);
                 }
             });

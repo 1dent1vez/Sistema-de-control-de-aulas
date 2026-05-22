@@ -115,7 +115,7 @@ class TestingDataSeeder extends Seeder
                         'building_id' => $building->id,
                         'level_id' => $level->id,
                         'classroom_name' => 'Aula '.$prefix.'-'.$roomNumber,
-                        'classroom_type' => 'Standard',
+                        'classroom_type' => 'classroom',
                         'status' => true,
                     ]);
 
