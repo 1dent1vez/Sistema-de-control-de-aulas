@@ -42,6 +42,11 @@ class UpdateClassroomRequest extends FormRequest
         $buildingId = $this->input('building_id');
 
         return [
+            'level_id' => [
+                'integer',
+                'exists:gama_levels,id',
+                Rule::exists('gama_levels', 'id')->where('building_id', $buildingId),
+            ],
             'classroom_name' => [
                 'string',
                 'max:30',
@@ -57,6 +62,7 @@ class UpdateClassroomRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'level_id.exists' => 'El nivel seleccionado no existe en el edificio indicado.',
             'classroom_name.unique' => 'Ya existe un aula con ese nombre en el mismo edificio.',
             'classroom_type.in' => 'El tipo de aula debe ser classroom o computer_lab.',
         ];

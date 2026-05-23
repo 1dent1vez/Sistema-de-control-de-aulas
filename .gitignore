@@ -33,5 +33,6 @@ Thumbs.db
 /.opencode/
 /AGENTS.md
 /docs/
-docs/modules/
-docs/PLAN_DESARROLLO.md
+
+# Todos los .md en la raíz del proyecto (reportes, auditorías, etc.)
+/*.md

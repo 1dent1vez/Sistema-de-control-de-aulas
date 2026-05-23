@@ -8,9 +8,10 @@
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
  * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.0.0
+ * @version        1.1.0
  * @creado         07/05/2026
- * @modificado     07/05/2026
+ * @modificado     23/05/2026
+ * @cambios        23/05/2026 - Unificación de apiFetch, eliminación de duplicados, maxlength a 30, enum Blade de tipo y remoción de capacidad
  */
 --}}
 
@@ -265,8 +266,9 @@
         <select id="filterEdificio" class="aulas-select"></select>
         <select id="filterTipo" class="aulas-select">
           <option value="">Todos los tipos</option>
-          <option value="classroom">Salón</option>
-          <option value="computer_lab">Laboratorio de Cómputo</option>
+          @foreach(App\Enums\Buildings\ClassroomType::cases() as $tipo)
+            <option value="{{ $tipo->value }}">{{ $tipo->label() }}</option>
+          @endforeach
         </select>
         <input id="searchAula" class="aulas-search" type="text" placeholder="Buscar aula..." autocomplete="off">
       </div>
@@ -282,7 +284,6 @@
             <th>Aula</th>
             <th>Nivel</th>
             <th>Tipo</th>
-            <th>Capacidad</th>
             <th>QR</th>
             <th style="width:170px;">Acciones</th>
           </tr>
@@ -316,8 +317,8 @@
 
     <div class="field">
       <label for="fNombre">Nombre del aula *</label>
-      <input id="fNombre" maxlength="60" placeholder="Ej. Aula 101">
-      <div class="hint"><span id="countNombre">0</span>/60</div>
+      <input id="fNombre" maxlength="30" placeholder="Ej. Aula 101">
+      <div class="hint"><span id="countNombre">0</span>/30</div>
       <div class="err" id="eNombre"></div>
     </div>
 
@@ -331,16 +332,11 @@
       <label for="fTipo">Tipo *</label>
       <select id="fTipo">
         <option value="">Selecciona...</option>
-        <option value="classroom">Salón</option>
-        <option value="computer_lab">Laboratorio de Cómputo</option>
+        @foreach(App\Enums\Buildings\ClassroomType::cases() as $tipo)
+          <option value="{{ $tipo->value }}">{{ $tipo->label() }}</option>
+        @endforeach
       </select>
       <div class="err" id="eTipo"></div>
-    </div>
-
-    <div class="field">
-      <label for="fCapacidad">Capacidad (opcional)</label>
-      <input id="fCapacidad" type="number" min="1" step="1" placeholder="Ej. 35">
-      <div class="err" id="eCapacidad"></div>
     </div>
   </div>
 
@@ -363,72 +359,54 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   }
 
-  /* Estado */
-  let buildings      = [];   // edificios activos
-  let aulas          = [];   // classrooms completos
-  let levelsCache    = {};   // { buildingId: [{id, name}] }
-  let state          = { edificio: '', tipo: '', q: '', editingId: null };
+  /* Estado Unificado */
+  const state = {
+    buildings: [],    // edificios activos
+    aulas: [],        // classrooms completos
+    levelsCache: {},  // { buildingId: [{id, name}] }
+    edificio: '',
+    tipo: '',
+    q: '',
+    editingId: null
+  };
 
-  /* CSRF */
+  /* CSRF Único */
   function getCsrf() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
   }
 
-  /* API helper */
+  /* apiFetch Único y Robustecido */
   async function apiFetch(url, opts = {}) {
-    const res = await fetch(url, {
-      headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': getCsrf(), 'Authorization': `Bearer ${authToken}`, ...opts.headers },
-      ...opts,
-    });
-    if (res.status === 401) {
-      localStorage.clear();
-      window.location.href = '/';
-      return;
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': getCsrf(),
+    };
+    if (authToken) {
+      defaultHeaders['Authorization'] = 'Bearer ' + authToken;
     }
-    const json = await res.json();
-    if (!res.ok) throw { status: res.status, json };
-    return json;
-  }
 
-  /* Estado */
-  let buildings      = [];   // edificios activos
-  let aulas          = [];   // classrooms completos
-  let levelsCache    = {};   // { buildingId: [{id, name}] }
-  let state          = { edificio: '', tipo: '', q: '', editingId: null };
-
-  /* CSRF */
-  function getCsrf() {
-    return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-  }
-
-  /* API helper */
-  async function apiFetch(url, opts = {}) {
     const res = await fetch(url, {
-      headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': getCsrf(), 'Authorization': `Bearer ${authToken}`, ...opts.headers },
       ...opts,
+      headers: { ...defaultHeaders, ...opts.headers },
     });
+
     if (res.status === 401) {
+      showToast('Sesión expirada', 'Por favor inicie sesión nuevamente.', 'error');
       localStorage.clear();
-      window.location.href = '/';
-      return;
+      setTimeout(() => { window.location.href = '/'; }, 1500);
+      return Promise.reject(new Error('Unauthorized'));
     }
+
     const json = await res.json();
     if (!res.ok) throw { status: res.status, json };
     return json;
   }
 
-  /* â”€â”€ API helper â”€â”€ */
-  async function apiFetch(url, opts = {}) {
-    const res = await fetch(url, {
-      headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': getCsrf(), ...opts.headers },
-      ...opts,
-    });
-    const json = await res.json();
-    if (!res.ok) throw { status: res.status, json };
-    return json;
-  }
+  /* ── Mapeo de tipo de aula ── */
+  const TIPOS = { classroom: 'Salón', computer_lab: 'Laboratorio de Cómputo' };
 
-  /* â”€â”€ Toast â”€â”€ */
+  /* ── Toast ── */
   function showToast(title, message, type = 'success') {
     const wrap = $('toastContainer');
     const icon = type === 'success' ? 'check' : (type === 'warning' ? 'exclamation' : 'times');
@@ -452,30 +430,27 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  /* ── Mapeo de tipo de aula ── */
-  const TIPOS = { classroom: 'Salón', computer_lab: 'Laboratorio de Cómputo' };
-
-  /* â”€â”€ Carga inicial â”€â”€ */
+  /* ── Carga inicial ── */
   async function loadAll() {
-    $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:22px;"></i></td></tr>';
+    $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:22px;"></i></td></tr>';
     
     let buildingsLoaded = false;
     try {
       const buildRes = await apiFetch('/api/v1/buildings');
-      buildings = (buildRes.data ?? [])
+      state.buildings = (buildRes.data ?? [])
         .filter(b => b.isActive)
         .map(b => ({ id: b.id, nombre: b.name, levelCount: b.levelCount }));
       buildingsLoaded = true;
     } catch(e) {
       showToast('Error', 'No se pudieron cargar los edificios.', 'error');
-      $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--status-inactive);">No se pudieron cargar los edificios.</td></tr>';
+      $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--status-inactive);">No se pudieron cargar los edificios.</td></tr>';
       bootPrecondition();
       return;
     }
 
     try {
       const aulaRes = await apiFetch('/api/v1/classrooms');
-      aulas = (aulaRes.data ?? []).map(c => ({
+      state.aulas = (aulaRes.data ?? []).map(c => ({
         id:          c.id,
         buildingId:  c.buildingId,
         edificio:    c.buildingName ?? '',
@@ -492,32 +467,32 @@ document.addEventListener('DOMContentLoaded', function () {
       populateFilters();
       renderTable();
     } catch(e) {
-      $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--status-inactive);">Error al cargar las aulas de la API.</td></tr>';
+      $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--status-inactive);">Error al cargar las aulas de la API.</td></tr>';
       showToast('Error', 'No se pudieron cargar las aulas.', 'error');
     }
   }
 
   /* ── Cargar niveles de un edificio ── */
   async function loadLevels(buildingId) {
-    if (levelsCache[buildingId]) return levelsCache[buildingId];
+    if (state.levelsCache[buildingId]) return state.levelsCache[buildingId];
     try {
       const res = await apiFetch(`/api/v1/buildings/${buildingId}/levels`);
-      levelsCache[buildingId] = (res.data ?? []).map(l => ({ id: l.id, name: l.name }));
-      return levelsCache[buildingId];
+      state.levelsCache[buildingId] = (res.data ?? []).map(l => ({ id: l.id, name: l.name }));
+      return state.levelsCache[buildingId];
     } catch(e) {
       return null;
     }
   }
 
-  /* â”€â”€ Filtros â”€â”€ */
+  /* ── Filtros ── */
   function populateFilters() {
     const f = $('filterEdificio');
     f.innerHTML = '<option value="">Todos los edificios</option>' +
-      buildings.map(b => `<option value="${b.id}">${esc(b.nombre)}</option>`).join('');
+      state.buildings.map(b => `<option value="${b.id}">${esc(b.nombre)}</option>`).join('');
   }
 
   function getRows() {
-    return aulas.filter(a => {
+    return state.aulas.filter(a => {
       const okE = !state.edificio || String(a.buildingId) === String(state.edificio);
       const okT = !state.tipo || a.tipo === state.tipo;
       const qq  = state.q.trim().toLowerCase();
@@ -526,13 +501,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* â”€â”€ Render tabla â”€â”€ */
+  /* ── Render tabla ── */
   function renderTable() {
     const rows = getRows();
     $('resultsInfo').textContent = `${rows.length} aula(s) encontrada(s)`;
     const body = $('aulasBody');
     if (rows.length === 0) {
-      body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--soft-steel);padding:28px;">Sin resultados</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--soft-steel);padding:28px;">Sin resultados</td></tr>';
       return;
     }
     body.innerHTML = rows.map((r, idx) => `
@@ -542,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function () {
         <td style="font-weight:600;color:var(--midnight);">${esc(r.nombre)}</td>
         <td>${esc(r.levelName)}</td>
         <td>${esc(r.tipoLabel)}</td>
-        <td><span style="color:var(--soft-steel);">N/D</span></td>
         <td>
           <span class="badge-qr ${r.qrGenerado ? 'ok' : 'pending'}">
             <i class="fas ${r.qrGenerado ? 'fa-check-circle' : 'fa-clock'}"></i>
@@ -556,6 +530,9 @@ document.addEventListener('DOMContentLoaded', function () {
             </button>
             <button class="btn-sm-fixed btn-qr" data-qr="${r.id}" title="Ver QR">
               <i class="fas fa-qrcode"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm btn-sm-fixed" style="background:#e3342f;color:#fff;border-color:#e3342f;" data-delete="${r.id}" title="Inactivar">
+              <i class="fas fa-ban"></i>
             </button>
           </div>
         </td>
@@ -583,10 +560,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const s = $('fEdificio');
     s.innerHTML = '<option value="">Selecciona...</option>' +
-      buildings.map(b => `<option value="${b.id}">${esc(b.nombre)}</option>`).join('');
+      state.buildings.map(b => `<option value="${b.id}">${esc(b.nombre)}</option>`).join('');
 
     if (editId) {
-      const record = aulas.find(x => x.id === editId);
+      const record = state.aulas.find(x => x.id === editId);
       if (!record) return;
       $('fEdificio').value = String(record.buildingId);
       await syncNiveles(record.levelId);
@@ -615,7 +592,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const buildingId = Number($('fEdificio').value);
     const level = $('fNivel');
     
-    // Limpiar errores previos de niveles
     $('eNivel').textContent = '';
     $('eNivel').classList.remove('active');
     
@@ -637,9 +613,9 @@ document.addEventListener('DOMContentLoaded', function () {
       levels.map(l => `<option value="${l.id}" ${selectedId == l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
   }
 
-  /* â”€â”€ Errores â”€â”€ */
+  /* ── Errores ── */
   function clearErrors() {
-    ['eEdificio','eNombre','eNivel','eTipo','eCapacidad'].forEach(id => {
+    ['eEdificio','eNombre','eNivel','eTipo'].forEach(id => {
       $(id).classList.remove('active');
       $(id).textContent = '';
     });
@@ -650,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $(id).classList.add('active');
   }
 
-  /* â”€â”€ Guardar â”€â”€ */
+  /* ── Guardar ── */
   async function saveForm() {
     clearErrors();
     const buildingId = Number($('fEdificio').value);
@@ -675,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const saveBtn = $('btnSaveAula');
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Guardandoâ€¦';
+    saveBtn.textContent = 'Guardando…';
 
     try {
       if (state.editingId) {
@@ -686,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showToast('Aula registrada', 'El aula fue registrada exitosamente.', 'success');
       }
       closePanel();
-      levelsCache = {};
+      state.levelsCache = {};
       await loadAll();
     } catch(err) {
       const errs = err.json?.errors ?? {};
@@ -702,9 +678,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* â”€â”€ Precondición â”€â”€ */
+  /* ── Inactivar Aula ── */
+  async function deleteAula(id) {
+    const record = state.aulas.find(x => x.id === id);
+    if (!record) return;
+    if (!confirm(`¿Está seguro de que desea inactivar el aula "${record.nombre}"?`)) return;
+    try {
+      await apiFetch(`/api/v1/classrooms/${id}`, { method: 'DELETE' });
+      showToast('Aula inactivada', 'El aula fue inactivada correctamente.', 'success');
+      await loadAll();
+    } catch(err) {
+      showToast('Error', err.json?.message ?? 'No se pudo inactivar el aula.', 'error');
+    }
+  }
+
+  /* ── Precondición ── */
   function bootPrecondition() {
-    if (buildings.length > 0) return;
+    if (state.buildings.length > 0) return;
     $('preconditionBox').style.display = 'block';
     $('btnNuevaAula').disabled = true;
     $('btnNuevaAula').title = 'Primero registra un edificio activo';
@@ -715,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function () {
   $('filterTipo').addEventListener('change',     (e) => { state.tipo     = e.target.value; renderTable(); });
   $('searchAula').addEventListener('input',      (e) => { state.q        = e.target.value; renderTable(); });
 
-  $('btnNuevaAula').addEventListener('click',        () => { if (buildings.length) openPanel(null); });
+  $('btnNuevaAula').addEventListener('click',        () => { if (state.buildings.length) openPanel(null); });
   $('btnClosePanelAula').addEventListener('click',   closePanel);
   $('btnCancelPanelAula').addEventListener('click',  closePanel);
   $('overlayAulas').addEventListener('click',        closePanel);
@@ -731,13 +721,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (edit) { openPanel(Number(edit.dataset.edit)); return; }
     const qr = e.target.closest('[data-qr]');
     if (qr) window.location.href = `{{ route('codigosqr') }}?aula_id=${qr.dataset.qr}`;
+    const del = e.target.closest('[data-delete]');
+    if (del) { deleteAula(Number(del.dataset.delete)); return; }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && $('panelAulas').classList.contains('open')) closePanel();
   });
 
-  /* â”€â”€ Arranque â”€â”€ */
+  /* ── Arranque ── */
   loadAll();
 });
 </script>

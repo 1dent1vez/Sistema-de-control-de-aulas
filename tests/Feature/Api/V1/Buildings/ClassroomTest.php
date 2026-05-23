@@ -126,3 +126,49 @@ it('can get classrooms by building', function (): void {
     $response->assertStatus(200)
         ->assertJsonCount(2, 'data');
 });
+
+it('excludes classrooms of soft-deleted buildings', function (): void {
+    $classroom = Classroom::factory()->create();
+
+    // Check that it's initially listed
+    $responseBefore = $this->getJson($this->endpoint);
+    $responseBefore->assertStatus(200);
+    $idsBefore = collect($responseBefore->json('data'))->pluck('id');
+    expect($idsBefore)->toContain($classroom->id);
+
+    // Soft delete the building
+    $classroom->building->delete();
+
+    // Check that it is no longer listed
+    $responseAfter = $this->getJson($this->endpoint);
+    $responseAfter->assertStatus(200);
+    $idsAfter = collect($responseAfter->json('data'))->pluck('id');
+    expect($idsAfter)->not->toContain($classroom->id);
+});
+
+it('can update a classroom level and other fields', function (): void {
+    $this->loginAsAdmin();
+    $classroom = Classroom::factory()->create(['building_id' => $this->building->id]);
+    $newLevel = Level::factory()->create(['building_id' => $this->building->id]);
+
+    $data = [
+        'building_id' => $this->building->id,
+        'level_id' => $newLevel->id,
+        'classroom_name' => 'A102-Updated',
+        'classroom_type' => 'computer_lab',
+    ];
+
+    $response = $this->putJson("$this->endpoint/{$classroom->id}", $data);
+
+    $response->assertStatus(200)
+        ->assertJsonPath('data.classroomName', 'A102-Updated')
+        ->assertJsonPath('data.levelId', $newLevel->id)
+        ->assertJsonPath('data.classroomTypeLabel', 'Laboratorio de Cómputo');
+
+    $this->assertDatabaseHas('gama_classrooms', [
+        'id' => $classroom->id,
+        'level_id' => $newLevel->id,
+        'classroom_name' => 'A102-Updated',
+        'classroom_type' => 'computer_lab',
+    ]);
+});
