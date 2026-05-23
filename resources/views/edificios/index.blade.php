@@ -870,14 +870,30 @@ document.addEventListener('DOMContentLoaded', function () {
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i></td></tr>';
         try {
             const json = await apiFetch('/api/v1/buildings');
-            buildings = (json.data ?? []).map(b => ({
-                id:          b.id,
-                nombre:      b.name,
-                niveles:     b.levelCount,
-                descripcion: b.description ?? '',
-                estatus:     b.isActive ? 'Activo' : 'Inactivo',
-                isActive:    b.isActive,
-            }));
+            buildings = (json.data ?? []).map(b => {
+                // Generar la nomenclatura de niveles desde b.levels si existe, de lo contrario calcularla dinámicamente
+                let nivelNomenclaturas = "";
+                if (Array.isArray(b.levels) && b.levels.length > 0) {
+                    nivelNomenclaturas = b.levels.map(l => l.name).join(', ');
+                } else {
+                    const count = parseInt(b.levelCount) || 0;
+                    const arr = [];
+                    for (let i = 0; i < count; i++) {
+                        arr.push(i === 0 ? 'PB' : 'P' + i);
+                    }
+                    nivelNomenclaturas = arr.join(', ');
+                }
+
+                return {
+                    id:          b.id,
+                    nombre:      b.name,
+                    niveles:     nivelNomenclaturas,
+                    levelCount:  b.levelCount,
+                    descripcion: b.description ?? '',
+                    estatus:     b.isActive ? 'Activo' : 'Inactivo',
+                    isActive:    b.isActive,
+                };
+            });
             render();
         } catch (e) {
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--status-inactive);">Error al cargar edificios. Verifica la conexión con la API.</td></tr>';
@@ -918,7 +934,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr>
                     <td class="td-id">${r.id}</td>
                     <td class="td-name"><div>${esc(r.nombre)}</div></td>
-                    <td class="tc">${r.niveles}</td>
+                    <td class="tc">${esc(r.niveles)}</td>
                     <td>
                         ${r.descripcion
                             ? `<span class="td-desc-cell" title="${esc(r.descripcion)}">${esc(r.descripcion)}</span>`
@@ -1016,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', function () {
         $('panelSubtitle').textContent = isEdit ? 'Modifica los datos del edificio' : 'Completa los datos del nuevo edificio';
 
         fieldNombre.value  = isEdit ? record.nombre      : '';
-        fieldNiveles.value = isEdit ? record.niveles     : '';
+        fieldNiveles.value = isEdit ? record.levelCount  : '';
         fieldDesc.value    = isEdit ? record.descripcion : '';
 
         // Deshabilitar el número de niveles al editar
