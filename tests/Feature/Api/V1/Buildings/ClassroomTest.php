@@ -45,7 +45,7 @@ it('can list all classrooms', function (): void {
     $response->assertStatus(200)
         ->assertJsonStructure([
             'success', 'statusCode', 'message',
-            'data' => [['id', 'buildingId', 'levelId', 'classroomName', 'classroomType', 'status']],
+            'data' => [['id', 'buildingId', 'levelId', 'classroomName', 'classroomType', 'classroomTypeLabel', 'status']],
             'errors',
         ]);
 });
@@ -77,7 +77,8 @@ it('can create a classroom', function (): void {
     $response = $this->postJson($this->endpoint, $data);
 
     $response->assertStatus(201)
-        ->assertJsonPath('data.classroomName', 'A101');
+        ->assertJsonPath('data.classroomName', 'A101')
+        ->assertJsonPath('data.classroomTypeLabel', 'Salón');
 
     $this->assertDatabaseHas('gama_classrooms', ['classroom_name' => 'A101']);
 });

@@ -27,6 +27,7 @@ namespace App\Services\Buildings;
 use App\Models\Classroom;
 use App\Repositories\Contracts\ClassroomRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class GamaClassroomService
 {
@@ -69,7 +70,9 @@ class GamaClassroomService
      */
     public function create(array $data): Classroom
     {
-        return $this->repository->create($data);
+        return DB::transaction(function () use ($data): Classroom {
+            return $this->repository->create($data);
+        });
     }
 
     /**

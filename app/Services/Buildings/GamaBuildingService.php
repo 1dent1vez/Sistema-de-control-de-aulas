@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace App\Services\Buildings;
 
 use App\Models\Building;
+use App\Models\Institution;
 use App\Models\Level;
 use App\Repositories\Contracts\BuildingRepositoryInterface;
 use App\Repositories\Contracts\LevelRepositoryInterface;
@@ -45,7 +46,9 @@ class GamaBuildingService
      */
     public function getAll(): Collection
     {
-        return $this->buildingRepository->all();
+        $activeInstitution = Institution::where('is_active', true)->first();
+
+        return $this->buildingRepository->all($activeInstitution?->id);
     }
 
     /**
@@ -63,6 +66,11 @@ class GamaBuildingService
      */
     public function store(array $data): Building
     {
+        $institution = Institution::find($data['institution_id']);
+        if (! $institution || ! $institution->is_active) {
+            throw new \RuntimeException('La institución seleccionada no está activa o no existe.');
+        }
+
         return DB::transaction(function () use ($data): Building {
             $building = $this->buildingRepository->create($data);
 

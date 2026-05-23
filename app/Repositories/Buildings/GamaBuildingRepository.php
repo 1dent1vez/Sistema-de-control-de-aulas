@@ -30,9 +30,15 @@ use Illuminate\Database\Eloquent\Collection;
 
 class GamaBuildingRepository implements BuildingRepositoryInterface
 {
-    public function all(): Collection
+    public function all(?int $institutionId = null): Collection
     {
-        return Building::with('levels')->get();
+        $query = Building::with('levels');
+
+        if ($institutionId !== null) {
+            $query->where('institution_id', $institutionId);
+        }
+
+        return $query->get();
     }
 
     public function findById(int $id): ?Building

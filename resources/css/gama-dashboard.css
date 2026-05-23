@@ -91,24 +91,24 @@ body {
 ======================================== */
 .mobile-menu-toggle {
     display: none;
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1001;
+    position: relative;
+    top: auto;
+    left: auto;
+    z-index: 50;
     width: 46px;
     height: 46px;
-    background-color: var(--royal-blue);
+    background-color: transparent;
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-md);
     cursor: pointer;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(19, 68, 116, 0.3);
+    box-shadow: none;
 }
 
 .mobile-menu-toggle:hover {
-    background-color: var(--corp-orange);
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 .hamburger {

@@ -29,6 +29,14 @@ enum ClassroomType: string
     case CLASSROOM = 'classroom';
     case COMPUTER_LAB = 'computer_lab';
 
+    public function label(): string
+    {
+        return match ($this) {
+            self::CLASSROOM => 'Salón',
+            self::COMPUTER_LAB => 'Laboratorio de Cómputo',
+        };
+    }
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

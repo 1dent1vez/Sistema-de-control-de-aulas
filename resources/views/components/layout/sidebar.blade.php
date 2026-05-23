@@ -125,8 +125,8 @@
             top: 0;
             left: 0;
             height: 100vh;
-            z-index: 1000;
-            transition: width var(--transition-normal);
+            z-index: 40;
+            transition: width var(--transition-normal), transform var(--transition-normal);
         }
 
         .sidebar.collapsed {
@@ -193,7 +193,7 @@
             align-items: center;
             justify-content: center;
             transition: all var(--transition-fast);
-            z-index: 1001;
+            z-index: 41;
         }
 
         .sidebar-toggle:hover {
@@ -1152,6 +1152,55 @@
         }
 
         /* ========================================
+           Mobile Menu Toggle Base
+        ======================================== */
+        .mobile-menu-toggle {
+            display: none;
+            position: relative;
+            top: auto;
+            left: auto;
+            z-index: 50;
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: transparent;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .hamburger {
+            width: 24px;
+            height: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 2.5px;
+            background: var(--gama-blanco);
+            border-radius: 2px;
+            transition: all var(--transition-fast);
+        }
+
+        .mobile-menu-toggle.active .hamburger span:nth-child(1) {
+            transform: rotate(45deg) translate(5.5px, 5.5px);
+        }
+
+        .mobile-menu-toggle.active .hamburger span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-toggle.active .hamburger span:nth-child(3) {
+            transform: rotate(-45deg) translate(5.5px, -5.5px);
+        }
+
+        /* ========================================
            Responsive
         ======================================== */
         @media (max-width: 1024px) {
@@ -1159,7 +1208,7 @@
                 transform: translateX(-100%);
             }
 
-            .sidebar.mobile-open {
+            .sidebar.active {
                 transform: translateX(0);
             }
 
@@ -1205,15 +1254,6 @@
         }
     </style>
      
-     <!-- Mobile Menu Toggle -->
-      <button class="mobile-menu-toggle" id="mobileMenuToggle">
-        <div class="hamburger">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </button>
-
       <!-- Sidebar Overlay -->
       <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -1348,6 +1388,19 @@
           sidebar.classList.remove("active");
           sidebarOverlay.classList.remove("active");
           mobileMenuToggle.classList.remove("active");
+        });
+
+        // Close sidebar on link/nav-item click in mobile
+        document.querySelectorAll(".sidebar a, .sidebar-footer a, .nav-item").forEach(function(item) {
+          item.addEventListener("click", function() {
+            if (window.innerWidth <= 1024) {
+              sidebar.classList.remove("active");
+              sidebarOverlay.classList.remove("active");
+              if (mobileMenuToggle) {
+                mobileMenuToggle.classList.remove("active");
+              }
+            }
+          });
         });
 
         // Logout handler

@@ -34,7 +34,9 @@ beforeEach(function (): void {
 });
 
 it('can list all buildings', function (): void {
-    Building::factory()->count(3)->create();
+    Building::factory()->count(3)->create([
+        'institution_id' => $this->institution->id,
+    ]);
 
     $response = $this->getJson($this->endpoint);
 
@@ -82,7 +84,7 @@ it('can create a building with auto-generated levels', function (): void {
     $this->assertDatabaseHas('gama_levels', ['building_id' => $buildingId, 'name' => 'P2', 'display_order' => 2]);
 });
 
-it('validates level_count between 1 and 20', function (): void {
+it('validates level_count between 1 and 5', function (): void {
     $this->loginAsAdmin();
     $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
@@ -93,7 +95,7 @@ it('validates level_count between 1 and 20', function (): void {
     $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
         'name' => 'Test 2',
-        'level_count' => 21,
+        'level_count' => 6,
     ])->assertStatus(422);
 });
 

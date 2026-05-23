@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface BuildingRepositoryInterface
 {
-    public function all(): Collection;
+    public function all(?int $institutionId = null): Collection;
 
     public function findById(int $id): ?Building;
 

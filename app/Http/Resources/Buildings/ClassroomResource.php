@@ -39,6 +39,7 @@ class ClassroomResource extends JsonResource
             'levelName' => $this->level?->name ?? null,
             'classroomName' => $this->classroom_name,
             'classroomType' => $this->classroom_type,
+            'classroomTypeLabel' => $this->classroom_type?->label(),
             'isActive' => (bool) $this->status,
             'status' => $this->status,
             'hasActiveQr' => $this->activeQr()->exists(),

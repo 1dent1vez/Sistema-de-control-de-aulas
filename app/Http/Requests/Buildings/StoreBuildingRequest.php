@@ -47,7 +47,7 @@ class StoreBuildingRequest extends FormRequest
                 Rule::unique('gama_buildings', 'name')
                     ->where('institution_id', $this->input('institution_id')),
             ],
-            'level_count' => ['required', 'integer', 'min:1', 'max:20'],
+            'level_count' => ['required', 'integer', 'min:1', 'max:5'],
             'description' => ['nullable', 'string', 'max:500'],
             'status' => ['boolean'],
         ];
@@ -56,8 +56,12 @@ class StoreBuildingRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if (! $this->has('institution_id') || ! $this->input('institution_id')) {
-            $first = Institution::first();
-            $this->merge(['institution_id' => $first?->id ?? 1]);
+            $active = Institution::where('is_active', true)->first();
+            abort_if(! $active, 422, 'No hay una institución activa registrada.');
+            $this->merge(['institution_id' => $active->id]);
+        } else {
+            $institution = Institution::find($this->input('institution_id'));
+            abort_if(! $institution?->is_active, 422, 'La institución seleccionada no está activa.');
         }
     }
 
@@ -69,7 +73,7 @@ class StoreBuildingRequest extends FormRequest
             'name.unique' => 'Ya existe un edificio con ese nombre en la misma institución.',
             'level_count.required' => 'El número de niveles es obligatorio.',
             'level_count.min' => 'El edificio debe tener al menos 1 nivel.',
-            'level_count.max' => 'El edificio puede tener máximo 20 niveles.',
+            'level_count.max' => 'El edificio puede tener máximo 5 niveles.',
         ];
     }
 }

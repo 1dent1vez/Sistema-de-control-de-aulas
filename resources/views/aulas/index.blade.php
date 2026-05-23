@@ -1,4 +1,4 @@
-﻿{{--
+{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -265,8 +265,8 @@
         <select id="filterEdificio" class="aulas-select"></select>
         <select id="filterTipo" class="aulas-select">
           <option value="">Todos los tipos</option>
-          <option value="Salon">Salón</option>
-          <option value="LabComputo">Lab. Cómputo</option>
+          <option value="classroom">Salón</option>
+          <option value="computer_lab">Laboratorio de Cómputo</option>
         </select>
         <input id="searchAula" class="aulas-search" type="text" placeholder="Buscar aula..." autocomplete="off">
       </div>
@@ -331,8 +331,8 @@
       <label for="fTipo">Tipo *</label>
       <select id="fTipo">
         <option value="">Selecciona...</option>
-        <option value="Salon">Salón</option>
-        <option value="LabComputo">Lab. Cómputo</option>
+        <option value="classroom">Salón</option>
+        <option value="computer_lab">Laboratorio de Cómputo</option>
       </select>
       <div class="err" id="eTipo"></div>
     </div>
@@ -452,23 +452,29 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  /* â”€â”€ Mapeo de tipo de aula â”€â”€ */
-  const TIPOS = { classroom: 'Salón', computer_lab: 'Lab. Cómputo' };
-  const TIPOS_API = { Salon: 'classroom', LabComputo: 'computer_lab' };
+  /* ── Mapeo de tipo de aula ── */
+  const TIPOS = { classroom: 'Salón', computer_lab: 'Laboratorio de Cómputo' };
 
   /* â”€â”€ Carga inicial â”€â”€ */
   async function loadAll() {
     $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:22px;"></i></td></tr>';
+    
+    let buildingsLoaded = false;
     try {
-      const [buildRes, aulaRes] = await Promise.all([
-        apiFetch('/api/v1/buildings'),
-        apiFetch('/api/v1/classrooms'),
-      ]);
-
+      const buildRes = await apiFetch('/api/v1/buildings');
       buildings = (buildRes.data ?? [])
         .filter(b => b.isActive)
         .map(b => ({ id: b.id, nombre: b.name, levelCount: b.levelCount }));
+      buildingsLoaded = true;
+    } catch(e) {
+      showToast('Error', 'No se pudieron cargar los edificios.', 'error');
+      $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--status-inactive);">No se pudieron cargar los edificios.</td></tr>';
+      bootPrecondition();
+      return;
+    }
 
+    try {
+      const aulaRes = await apiFetch('/api/v1/classrooms');
       aulas = (aulaRes.data ?? []).map(c => ({
         id:          c.id,
         buildingId:  c.buildingId,
@@ -477,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
         levelName:   c.levelName ?? '',
         nombre:      c.classroomName,
         tipo:        c.classroomType,
+        tipoLabel:   c.classroomTypeLabel ?? (TIPOS[c.classroomType] ?? c.classroomType),
         isActive:    c.isActive,
         qrGenerado:  c.hasActiveQr ?? false,
       }));
@@ -485,12 +492,12 @@ document.addEventListener('DOMContentLoaded', function () {
       populateFilters();
       renderTable();
     } catch(e) {
-      $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--status-inactive);">Error al cargar datos de la API.</td></tr>';
-      showToast('Error', 'No se pudieron cargar los datos.', 'error');
+      $('aulasBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--status-inactive);">Error al cargar las aulas de la API.</td></tr>';
+      showToast('Error', 'No se pudieron cargar las aulas.', 'error');
     }
   }
 
-  /* â”€â”€ Cargar niveles de un edificio â”€â”€ */
+  /* ── Cargar niveles de un edificio ── */
   async function loadLevels(buildingId) {
     if (levelsCache[buildingId]) return levelsCache[buildingId];
     try {
@@ -498,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
       levelsCache[buildingId] = (res.data ?? []).map(l => ({ id: l.id, name: l.name }));
       return levelsCache[buildingId];
     } catch(e) {
-      return [];
+      return null;
     }
   }
 
@@ -534,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <td>${esc(r.edificio)}</td>
         <td style="font-weight:600;color:var(--midnight);">${esc(r.nombre)}</td>
         <td>${esc(r.levelName)}</td>
-        <td>${TIPOS[r.tipo] ?? r.tipo}</td>
+        <td>${esc(r.tipoLabel)}</td>
         <td><span style="color:var(--soft-steel);">N/D</span></td>
         <td>
           <span class="badge-qr ${r.qrGenerado ? 'ok' : 'pending'}">
@@ -555,7 +562,17 @@ document.addEventListener('DOMContentLoaded', function () {
       </tr>`).join('');
   }
 
-  /* â”€â”€ Panel nuevo/editar â”€â”€ */
+  /* ── Panel nuevo/editar ── */
+  function checkFormValidity() {
+    const buildingId = $('fEdificio').value;
+    const nombre     = $('fNombre').value.trim();
+    const levelId    = $('fNivel').value;
+    const tipo       = $('fTipo').value;
+
+    const isValid = buildingId && nombre && nombre.length <= 30 && levelId && tipo;
+    $('btnSaveAula').disabled = !isValid;
+  }
+
   async function openPanel(editId = null) {
     state.editingId = editId;
     clearErrors();
@@ -583,6 +600,8 @@ document.addEventListener('DOMContentLoaded', function () {
       $('countNombre').textContent = '0';
       $('fTipo').value = '';
     }
+
+    checkFormValidity();
   }
 
   function closePanel() {
@@ -595,12 +614,25 @@ document.addEventListener('DOMContentLoaded', function () {
   async function syncNiveles(selectedId = null) {
     const buildingId = Number($('fEdificio').value);
     const level = $('fNivel');
+    
+    // Limpiar errores previos de niveles
+    $('eNivel').textContent = '';
+    $('eNivel').classList.remove('active');
+    
     if (!buildingId) {
       level.innerHTML = '<option value="">Selecciona edificio...</option>';
       return;
     }
     level.innerHTML = '<option value="">Cargando...</option>';
     const levels = await loadLevels(buildingId);
+    if (levels === null) {
+      showToast('Error', 'No se pudieron cargar los niveles.', 'error');
+      setError('eNivel', 'No se pudieron cargar los niveles.');
+      level.innerHTML = '<option value="">Error al cargar niveles</option>';
+      level.disabled = true;
+      return;
+    }
+    level.disabled = false;
     level.innerHTML = '<option value="">Selecciona...</option>' +
       levels.map(l => `<option value="${l.id}" ${selectedId == l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
   }
@@ -678,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btnNuevaAula').title = 'Primero registra un edificio activo';
   }
 
-  /* â”€â”€ Eventos â”€â”€ */
+  /* ── Eventos ── */
   $('filterEdificio').addEventListener('change', (e) => { state.edificio = e.target.value; renderTable(); });
   $('filterTipo').addEventListener('change',     (e) => { state.tipo     = e.target.value; renderTable(); });
   $('searchAula').addEventListener('input',      (e) => { state.q        = e.target.value; renderTable(); });
@@ -688,8 +720,11 @@ document.addEventListener('DOMContentLoaded', function () {
   $('btnCancelPanelAula').addEventListener('click',  closePanel);
   $('overlayAulas').addEventListener('click',        closePanel);
   $('btnSaveAula').addEventListener('click',         saveForm);
-  $('fEdificio').addEventListener('change',          () => syncNiveles());
-  $('fNombre').addEventListener('input',             () => { $('countNombre').textContent = $('fNombre').value.length; });
+  
+  $('fEdificio').addEventListener('change',          () => { syncNiveles().then(() => checkFormValidity()); });
+  $('fNombre').addEventListener('input',             () => { $('countNombre').textContent = $('fNombre').value.length; checkFormValidity(); });
+  $('fNivel').addEventListener('change',             checkFormValidity);
+  $('fTipo').addEventListener('change',              checkFormValidity);
 
   $('aulasBody').addEventListener('click', (e) => {
     const edit = e.target.closest('[data-edit]');

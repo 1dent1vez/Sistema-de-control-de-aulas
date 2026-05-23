@@ -36,6 +36,7 @@ class LevelResource extends JsonResource
             'buildingId' => $this->building_id,
             'name' => $this->name,
             'displayOrder' => $this->display_order,
+            'levelNumber' => $this->display_order,
         ];
     }
 }

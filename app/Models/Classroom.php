@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\Buildings\ClassroomType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,6 +49,7 @@ class Classroom extends Model
     {
         return [
             'status' => 'boolean',
+            'classroom_type' => ClassroomType::class,
         ];
     }
 

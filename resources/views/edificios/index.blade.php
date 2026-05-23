@@ -1,4 +1,4 @@
-﻿{{--
+{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -719,10 +719,18 @@
             <label class="form-label" for="fieldNiveles">
                 Número de niveles <span class="req">*</span>
             </label>
-            <input type="number" class="form-input" id="fieldNiveles" min="1" step="1" placeholder="Ej. 4">
+            <input type="number" class="form-input" id="fieldNiveles" min="1" max="5" step="1" placeholder="Ej. 4">
             <div class="form-error hidden" id="errorNiveles">
                 <i class="fas fa-exclamation-circle"></i>
                 <span id="errorNivelesMsg"></span>
+            </div>
+        </div>
+
+        {{-- Previsualización de Niveles --}}
+        <div class="form-field" id="levelsPreviewContainer" style="display: none;">
+            <label class="form-label">Niveles que se generarán</label>
+            <div class="form-static" style="background: var(--light-blue); border-style: dashed; border-color: var(--royal-blue);">
+                <span id="levelsPreviewText" style="font-weight: 600; color: var(--royal-blue);">PB</span>
             </div>
         </div>
 
@@ -958,7 +966,7 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    /* â”€â”€â”€ Delegación de eventos en la tabla â”€â”€â”€ */
+    /* ——— Delegación de eventos en la tabla ——— */
     tableBody.addEventListener('click', function (e) {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
@@ -968,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btn.dataset.action === 'inactivar') openInactivarModal(record);
     });
 
-    /* â”€â”€â”€ Búsqueda y filtro â”€â”€â”€ */
+    /* ——— Búsqueda y filtro ——— */
     let searchTimer;
     searchInput.addEventListener('input', function () {
         clearTimeout(searchTimer);
@@ -980,6 +988,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* â”€â”€â”€ Panel lateral â”€â”€â”€ */
+    function updateLevelsPreview() {
+        const val = parseInt(fieldNiveles.value);
+        const container = $('levelsPreviewContainer');
+        const textSpan = $('levelsPreviewText');
+
+        if (isNaN(val) || val <= 0 || val > 5) {
+            container.style.display = 'none';
+            textSpan.textContent = '';
+            return;
+        }
+
+        const levels = [];
+        for (let i = 0; i < val; i++) {
+            levels.push(i === 0 ? 'PB' : `P${i}`);
+        }
+
+        container.style.display = 'block';
+        textSpan.textContent = levels.join(', ');
+    }
+
     function openPanel(record) {
         panelRecord = record || {};
         const isEdit = !!record?.id;
@@ -990,6 +1018,9 @@ document.addEventListener('DOMContentLoaded', function () {
         fieldNombre.value  = isEdit ? record.nombre      : '';
         fieldNiveles.value = isEdit ? record.niveles     : '';
         fieldDesc.value    = isEdit ? record.descripcion : '';
+
+        // Deshabilitar el número de niveles al editar
+        fieldNiveles.disabled = isEdit;
 
         $('nombreCount').textContent = fieldNombre.value.length;
         $('descCount').textContent   = fieldDesc.value.length;
@@ -1002,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ? '(se gestiona con el botón Inactivar)'
             : 'Por defecto: Activo';
 
+        updateLevelsPreview();
         clearErrors();
         sidePanel.classList.add('open');
         panelBackdrop.classList.add('active');
@@ -1023,6 +1055,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fieldNombre.addEventListener('input', () => $('nombreCount').textContent = fieldNombre.value.length);
     fieldDesc.addEventListener('input',   () => $('descCount').textContent   = fieldDesc.value.length);
+    fieldNiveles.addEventListener('input', updateLevelsPreview);
+    fieldNiveles.addEventListener('change', updateLevelsPreview);
 
     /* â”€â”€â”€ Validación del formulario â”€â”€â”€ */
     function clearErrors() {
@@ -1046,6 +1080,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!nombre) {
             showError('fieldNombre','errorNombre','errorNombreMsg','El nombre es obligatorio.');
             ok = false;
+        } else if (nombre.length < 3) {
+            showError('fieldNombre','errorNombre','errorNombreMsg','El nombre debe tener al menos 3 caracteres.');
+            ok = false;
         } else if (nombre.length > 80) {
             showError('fieldNombre','errorNombre','errorNombreMsg','Máximo 80 caracteres.');
             ok = false;
@@ -1054,8 +1091,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!niveles) {
             showError('fieldNiveles','errorNiveles','errorNivelesMsg','El número de niveles es obligatorio.');
             ok = false;
-        } else if (!Number.isInteger(+niveles) || +niveles <= 0) {
-            showError('fieldNiveles','errorNiveles','errorNivelesMsg','Debe ser un entero positivo mayor a cero.');
+        } else if (!Number.isInteger(+niveles) || +niveles < 1 || +niveles > 5) {
+            showError('fieldNiveles','errorNiveles','errorNivelesMsg','Debe ser un entero entre 1 y 5.');
             ok = false;
         }
 

@@ -32,7 +32,7 @@ Estilos modulares para el sidebar de navegación
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
+    z-index: 30;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -50,8 +50,8 @@ Estilos modulares para el sidebar de navegación
     background-color: var(--deep-blue);
     display: flex;
     flex-direction: column;
-    transition: width 0.25s ease;
-    z-index: 1000;
+    transition: width 0.25s ease, transform 0.3s ease;
+    z-index: 40;
     position: fixed;
     top: 0;
     left: 0;

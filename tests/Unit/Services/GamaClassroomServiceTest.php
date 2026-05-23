@@ -22,6 +22,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Buildings\ClassroomType;
 use App\Models\Building;
 use App\Models\Classroom;
 use App\Models\Level;
@@ -85,7 +86,7 @@ it('can create classroom', function () {
     $classroom = $this->service->create($data);
 
     expect($classroom->classroom_name)->toBe('Aula 101')
-        ->and($classroom->classroom_type)->toBe('classroom');
+        ->and($classroom->classroom_type)->toBe(ClassroomType::CLASSROOM);
 
     $this->assertDatabaseHas('gama_classrooms', ['classroom_name' => 'Aula 101']);
 });

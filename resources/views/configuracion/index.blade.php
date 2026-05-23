@@ -114,14 +114,6 @@
             <div id="eHex" class="err"></div>
           </div>
 
-          <div class="field">
-            <label>Semestre activo *</label>
-            <select id="fSemestre">
-              <option value="">Cargando...</option>
-            </select>
-            <div id="eSemestre" class="err"></div>
-          </div>
-
           <button id="btnGuardar" class="btn btn-primary btn-md" style="width:100%; margin-top: 6px;">
             <i class="fas fa-save"></i><span>Guardar Configuración</span>
           </button>
@@ -138,7 +130,6 @@
             </div>
             <div class="live-body">
               <p style="font-size:13px;color:var(--dark-graphite);margin-bottom:8px;">Vista previa de navegación con color primario aplicado en tiempo real.</p>
-              <span class="live-chip" id="liveSem">Semestre: --</span>
             </div>
           </div>
           <div class="note info">
@@ -166,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
     nombre: '',
     palette: '',
     hex: '',
-    semestre: '',
     institutionId: null,
     institutionCode: ''
   };
@@ -191,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function setErr(id, msg) { var e = $(id); e.textContent = msg; e.classList.add('show'); }
   function clearErr(id) { var e = $(id); e.textContent = ''; e.classList.remove('show'); }
-  function clearAllErr() { ['eLogo','eNombre','eHex','eSemestre'].forEach(clearErr); $('fHex').classList.remove('err-border'); }
+  function clearAllErr() { ['eLogo','eNombre','eHex'].forEach(clearErr); $('fHex').classList.remove('err-border'); }
 
   function primaryColor() {
     if (state.palette && state.palette !== 'custom') return state.palette;
@@ -201,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function () {
   function refreshPreview() {
     $('liveBar').style.backgroundColor = primaryColor();
     $('liveInstName').textContent = state.nombre || 'Institución Activa';
-    $('liveSem').textContent = 'Semestre: ' + (state.semestre || '--');
   }
 
   function showToast(title, message) {
@@ -220,7 +209,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var ok = true;
     if (!state.nombre.trim()) { setErr('eNombre', 'El nombre institucional es obligatorio.'); ok = false; }
     if (state.nombre.length > 100) { setErr('eNombre', 'Máximo 100 caracteres.'); ok = false; }
-    if (!state.semestre) { setErr('eSemestre', 'Selecciona un semestre activo.'); ok = false; }
     if (state.palette === 'custom' || (!state.palette && state.hex)) {
       if (!HEX_RE.test(state.hex)) {
         setErr('eHex', 'Formato HEX inválido. Usa #RRGGBB.');
@@ -236,35 +224,27 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function init() {
-    Promise.all([
-      apiGet('/api/v1/institutions'),
-      apiGet('/api/v1/semesters')
-    ]).then(function (results) {
-      var instResp = results[0];
-      var semResp = results[1];
-      var institutions = (instResp && instResp.data) ? (Array.isArray(instResp.data) ? instResp.data : []) : [];
-      var semesters = (semResp && semResp.data) ? (Array.isArray(semResp.data) ? semResp.data : []) : [];
+    apiGet('/api/v1/institutions').then(function (instResp) {
+      var raw = (instResp && instResp.data) ? instResp.data : [];
+      var institutions = Array.isArray(raw) ? raw : (raw.data ? raw.data : []);
 
       if (institutions.length > 0) {
-        var inst = institutions[0];
+        // Buscar la institución activa utilizando la clave camelCase isActive
+        var inst = institutions.find(function (i) { return i.isActive === true; }) || institutions[0];
         state.institutionId = inst.id;
         state.institutionCode = inst.code || '';
         state.nombre = inst.name || '';
         $('fNombre').value = state.nombre;
         $('nameCount').textContent = String(state.nombre.length);
+      } else {
+        // Si no hay ninguna institución en absoluto, deshabilitar formulario y botón
+        $('fNombre').disabled = true;
+        $('fPalette').disabled = true;
+        $('fHex').disabled = true;
+        $('fLogo').disabled = true;
+        $('btnGuardar').disabled = true;
+        showToast('Error', 'No hay instituciones registradas en el sistema. Registre una institución primero.');
       }
-
-      var sel = $('fSemestre');
-      sel.innerHTML = '<option value="">Selecciona...</option>';
-      semesters.forEach(function (s) {
-        var opt = document.createElement('option');
-        opt.value = s.name;
-        opt.textContent = s.name;
-        if (s.isActive) opt.selected = true;
-        sel.appendChild(opt);
-      });
-      if (semesters.length > 0 && !sel.value) sel.value = semesters[0].name;
-      state.semestre = sel.value;
 
       $('mainLoader').classList.add('hidden');
       $('mainContent').classList.remove('hidden');
@@ -324,11 +304,6 @@ document.addEventListener('DOMContentLoaded', function () {
   $('fHex').addEventListener('input', function (e) {
     state.hex = e.target.value.trim();
     if (state.hex) state.palette = 'custom';
-    refreshPreview();
-  });
-
-  $('fSemestre').addEventListener('change', function (e) {
-    state.semestre = e.target.value;
     refreshPreview();
   });
 
