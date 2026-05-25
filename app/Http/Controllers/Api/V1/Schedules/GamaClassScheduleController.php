@@ -29,6 +29,7 @@ use App\Http\Requests\Schedules\StoreClassScheduleRequest;
 use App\Http\Resources\Schedules\ClassScheduleResource;
 use App\Models\ClassSchedule;
 use App\Services\Schedules\GamaClassScheduleService;
+use App\Services\Schedules\GamaSemesterService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,8 @@ class GamaClassScheduleController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly GamaClassScheduleService $service
+        private readonly GamaClassScheduleService $service,
+        private readonly GamaSemesterService $semesterService
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -61,8 +63,25 @@ class GamaClassScheduleController extends Controller
     public function store(StoreClassScheduleRequest $request): JsonResponse
     {
         $this->authorize('create', ClassSchedule::class);
+
         try {
-            return $this->success(new ClassScheduleResource($this->service->create($request->validated())), 'Horario creado exitosamente.', 201);
+            $semestreVigente = $this->semesterService->obtenerSemestreVigente();
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'DB_ERROR') {
+                return $this->error('Error al determinar el semestre vigente. No se puede registrar el horario.', 500);
+            }
+            throw $e;
+        }
+
+        if (! $semestreVigente) {
+            return $this->error('No existe semestre vigente', 422);
+        }
+
+        try {
+            $data = $request->validated();
+            $data['semester_id'] = $semestreVigente->id;
+
+            return $this->success(new ClassScheduleResource($this->service->create($data)), 'Horario creado exitosamente.', 201);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -71,13 +90,40 @@ class GamaClassScheduleController extends Controller
     public function update(StoreClassScheduleRequest $request, int $id): JsonResponse
     {
         $this->authorize('update', ClassSchedule::class);
+
         try {
-            $schedule = $this->service->update($id, $request->validated());
+            $semestreVigente = $this->semesterService->obtenerSemestreVigente();
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'DB_ERROR') {
+                return $this->error('Error al determinar el semestre vigente. No se puede registrar el horario.', 500);
+            }
+            throw $e;
+        }
+
+        if (! $semestreVigente) {
+            return $this->error('No existe semestre vigente', 422);
+        }
+
+        try {
+            $schedule = $this->service->getById($id);
             if (! $schedule) {
                 return $this->error('Horario no encontrado.', 404);
             }
 
-            return $this->success(new ClassScheduleResource($schedule), 'Horario actualizado exitosamente.');
+            $scheduleSemester = $schedule->semester;
+            if ($scheduleSemester && now()->greaterThan($scheduleSemester->end_date)) {
+                return $this->error('No se pueden registrar ni modificar horarios en semestres cuya fecha fin ya haya sido superada.', 422);
+            }
+
+            $data = $request->validated();
+            $data['semester_id'] = $semestreVigente->id;
+
+            $updatedSchedule = $this->service->update($id, $data);
+            if (! $updatedSchedule) {
+                return $this->error('Horario no encontrado.', 404);
+            }
+
+            return $this->success(new ClassScheduleResource($updatedSchedule), 'Horario actualizado exitosamente.');
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }

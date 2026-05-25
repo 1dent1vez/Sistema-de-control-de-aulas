@@ -24,6 +24,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Enums\Auth\SamRole;
+use App\Models\SamIdentity;
+use App\Notifications\PurgeFailedNotification;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -45,25 +48,35 @@ class PurgeExpiredSemestersCommand extends Command
             return Command::SUCCESS;
         }
 
-        try {
-            DB::transaction(function () use ($expired): void {
-                foreach ($expired as $semester) {
+        $successCount = 0;
+        $admins = SamIdentity::where('role', SamRole::ADMIN)->get();
+
+        foreach ($expired as $semester) {
+            try {
+                DB::transaction(function () use ($semester): void {
                     $semester->classSchedules()->delete();
                     $semester->delete();
-                    $this->line("Semestre '{$semester->name}' (ID: {$semester->id}) purgado.");
-                }
-            });
-        } catch (\Exception $e) {
-            Log::error('Fallo al purgar semestres caducados: '.$e->getMessage(), [
-                'expired_semesters' => $expired->pluck('id')->toArray(),
-                'exception' => $e,
-            ]);
-            $this->error('Fallo técnico al purgar semestres: '.$e->getMessage());
+                });
 
-            return Command::FAILURE;
+                $this->line("Semestre '{$semester->name}' (ID: {$semester->id}) purgado.");
+                $successCount++;
+            } catch (\Exception $e) {
+                $errorMessage = "Error al purgar semestre caducado ID: {$semester->id}";
+                Log::error($errorMessage.' - Detalle: '.$e->getMessage(), [
+                    'semester_id' => $semester->id,
+                    'exception' => $e,
+                ]);
+                $this->error($errorMessage);
+
+                foreach ($admins as $admin) {
+                    $admin->notify(new PurgeFailedNotification($semester, $e->getMessage()));
+                }
+            }
         }
 
-        $this->info("{$expired->count()} semestre(s) purgado(s).");
+        if ($successCount > 0) {
+            $this->info("{$successCount} semestre(s) purgado(s).");
+        }
 
         return Command::SUCCESS;
     }

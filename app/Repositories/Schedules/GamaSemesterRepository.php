@@ -32,7 +32,9 @@ class GamaSemesterRepository implements SemesterRepositoryInterface
 {
     public function all(): Collection
     {
-        return Semester::withCount('classSchedules')->get();
+        return Semester::withCount('classSchedules')
+            ->orderBy('start_date', 'desc')
+            ->get();
     }
 
     public function findById(int $id): ?Semester

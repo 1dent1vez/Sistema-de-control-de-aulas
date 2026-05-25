@@ -62,6 +62,12 @@ class Semester extends Model
             ->whereDate('end_date', '>=', now());
     }
 
+    public function scopeVigente(Builder $query, $date): Builder
+    {
+        return $query->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date);
+    }
+
     public function isActive(): bool
     {
         $today = now()->toDateString();

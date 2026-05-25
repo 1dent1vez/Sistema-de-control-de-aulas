@@ -28,6 +28,7 @@ use App\Models\Semester;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class GamaSemesterService
 {
@@ -70,8 +71,15 @@ class GamaSemesterService
      */
     public function create(array $data): Semester
     {
-        if ($this->repository->hasOverlap($data['institution_id'], $data['start_date'], $data['end_date'])) {
-            throw new \RuntimeException('El rango de fechas del semestre se solapa con otro semestre existente.');
+        try {
+            $hasOverlap = $this->repository->hasOverlap($data['institution_id'], $data['start_date'], $data['end_date']);
+        } catch (\Exception $e) {
+            Log::error('Fallo de BD al verificar solapamiento: '.$e->getMessage());
+            throw new \RuntimeException('No se pudo determinar el semestre activo');
+        }
+
+        if ($hasOverlap) {
+            throw new \RuntimeException('El período se solapa con un semestre vigente');
         }
 
         return $this->repository->create($data);
@@ -96,8 +104,15 @@ class GamaSemesterService
             $startDate = $data['start_date'] ?? Carbon::parse($semester->start_date)->format('Y-m-d');
             $endDate = $data['end_date'] ?? Carbon::parse($semester->end_date)->format('Y-m-d');
 
-            if ($this->repository->hasOverlap($semester->institution_id, $startDate, $endDate, $id)) {
-                throw new \RuntimeException('El rango de fechas se solapa con otro semestre existente.');
+            try {
+                $hasOverlap = $this->repository->hasOverlap($semester->institution_id, $startDate, $endDate, $id);
+            } catch (\Exception $e) {
+                Log::error('Fallo de BD al verificar solapamiento: '.$e->getMessage());
+                throw new \RuntimeException('No se pudo determinar el semestre activo');
+            }
+
+            if ($hasOverlap) {
+                throw new \RuntimeException('El período se solapa con un semestre vigente');
             }
         }
 
@@ -116,5 +131,29 @@ class GamaSemesterService
         }
 
         return $this->repository->delete($semester);
+    }
+
+    /**
+     * Obtiene el semestre vigente comparando la fecha actual del servidor.
+     *
+     * @throws \RuntimeException Si hay un fallo de BD o anomalía lógica.
+     */
+    public function obtenerSemestreVigente(): ?Semester
+    {
+        try {
+            $today = now()->format('Y-m-d');
+            $semesters = Semester::vigente($today)->get();
+
+            if ($semesters->count() > 1) {
+                Log::critical('Error crítico: Existe más de un semestre vigente simultáneamente.');
+
+                return $semesters->first();
+            }
+
+            return $semesters->first();
+        } catch (\Exception $e) {
+            Log::error('Error de BD al determinar el semestre vigente: '.$e->getMessage());
+            throw new \RuntimeException('DB_ERROR');
+        }
     }
 }

@@ -1320,6 +1320,10 @@
               <i class="fas fa-file-import nav-icon"></i>
               <span class="nav-text">Importar Horarios</span>
             </a>
+            <a href="{{ route('horarios.semestres.index') }}" class="nav-item {{ request()->routeIs('horarios.semestres.index') ? 'active' : '' }}" data-tooltip="Semestres">
+              <i class="fas fa-calendar-check nav-icon"></i>
+              <span class="nav-text">Semestres</span>
+            </a>
             <a href="{{ route('aulas.horario_publico') }}" class="nav-item {{ request()->routeIs('aulas.horario_publico') ? 'active' : '' }}" data-tooltip="Horario Público QR">
               <i class="fas fa-clock nav-icon"></i>
               <span class="nav-text">Horario Público QR</span>

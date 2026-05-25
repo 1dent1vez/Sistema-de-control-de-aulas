@@ -27,6 +27,7 @@ namespace App\Http\Requests\Schedules;
 use App\Enums\Schedules\Weekday;
 use App\Models\Semester;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class StoreClassScheduleRequest extends FormRequest
@@ -44,11 +45,27 @@ class StoreClassScheduleRequest extends FormRequest
                 'integer',
                 Rule::exists('gama_semesters', 'id')->whereNull('deleted_at'),
                 function ($attribute, $value, $fail) {
-                    $isActive = Semester::where('id', $value)
-                        ->current()
-                        ->exists();
-                    if (! $isActive) {
-                        $fail('El semestre seleccionado no está vigente.');
+                    try {
+                        $today = now()->format('Y-m-d');
+                        $semesters = Semester::vigente($today)->get();
+
+                        if ($semesters->isEmpty()) {
+                            $fail('No existe semestre vigente');
+
+                            return;
+                        }
+
+                        if ($semesters->count() > 1) {
+                            Log::critical('Error crítico: Existe más de un semestre vigente simultáneamente.');
+                        }
+
+                        $semestreVigente = $semesters->first();
+                        if ((int) $value !== $semestreVigente->id) {
+                            $fail('El semestre seleccionado no está vigente.');
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error de BD al determinar el semestre vigente: '.$e->getMessage());
+                        $fail('Error al determinar el semestre vigente. No se puede registrar el horario.');
                     }
                 },
             ],

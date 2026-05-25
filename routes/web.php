@@ -92,6 +92,10 @@ Route::middleware('sam.auth')->group(function () {
             return view('horarios.importar');
         })->name('horarios.importar');
 
+        Route::get('/horarios/semestres', function () {
+            return view('horarios.semestres.index');
+        })->name('horarios.semestres.index');
+
         Route::get('/usuarios', function () {
             return view('usuarios.index');
         })->name('usuarios');
