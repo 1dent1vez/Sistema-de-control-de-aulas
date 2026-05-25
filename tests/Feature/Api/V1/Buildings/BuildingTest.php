@@ -67,7 +67,7 @@ it('can create a building with auto-generated levels', function (): void {
     $this->loginAsAdmin();
     $data = [
         'institution_id' => $this->institution->id,
-        'name' => 'Edificio Principal',
+        'name' => 'Edificio-Principal',
         'level_count' => 3,
     ];
 
@@ -76,7 +76,7 @@ it('can create a building with auto-generated levels', function (): void {
     $response->assertStatus(201)
         ->assertJsonPath('data.levelCount', 3);
 
-    $this->assertDatabaseHas('gama_buildings', ['name' => 'Edificio Principal']);
+    $this->assertDatabaseHas('gama_buildings', ['name' => 'Edificio-Principal']);
 
     $buildingId = $response->json('data.id');
     $this->assertDatabaseHas('gama_levels', ['building_id' => $buildingId, 'name' => 'PB', 'display_order' => 0]);
@@ -94,7 +94,7 @@ it('validates level_count between 1 and 5', function (): void {
 
     $this->postJson($this->endpoint, [
         'institution_id' => $this->institution->id,
-        'name' => 'Test 2',
+        'name' => 'Test-2',
         'level_count' => 6,
     ])->assertStatus(422);
 });
@@ -124,7 +124,7 @@ it('can get levels of a building', function (): void {
     $this->loginAsAdmin();
     $data = [
         'institution_id' => $this->institution->id,
-        'name' => 'Building With Levels',
+        'name' => 'Building-With-Levels',
         'level_count' => 3,
     ];
 

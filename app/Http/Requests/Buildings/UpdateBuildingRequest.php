@@ -15,9 +15,10 @@
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-13 - Creación inicial del FormRequest
+ *               2026-05-25 - Actualización de validaciones (nombre alfanumérico + guion, descripción solo letras y sin estatus)
  */
 
 declare(strict_types=1);
@@ -42,20 +43,22 @@ class UpdateBuildingRequest extends FormRequest
         return [
             'name' => [
                 'string',
-                'max:100',
+                'regex:/^[a-zA-Z0-9\-]+$/',
+                'max:255',
                 Rule::unique('gama_buildings', 'name')
                     ->where('institution_id', $this->input('institution_id'))
                     ->ignore($buildingId),
             ],
-            'status' => ['boolean'],
-            'description' => ['nullable', 'string', 'max:500'],
+            'description' => ['nullable', 'string', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', 'max:500'],
         ];
     }
 
     public function messages(): array
     {
         return [
+            'name.regex' => 'El nombre del edificio solo puede contener letras, números y el guion medio (-).',
             'name.unique' => 'Ya existe un edificio con ese nombre en la misma institución.',
+            'description.regex' => 'La descripción solo puede contener letras.',
         ];
     }
 }

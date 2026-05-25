@@ -43,7 +43,7 @@ it('executes the full infrastructure flow correctly', function () {
     // 2. Crear Edificio (con 3 niveles automáticos)
     $response = $this->postJson('/api/v1/buildings', [
         'institution_id' => $institutionId,
-        'name' => 'Edificio Ciencias',
+        'name' => 'Edificio-Ciencias',
         'level_count' => 3,
         'status' => true,
     ]);

@@ -279,14 +279,14 @@
 
 .btn-editar:hover { background: var(--corp-orange); }
 
-.btn-inactivar {
+.btn-eliminar-red {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     padding: 5px 12px;
     background: transparent;
-    color: var(--soft-steel);
-    border: 1px solid var(--mist-blue);
+    color: var(--status-inactive);
+    border: 1px solid rgba(194, 120, 120, 0.4);
     border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 600;
@@ -297,30 +297,43 @@
     min-height: 34px;
 }
 
-.btn-inactivar:hover:not([disabled]) {
-    color: var(--deep-orange);
-    border-color: var(--deep-orange);
-    background: rgba(217, 106, 16, 0.08);
+.btn-eliminar-red:hover:not([disabled]) {
+    color: white;
+    border-color: var(--status-inactive);
+    background: var(--status-inactive);
 }
 
-.btn-inactivar[disabled] {
+.btn-eliminar-red[disabled] {
     opacity: 0.45;
     cursor: not-allowed;
 }
 
-.btn-inactivar.blocked {
-    opacity: 1;
-    color: var(--status-inactive);
-    border-color: rgba(194,120,120,0.4);
-    background: rgba(194,120,120,0.08);
+.btn-spinner {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--mist-blue);
+    background: var(--ice-blue);
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background 0.15s, border-color 0.15s;
+    color: var(--midnight);
+    outline: none;
 }
 
-.inact-label {
-    font-size: 11px;
-    color: var(--soft-steel);
-    padding: 5px 10px;
-    background: var(--ice-blue);
-    border-radius: var(--radius-sm);
+.btn-spinner:hover:not([disabled]) {
+    background: var(--light-orange);
+    border-color: var(--corp-orange);
+    color: var(--corp-orange);
+}
+
+.btn-spinner:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* â”€â”€ Fila vacía â”€â”€ */
@@ -585,9 +598,9 @@
     color: var(--corp-orange);
 }
 
-.btn-confirm-inactivar {
+.btn-confirm-eliminar {
     padding: 10px 20px;
-    background: var(--deep-orange);
+    background: var(--status-inactive);
     color: white;
     border: none;
     border-radius: var(--radius-md);
@@ -598,7 +611,7 @@
     transition: background 0.18s;
 }
 
-.btn-confirm-inactivar:hover { background: #b85a0d; }
+.btn-confirm-eliminar:hover { background: #a82e2e; }
 
 /* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
@@ -629,7 +642,7 @@
                     <span class="current">Gestión de Edificios</span>
                 </nav>
                 <h1 class="edif-page-title">Gestión de Edificios</h1>
-                <p class="edif-page-subtitle">Registrar, consultar, editar e inactivar edificios de la institución</p>
+                <p class="edif-page-subtitle">Registrar, consultar, editar y eliminar edificios de la institución</p>
             </div>
             <button class="btn-nuevo-edif" id="btnNuevo">
                 <i class="fas fa-plus"></i>
@@ -645,13 +658,8 @@
                 <div class="edif-toolbar-left">
                     <div class="edif-search">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Buscar edificioâ€¦" autocomplete="off">
+                        <input type="text" id="searchInput" placeholder="Buscar edificios" autocomplete="off">
                     </div>
-                    <select class="edif-select" id="filterEstatus">
-                        <option value="">Todos los estatus</option>
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                    </select>
                 </div>
                 <span class="edif-count" id="resultsCount"></span>
             </div>
@@ -665,7 +673,6 @@
                             <th>Nombre del Edificio</th>
                             <th class="tc" style="width:80px;">Niveles</th>
                             <th>Descripción / Referencia</th>
-                            <th style="width:110px;">Estatus</th>
                             <th style="width:180px;">Acciones</th>
                         </tr>
                     </thead>
@@ -706,8 +713,11 @@
                 Nombre del edificio <span class="req">*</span>
             </label>
             <input type="text" class="form-input" id="fieldNombre" maxlength="80"
-                   placeholder="Ej. Edificio A — Ciencias">
-            <div class="form-hint"><span id="nombreCount">0</span>/80</div>
+                   placeholder="Ej.Edificio T">
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span style="font-size: 11px; color: var(--soft-steel);">Solo letras, números</span>
+                <div class="form-hint" style="margin-top: 0;"><span id="nombreCount">0</span>/80</div>
+            </div>
             <div class="form-error hidden" id="errorNombre">
                 <i class="fas fa-exclamation-circle"></i>
                 <span id="errorNombreMsg"></span>
@@ -719,7 +729,11 @@
             <label class="form-label" for="fieldNiveles">
                 Número de niveles <span class="req">*</span>
             </label>
-            <input type="number" class="form-input" id="fieldNiveles" min="1" max="5" step="1" placeholder="Ej. 4">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="btn-spinner" id="btnNivelesDec">—</button>
+                <input type="text" class="form-input" id="fieldNiveles" min="1" max="5" step="1" placeholder="Ej. 4" style="text-align: center; flex: 1;">
+                <button type="button" class="btn-spinner" id="btnNivelesInc">+</button>
+            </div>
             <div class="form-error hidden" id="errorNiveles">
                 <i class="fas fa-exclamation-circle"></i>
                 <span id="errorNivelesMsg"></span>
@@ -738,20 +752,14 @@
         <div class="form-field">
             <label class="form-label" for="fieldDesc">Descripción / Referencia</label>
             <textarea class="form-textarea" id="fieldDesc" maxlength="200" rows="4"
-                      placeholder="Referencia interna opcionalâ€¦"></textarea>
-            <div class="form-hint"><span id="descCount">0</span>/200</div>
+                      placeholder="Referencia interna opcional…"></textarea>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span style="font-size: 11px; color: var(--soft-steel);">Solo letras.</span>
+                <div class="form-hint" style="margin-top: 0;"><span id="descCount">0</span>/200</div>
+            </div>
             <div class="form-error hidden" id="errorDesc">
                 <i class="fas fa-exclamation-circle"></i>
                 <span id="errorDescMsg"></span>
-            </div>
-        </div>
-
-        {{-- Estatus (solo lectura) --}}
-        <div class="form-field">
-            <label class="form-label">Estatus</label>
-            <div class="form-static">
-                <span class="st-badge" id="panelStatusBadge"></span>
-                <span class="form-static-hint" id="panelStatusHint"></span>
             </div>
         </div>
     </div>
@@ -764,32 +772,32 @@
     </div>
 </aside>
 
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     Modal — Confirmar inactivar
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="modal-overlay" id="inactivarModal" role="dialog" aria-modal="true">
+{{-- ──────────────────────────────────────────────────────────────────
+     Modal — Confirmar eliminar
+────────────────────────────────────────────────────────────────── --}}
+<div class="modal-overlay" id="eliminarModal" role="dialog" aria-modal="true">
     <div class="modal">
         <div class="modal-header">
             <div>
-                <h3 class="modal-title">Inactivar Edificio</h3>
+                <h3 class="modal-title">Eliminar Edificio</h3>
                 <p style="font-size:13px;color:var(--soft-steel);margin-top:3px;">
-                    Esta acción cambiará el estatus del registro
+                    Esta acción eliminará el registro de forma permanente
                 </p>
             </div>
-            <button class="modal-close" id="btnCloseInactivar" aria-label="Cerrar">
+            <button class="modal-close" id="btnCloseEliminar" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="modal-body">
-            <div class="modal-warn-icon">
-                <i class="fas fa-exclamation-triangle"></i>
+            <div class="modal-warn-icon" style="background: rgba(194, 120, 120, 0.1);">
+                <i class="fas fa-exclamation-triangle" style="color: var(--status-inactive);"></i>
             </div>
-            <p class="modal-text" id="inactivarText"></p>
+            <p class="modal-text" id="eliminarText"></p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-outline" id="btnCancelInactivar">Cancelar</button>
-            <button class="btn-confirm-inactivar" id="btnConfirmInactivar">
-                <i class="fas fa-ban" style="margin-right:7px;"></i>Inactivar
+            <button class="btn btn-outline" id="btnCancelEliminar">Cancelar</button>
+            <button class="btn-confirm-eliminar" id="btnConfirmEliminar">
+                <i class="fas fa-trash-alt" style="margin-right:7px;"></i>Eliminar
             </button>
         </div>
     </div>
@@ -804,20 +812,18 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* â”€â”€â”€ Estado â”€â”€â”€ */
+    /* ─── Estado ─── */
     const PER_PAGE  = 10;
     let buildings   = [];
     let page        = 1;
     let search      = '';
-    let filterEstatus = '';
     let panelRecord   = null;
-    let inactivarTarget = null;
+    let eliminarTarget = null;
     let isLoading   = false;
 
-    /* â”€â”€â”€ Refs DOM â”€â”€â”€ */
+    /* ─── Refs DOM ─── */
     const $ = id => document.getElementById(id);
     const searchInput     = $('searchInput');
-    const filterEstatusEl = $('filterEstatus');
     const resultsCount    = $('resultsCount');
     const tableBody       = $('tableBody');
     const paginationInfo  = $('paginationInfo');
@@ -827,27 +833,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const fieldNombre     = $('fieldNombre');
     const fieldNiveles    = $('fieldNiveles');
     const fieldDesc       = $('fieldDesc');
-    const inactivarModal  = $('inactivarModal');
+    const btnNivelesDec   = $('btnNivelesDec');
+    const btnNivelesInc   = $('btnNivelesInc');
+    const eliminarModal   = $('eliminarModal');
     const toastContainer  = $('toastContainer');
 
-    /* â”€â”€â”€ Utilidades â”€â”€â”€ */
+    /* ─── Utilidades ─── */
     function esc(str) {
         if (!str) return '';
         return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function badge(activo) {
-        return activo
-            ? '<span class="st-badge st-activo">Activo</span>'
-            : '<span class="st-badge st-inactivo">Inactivo</span>';
-    }
-
-    /* â”€â”€â”€ CSRF â”€â”€â”€ */
+    /* ─── CSRF ─── */
     function getCsrf() {
         return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     }
 
-    /* â”€â”€â”€ API helpers â”€â”€â”€ */
+    /* ─── API helpers ─── */
     async function apiFetch(url, options = {}) {
         const token = localStorage.getItem('auth_token');
         const res = await fetch(url, {
@@ -865,9 +867,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return json;
     }
 
-    /* â”€â”€â”€ Carga de datos desde la API â”€â”€â”€ */
+    /* ─── Carga de datos desde la API ─── */
     async function loadBuildings() {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i></td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i></td></tr>';
         try {
             const json = await apiFetch('/api/v1/buildings');
             buildings = (json.data ?? []).map(b => {
@@ -896,22 +898,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             render();
         } catch (e) {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--status-inactive);">Error al cargar edificios. Verifica la conexión con la API.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--status-inactive);">Error al cargar edificios. Verifica la conexión con la API.</td></tr>';
             showToast('Error', 'No se pudieron cargar los edificios.', 'error');
         }
     }
 
-    /* â”€â”€â”€ Filtrado â”€â”€â”€ */
+    /* ─── Filtrado ─── */
     function getFiltered() {
         const q = search.toLowerCase();
         return buildings.filter(b => {
-            const matchQ = !q || b.nombre.toLowerCase().includes(q) || (b.descripcion || '').toLowerCase().includes(q);
-            const matchE = !filterEstatus || b.estatus === filterEstatus;
-            return matchQ && matchE;
+            return !q || b.nombre.toLowerCase().includes(q) || (b.descripcion || '').toLowerCase().includes(q);
         });
     }
 
-    /* â”€â”€â”€ Render principal â”€â”€â”€ */
+    /* ─── Render principal ─── */
     function render() {
         const filtered   = getFiltered();
         const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
@@ -924,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pageData.length === 0) {
             tableBody.innerHTML = `
                 <tr class="edif-empty">
-                    <td colspan="6">
+                    <td colspan="5">
                         <i class="fas fa-building"></i>
                         No se encontraron edificios con los filtros aplicados.
                     </td>
@@ -940,19 +940,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             ? `<span class="td-desc-cell" title="${esc(r.descripcion)}">${esc(r.descripcion)}</span>`
                             : `<span class="td-empty">Sin descripción</span>`}
                     </td>
-                    <td>${badge(r.isActive)}</td>
                     <td>
                         <div class="edif-actions">
                             <button class="btn-editar" data-action="editar" data-id="${r.id}">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
-                            ${r.isActive
-                                ? `<button class="btn-inactivar" data-action="inactivar" data-id="${r.id}"
-                                        title="Inactivar edificio">
-                                       <i class="fas fa-ban"></i> Inactivar
-                                   </button>`
-                                : `<span class="inact-label">Inactivo</span>`
-                            }
+                            <button class="btn-eliminar-red" data-action="eliminar" data-id="${r.id}" title="Eliminar edificio">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
                         </div>
                     </td>
                 </tr>`).join('');
@@ -988,22 +983,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!btn) return;
         const record = buildings.find(b => b.id === +btn.dataset.id);
         if (!record) return;
-        if (btn.dataset.action === 'editar')    openPanel(record);
-        if (btn.dataset.action === 'inactivar') openInactivarModal(record);
+        if (btn.dataset.action === 'editar') openPanel(record);
+        if (btn.dataset.action === 'eliminar') openEliminarModal(record);
     });
 
-    /* ——— Búsqueda y filtro ——— */
+    /* ——— Búsqueda y filtro ─── */
     let searchTimer;
     searchInput.addEventListener('input', function () {
+        // Solo permitir letras (A-Z, a-z) y números (0-9)
+        this.value = this.value.replace(/[^a-zA-Z0-9]/g, '');
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => { search = this.value; page = 1; render(); }, 280);
     });
 
-    filterEstatusEl.addEventListener('change', function () {
-        filterEstatus = this.value; page = 1; render();
-    });
-
-    /* â”€â”€â”€ Panel lateral â”€â”€â”€ */
+    /* ─── Panel lateral ─── */
     function updateLevelsPreview() {
         const val = parseInt(fieldNiveles.value);
         const container = $('levelsPreviewContainer');
@@ -1037,17 +1030,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Deshabilitar el número de niveles al editar
         fieldNiveles.disabled = isEdit;
+        btnNivelesDec.disabled = isEdit;
+        btnNivelesInc.disabled = isEdit;
 
         $('nombreCount').textContent = fieldNombre.value.length;
         $('descCount').textContent   = fieldDesc.value.length;
-
-        const activo = isEdit ? record.isActive : true;
-        const badgeEl = $('panelStatusBadge');
-        badgeEl.className   = `st-badge ${activo ? 'st-activo' : 'st-inactivo'}`;
-        badgeEl.textContent = activo ? 'Activo' : 'Inactivo';
-        $('panelStatusHint').textContent = isEdit
-            ? '(se gestiona con el botón Inactivar)'
-            : 'Por defecto: Activo';
 
         updateLevelsPreview();
         clearErrors();
@@ -1069,12 +1056,47 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btnCancelPanel').addEventListener('click', closePanel);
     panelBackdrop.addEventListener('click',       closePanel);
 
-    fieldNombre.addEventListener('input', () => $('nombreCount').textContent = fieldNombre.value.length);
-    fieldDesc.addEventListener('input',   () => $('descCount').textContent   = fieldDesc.value.length);
-    fieldNiveles.addEventListener('input', updateLevelsPreview);
-    fieldNiveles.addEventListener('change', updateLevelsPreview);
+    // Validaciones de teclado en tiempo real
+    fieldNombre.addEventListener('input', function () {
+        // Solo permitir letras, números y el guion medio
+        this.value = this.value.replace(/[^a-zA-Z0-9\-]/g, '');
+        $('nombreCount').textContent = this.value.length;
+    });
 
-    /* â”€â”€â”€ Validación del formulario â”€â”€â”€ */
+    fieldDesc.addEventListener('input', function () {
+        // Solo permitir letras
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        $('descCount').textContent = this.value.length;
+    });
+
+    fieldNiveles.addEventListener('input', function () {
+        // Bloquear en tiempo real cualquier letra o símbolo (permitir solo dígitos)
+        this.value = this.value.replace(/[^0-9]/g, '');
+        
+        if (this.value !== '') {
+            let val = parseInt(this.value);
+            if (val > 5) this.value = '5';
+        }
+        updateLevelsPreview();
+    });
+
+    btnNivelesDec.addEventListener('click', () => {
+        let val = parseInt(fieldNiveles.value) || 1;
+        if (val > 1) {
+            fieldNiveles.value = val - 1;
+            updateLevelsPreview();
+        }
+    });
+
+    btnNivelesInc.addEventListener('click', () => {
+        let val = parseInt(fieldNiveles.value) || 0;
+        if (val < 5) {
+            fieldNiveles.value = val + 1;
+            updateLevelsPreview();
+        }
+    });
+
+    /* ─── Validación del formulario ─── */
     function clearErrors() {
         ['errorNombre','errorNiveles','errorDesc'].forEach(id => $(id).classList.add('hidden'));
         ['fieldNombre','fieldNiveles','fieldDesc'].forEach(id => $(id).classList.remove('has-error'));
@@ -1091,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let ok = true;
         const nombre  = fieldNombre.value.trim();
         const niveles = fieldNiveles.value;
-        const desc    = fieldDesc.value;
+        const desc    = fieldDesc.value.trim();
 
         if (!nombre) {
             showError('fieldNombre','errorNombre','errorNombreMsg','El nombre es obligatorio.');
@@ -1101,6 +1123,9 @@ document.addEventListener('DOMContentLoaded', function () {
             ok = false;
         } else if (nombre.length > 80) {
             showError('fieldNombre','errorNombre','errorNombreMsg','Máximo 80 caracteres.');
+            ok = false;
+        } else if (!/^[a-zA-Z0-9\-]+$/.test(nombre)) {
+            showError('fieldNombre','errorNombre','errorNombreMsg','Solo letras, números y guion (-).');
             ok = false;
         }
 
@@ -1112,7 +1137,10 @@ document.addEventListener('DOMContentLoaded', function () {
             ok = false;
         }
 
-        if (desc.length > 200) {
+        if (desc && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(desc)) {
+            showError('fieldDesc','errorDesc','errorDescMsg','La descripción solo puede contener letras.');
+            ok = false;
+        } else if (desc.length > 200) {
             showError('fieldDesc','errorDesc','errorDescMsg','Máximo 200 caracteres.');
             ok = false;
         }
@@ -1131,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const saveBtn = $('btnSavePanel');
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Guardandoâ€¦';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Guardando…';
 
         try {
             if (panelRecord?.id) {
@@ -1164,53 +1192,53 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /* â”€â”€â”€ Modal de inactivar â”€â”€â”€ */
-    function openInactivarModal(record) {
-        inactivarTarget = record;
-        $('inactivarText').innerHTML =
-            `¿Está seguro de que desea inactivar el edificio
+    /* ─── Modal de eliminar ─── */
+    function openEliminarModal(record) {
+        eliminarTarget = record;
+        $('eliminarText').innerHTML =
+            `¿Está seguro de que desea eliminar el edificio
              <strong style="color:var(--midnight);">"${esc(record.nombre)}"</strong>?<br><br>
-             El registro no se eliminará físicamente. El estatus cambiará a <strong>Inactivo</strong>.`;
-        inactivarModal.classList.add('active');
+             Esta acción no se puede deshacer de forma sencilla.`;
+        eliminarModal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    function closeInactivarModal() {
-        inactivarTarget = null;
-        inactivarModal.classList.remove('active');
+    function closeEliminarModal() {
+        eliminarTarget = null;
+        eliminarModal.classList.remove('active');
         document.body.style.overflow = '';
     }
 
-    $('btnCloseInactivar').addEventListener('click',  closeInactivarModal);
-    $('btnCancelInactivar').addEventListener('click', closeInactivarModal);
-    inactivarModal.addEventListener('click', e => { if (e.target === inactivarModal) closeInactivarModal(); });
+    $('btnCloseEliminar').addEventListener('click',  closeEliminarModal);
+    $('btnCancelEliminar').addEventListener('click', closeEliminarModal);
+    eliminarModal.addEventListener('click', e => { if (e.target === eliminarModal) closeEliminarModal(); });
 
-    $('btnConfirmInactivar').addEventListener('click', async function () {
-        if (!inactivarTarget) return;
-        const nombre = inactivarTarget.nombre;
-        const confirmBtn = $('btnConfirmInactivar');
+    $('btnConfirmEliminar').addEventListener('click', async function () {
+        if (!eliminarTarget) return;
+        const nombre = eliminarTarget.nombre;
+        const confirmBtn = $('btnConfirmEliminar');
         confirmBtn.disabled = true;
 
         try {
-            await apiFetch(`/api/v1/buildings/${inactivarTarget.id}`, { method: 'DELETE' });
-            closeInactivarModal();
-            showToast('Edificio inactivado', `"${nombre}" fue inactivado correctamente.`, 'success');
+            await apiFetch(`/api/v1/buildings/${eliminarTarget.id}`, { method: 'DELETE' });
+            closeEliminarModal();
+            showToast('Edificio eliminado', `"${nombre}" fue eliminado correctamente.`, 'success');
             await loadBuildings();
         } catch (err) {
-            showToast('Error', err.json?.message ?? 'No se pudo inactivar el edificio.', 'error');
+            showToast('Error', err.json?.message ?? 'No se pudo eliminar el edificio.', 'error');
         } finally {
             confirmBtn.disabled = false;
         }
     });
 
-    /* â”€â”€â”€ Escape â”€â”€â”€ */
+    /* ─── Escape ─── */
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
-        if (sidePanel.classList.contains('open'))        closePanel();
-        if (inactivarModal.classList.contains('active')) closeInactivarModal();
+        if (sidePanel.classList.contains('open'))       closePanel();
+        if (eliminarModal.classList.contains('active')) closeEliminarModal();
     });
 
-    /* â”€â”€â”€ Toast â”€â”€â”€ */
+    /* ─── Toast ─── */
     function showToast(title, message, type = 'success') {
         const icons = { success: 'check', error: 'times', warning: 'exclamation' };
         const toast = document.createElement('div');
@@ -1233,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => toast.remove(), 300);
     }
 
-    /* â”€â”€â”€ Arranque: carga desde la API â”€â”€â”€ */
+    /* ─── Arranque: carga desde la API ─── */
     loadBuildings();
 });
 </script>
