@@ -70,7 +70,10 @@ class GamaSemesterController extends Controller
         try {
             return $this->created(new SemesterResource($this->service->create($request->validated())));
         } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
+            return $this->error($e->getMessage(), 422, [
+                'start_date' => [$e->getMessage()],
+                'end_date' => [$e->getMessage()],
+            ]);
         }
     }
 
@@ -85,7 +88,10 @@ class GamaSemesterController extends Controller
                 ? $this->success(new SemesterResource($semester))
                 : $this->error('Semestre no encontrado.', 404);
         } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
+            return $this->error($e->getMessage(), 422, [
+                'start_date' => [$e->getMessage()],
+                'end_date' => [$e->getMessage()],
+            ]);
         }
     }
 

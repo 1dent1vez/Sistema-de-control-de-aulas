@@ -72,10 +72,14 @@
 
     return fetch(url, options)
       .then(function (response) {
-        if (response.status === 401 || response.status === 403) {
+        if (response.status === 401) {
           showToast('Sesión expirada', 'Redirigiendo al inicio de sesión...', 'warning');
           setTimeout(redirectLogin, 800);
-          throw new Error(response.status === 401 ? 'Unauthenticated' : 'Forbidden');
+          throw new Error('Unauthenticated');
+        }
+        if (response.status === 403) {
+          showToast('Acceso denegado', 'No tienes permisos para realizar esta acción.', 'error');
+          throw new Error('Forbidden');
         }
         return response.json().then(function (data) {
           if (!response.ok) {
