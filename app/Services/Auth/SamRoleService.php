@@ -17,9 +17,10 @@
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-17
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-17 - Creación inicial del servicio de roles SAM
+ *               2026-05-25 - Corrección: prevenir duplicación de email si external_id o query ya contiene arroba.
  */
 
 declare(strict_types=1);
@@ -27,6 +28,7 @@ declare(strict_types=1);
 namespace App\Services\Auth;
 
 use App\Enums\Auth\SamRole;
+use App\Exceptions\SamOfflineException;
 use App\Models\SamIdentity;
 use App\Repositories\Contracts\SamIdentityRepositoryInterface;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +55,10 @@ class SamRoleService
      */
     public function searchInSam(string $query): array
     {
+        if (! config('sam.mock_enabled') && ! $this->samService->checkConnection()) {
+            throw new SamOfflineException;
+        }
+
         // TODO: Buscar contra SAM real vía endpoint de SAM cuando esté disponible
         $identities = $this->identityRepository->search($query);
 
@@ -63,7 +69,7 @@ class SamRoleService
         return [
             [
                 'external_id' => $query,
-                'email' => $query.'@toluca.tecnm.mx',
+                'email' => str_contains($query, '@') ? $query : $query.'@toluca.tecnm.mx',
                 'full_name' => null,
                 'role' => 'teacher',
             ],
@@ -75,19 +81,27 @@ class SamRoleService
      */
     public function assignRole(string $externalId, SamRole $role): SamIdentity
     {
+        if (! config('sam.mock_enabled') && ! $this->samService->checkConnection()) {
+            throw new SamOfflineException;
+        }
+
         return DB::transaction(function () use ($externalId, $role) {
             $identity = $this->identityRepository->findByExternalId($externalId);
 
             if ($identity === null) {
-                $identity = $this->identityRepository->create([
-                    'external_id' => $externalId,
-                    'email' => $externalId.'@toluca.tecnm.mx',
-                    'full_name' => null,
-                    'role' => $role,
-                ]);
+                $identity = new SamIdentity;
+                $identity->external_id = $externalId;
+                $identity->email = str_contains($externalId, '@') ? $externalId : $externalId.'@toluca.tecnm.mx';
+                $identity->full_name = null;
+                $identity->role = $role;
+                $identity->save();
             } else {
-                $this->identityRepository->update($identity, ['role' => $role]);
+                $identity->role = $role;
+                $identity->save();
             }
+
+            // Revocar de inmediato todos los tokens Sanctum para forzar re-login
+            $identity->tokens()->delete();
 
             return $identity;
         });

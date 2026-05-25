@@ -1280,10 +1280,22 @@
           <!-- Principal -->
           <div class="nav-section">
             <span class="nav-label">Principal</span>
-            <a href="{{ route('dashboard') }}" class="nav-item active" data-tooltip="Dashboard">
-              <i class="fas fa-home nav-icon"></i>
-              <span class="nav-text">Dashboard</span>
-            </a>
+            @if (Auth::user()?->role?->value === 'admin')
+              <a href="{{ route('admin.dashboard') }}" class="nav-item {{ (request()->routeIs('admin.dashboard') || (request()->routeIs('dashboard') && Auth::user()?->role?->value === 'admin')) ? 'active' : '' }}" data-tooltip="Dashboard Admin">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-text">Dashboard Admin</span>
+              </a>
+            @elseif (Auth::user()?->role?->value === 'teacher')
+              <a href="{{ route('docente.dashboard') }}" class="nav-item {{ (request()->routeIs('docente.dashboard') || (request()->routeIs('dashboard') && Auth::user()?->role?->value === 'teacher')) ? 'active' : '' }}" data-tooltip="Dashboard Docente">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-text">Dashboard Docente</span>
+              </a>
+            @else
+              <a href="{{ route('espera.rol') }}" class="nav-item active" data-tooltip="Espera de Rol">
+                <i class="fas fa-user-shield nav-icon"></i>
+                <span class="nav-text">Espera de Rol</span>
+              </a>
+            @endif
           </div>
 
           <!-- Módulos -->
@@ -1292,27 +1304,27 @@
           @if ($isAdmin)
           <div class="nav-section">
             <span class="nav-label">GESTIÓN ACADÉMICA</span>
-            <a href="{{ route('edificios') }}" class="nav-item" data-tooltip="Edificios">
+            <a href="{{ route('edificios') }}" class="nav-item {{ request()->routeIs('edificios') ? 'active' : '' }}" data-tooltip="Edificios">
               <i class="fas fa-building nav-icon"></i>
               <span class="nav-text">Edificios</span>
             </a>
-            <a href="{{ route('aulas') }}" class="nav-item" data-tooltip="Aulas">
+            <a href="{{ route('aulas') }}" class="nav-item {{ request()->routeIs('aulas') ? 'active' : '' }}" data-tooltip="Aulas">
               <i class="fas fa-school nav-icon"></i>
               <span class="nav-text">Aulas</span>
             </a>
-            <a href="{{ route('horarios.manual') }}" class="nav-item" data-tooltip="Horarios Manuales">
+            <a href="{{ route('horarios.manual') }}" class="nav-item {{ request()->routeIs('horarios.manual') ? 'active' : '' }}" data-tooltip="Horarios Manuales">
               <i class="fas fa-calendar-alt nav-icon"></i>
               <span class="nav-text">Horarios Manuales</span>
             </a>
-            <a href="{{ route('horarios.importar') }}" class="nav-item" data-tooltip="Importar Horarios">
+            <a href="{{ route('horarios.importar') }}" class="nav-item {{ request()->routeIs('horarios.importar') ? 'active' : '' }}" data-tooltip="Importar Horarios">
               <i class="fas fa-file-import nav-icon"></i>
               <span class="nav-text">Importar Horarios</span>
             </a>
-            <a href="{{ route('aulas.horario_publico') }}" class="nav-item" data-tooltip="Horario Público QR">
+            <a href="{{ route('aulas.horario_publico') }}" class="nav-item {{ request()->routeIs('aulas.horario_publico') ? 'active' : '' }}" data-tooltip="Horario Público QR">
               <i class="fas fa-clock nav-icon"></i>
               <span class="nav-text">Horario Público QR</span>
             </a>
-            <a href="{{ route('codigosqr') }}" class="nav-item" data-tooltip="CodigosQR">
+            <a href="{{ route('codigosqr') }}" class="nav-item {{ request()->routeIs('codigosqr') ? 'active' : '' }}" data-tooltip="CodigosQR">
               <i class="fas fa-qrcode nav-icon"></i>
               <span class="nav-text">Códigos QR</span>
             </a>
@@ -1320,11 +1332,11 @@
               <i class="fas fa-book nav-icon"></i>
               <span class="nav-text">Materias</span>
             </a>
-            <a href="{{ route('usuarios') }}" class="nav-item" data-tooltip="Usuarios">
+            <a href="{{ route('usuarios') }}" class="nav-item {{ request()->routeIs('usuarios') ? 'active' : '' }}" data-tooltip="Usuarios">
               <i class="fas fa-users nav-icon"></i>
               <span class="nav-text">Usuarios</span>
             </a>
-            <a href="{{ route('dashboard.admin') }}" class="nav-item" data-tooltip="Dashboard Admin">
+            <a href="{{ route('dashboard.admin') }}" class="nav-item {{ request()->routeIs('dashboard.admin') ? 'active' : '' }}" data-tooltip="Dashboard Admin">
               <i class="fas fa-user-shield nav-icon"></i>
               <span class="nav-text">Dashboard Admin</span>
             </a>
@@ -1332,12 +1344,16 @@
               <i class="fas fa-chart-bar nav-icon"></i>
               <span class="nav-text">Reportes</span>
             </a>
+            <a href="{{ route('admin.teacher-absences.index') }}" class="nav-item {{ request()->routeIs('admin.teacher-absences.index') ? 'active' : '' }}" data-tooltip="Gestión de Ausencias">
+              <i class="fas fa-user-clock nav-icon"></i>
+              <span class="nav-text">Gestión de Ausencias</span>
+            </a>
           </div>
 
           <!-- Configuración -->
           <div class="nav-section">
             <span class="nav-label">Configuración</span>
-            <a href="{{ route('configuracion') }}" class="nav-item" data-tooltip="Configuración">
+            <a href="{{ route('configuracion') }}" class="nav-item {{ request()->routeIs('configuracion') ? 'active' : '' }}" data-tooltip="Configuración">
               <i class="fas fa-cog nav-icon"></i>
               <span class="nav-text">Configuración</span>
             </a>
@@ -1345,13 +1361,15 @@
           @endif
 
           <!-- Docente -->
+          @if (Auth::user()?->role?->value === 'teacher')
           <div class="nav-section">
             <span class="nav-label">DOCENTE</span>
-            <a href="{{ route('docente.estatus') }}" class="nav-item" data-tooltip="Estatus Docente">
+            <a href="{{ route('docente.estatus') }}" class="nav-item {{ request()->routeIs('docente.estatus') ? 'active' : '' }}" data-tooltip="Estatus Docente">
               <i class="fas fa-chalkboard-teacher nav-icon"></i>
               <span class="nav-text">Estatus Docente</span>
             </a>
           </div>
+          @endif
         </nav>
 
         <!-- Sidebar Footer -->

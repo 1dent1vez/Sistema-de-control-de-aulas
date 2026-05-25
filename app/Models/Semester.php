@@ -61,4 +61,11 @@ class Semester extends Model
         return $query->whereDate('start_date', '<=', now())
             ->whereDate('end_date', '>=', now());
     }
+
+    public function isActive(): bool
+    {
+        $today = now()->toDateString();
+
+        return $this->start_date->format('Y-m-d') <= $today && $this->end_date->format('Y-m-d') >= $today;
+    }
 }

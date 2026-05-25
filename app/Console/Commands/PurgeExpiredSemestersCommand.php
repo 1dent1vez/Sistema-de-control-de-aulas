@@ -27,6 +27,7 @@ namespace App\Console\Commands;
 use App\Repositories\Contracts\SemesterRepositoryInterface;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PurgeExpiredSemestersCommand extends Command
 {
@@ -44,13 +45,23 @@ class PurgeExpiredSemestersCommand extends Command
             return Command::SUCCESS;
         }
 
-        DB::transaction(function () use ($expired): void {
-            foreach ($expired as $semester) {
-                $semester->classSchedules()->delete();
-                $semester->delete();
-                $this->line("Semestre '{$semester->name}' (ID: {$semester->id}) purgado.");
-            }
-        });
+        try {
+            DB::transaction(function () use ($expired): void {
+                foreach ($expired as $semester) {
+                    $semester->classSchedules()->delete();
+                    $semester->delete();
+                    $this->line("Semestre '{$semester->name}' (ID: {$semester->id}) purgado.");
+                }
+            });
+        } catch (\Exception $e) {
+            Log::error('Fallo al purgar semestres caducados: '.$e->getMessage(), [
+                'expired_semesters' => $expired->pluck('id')->toArray(),
+                'exception' => $e,
+            ]);
+            $this->error('Fallo técnico al purgar semestres: '.$e->getMessage());
+
+            return Command::FAILURE;
+        }
 
         $this->info("{$expired->count()} semestre(s) purgado(s).");
 

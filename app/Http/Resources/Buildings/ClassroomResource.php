@@ -43,6 +43,8 @@ class ClassroomResource extends JsonResource
             'isActive' => (bool) $this->status,
             'status' => $this->status,
             'hasActiveQr' => $this->relationLoaded('activeQr') ? ! is_null($this->activeQr) : $this->activeQr()->exists(),
+            'activeQrId' => ($activeQr = $this->relationLoaded('activeQr') ? $this->activeQr : $this->activeQr()->first())?->id,
+            'qrImageUrl' => $activeQr ? "api/v1/qr-codes/{$activeQr->id}/file" : null,
             'level' => new LevelResource($this->whenLoaded('level')),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),

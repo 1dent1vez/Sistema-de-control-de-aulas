@@ -24,16 +24,14 @@ declare(strict_types=1);
 
 namespace App\Services\Schedules;
 
+use App\Enums\Schedules\Weekday;
 use App\Repositories\Contracts\ClassroomRepositoryInterface;
 use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\ToArray;
-use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Facades\Excel;
 
 class GamaScheduleImportService
@@ -50,42 +48,48 @@ class GamaScheduleImportService
         'group_name', 'weekday', 'start_time', 'end_time',
     ];
 
-    private const VALID_WEEKDAYS = [
-        'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
-    ];
-
     /**
      * Importa horarios desde un archivo CSV/XLSX en chunks transaccionales.
      *
      * @param  int  $semesterId  ID del semestre al que asignar los horarios
+     * @param  string  $batchId  ID único del lote de importación
      * @return array{imported: int, errors: array<int, array{row: int, error: string}>, report_path: string|null}
      */
-    public function import(UploadedFile $file, int $semesterId): array
+    public function import(UploadedFile $file, int $semesterId, string $batchId): array
     {
-        $errors = [];
         $imported = 0;
         $rows = [];
 
-        Excel::import(new class($rows) implements ToCollection
-        {
-            use Importable;
-
-            public function collection(Collection $collection) {}
-        }, $file);
-
-        $rows = Excel::toArray(new class implements ToArray
-        {
-            public function array(array $array)
+        try {
+            $rows = Excel::toArray(new class implements ToArray
             {
-                return $array;
-            }
-        }, $file)[0] ?? [];
+                public function array(array $array): array
+                {
+                    return $array;
+                }
+            }, $file)[0] ?? [];
+        } catch (\Exception $e) {
+            Log::error('Error leyendo archivo de horarios: '.$e->getMessage());
+            $report = [['row' => 0, 'error' => 'Archivo dañado o formato no soportado. Vuelva a cargar el archivo.']];
+            $reportPath = "imports/{$batchId}.json";
+            Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
-        if (empty($rows)) {
             return [
                 'imported' => 0,
-                'errors' => [['row' => 0, 'error' => 'El archivo está vacío o no tiene datos.']],
-                'report_path' => null,
+                'errors' => $report,
+                'report_path' => $reportPath,
+            ];
+        }
+
+        if (empty($rows)) {
+            $report = [['row' => 0, 'error' => 'El archivo está vacío o no tiene datos.']];
+            $reportPath = "imports/{$batchId}.json";
+            Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
+
+            return [
+                'imported' => 0,
+                'errors' => $report,
+                'report_path' => $reportPath,
             ];
         }
 
@@ -94,10 +98,14 @@ class GamaScheduleImportService
 
         $missing = array_diff(self::REQUIRED_COLUMNS, $header);
         if (! empty($missing)) {
+            $report = [['row' => 1, 'error' => 'Columnas faltantes: '.implode(', ', $missing)]];
+            $reportPath = "imports/{$batchId}.json";
+            Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
+
             return [
                 'imported' => 0,
-                'errors' => [['row' => 1, 'error' => 'Columnas faltantes: '.implode(', ', $missing)]],
-                'report_path' => null,
+                'errors' => $report,
+                'report_path' => $reportPath,
             ];
         }
 
@@ -116,19 +124,20 @@ class GamaScheduleImportService
                     $rowErrors = [];
 
                     $classroomId = (int) ($rowData['classroom_id'] ?? 0);
-                    $weekday = mb_strtolower(trim($rowData['weekday'] ?? ''));
-                    $startTime = trim($rowData['start_time'] ?? '');
-                    $endTime = trim($rowData['end_time'] ?? '');
-                    $teacherExternalId = trim($rowData['teacher_external_id'] ?? '');
-                    $subjectName = trim($rowData['subject_name'] ?? '');
-                    $groupName = trim($rowData['group_name'] ?? '');
+                    $weekday = mb_strtolower(trim((string) ($rowData['weekday'] ?? '')));
+                    $startTime = trim((string) ($rowData['start_time'] ?? ''));
+                    $endTime = trim((string) ($rowData['end_time'] ?? ''));
+                    $teacherExternalId = trim((string) ($rowData['teacher_external_id'] ?? ''));
+                    $subjectName = trim((string) ($rowData['subject_name'] ?? ''));
+                    $groupName = trim((string) ($rowData['group_name'] ?? ''));
 
-                    if (! $classroomId || ! $this->classroomRepository->findById($classroomId)) {
+                    $classroom = null;
+                    if (! $classroomId || ! ($classroom = $this->classroomRepository->findById($classroomId))) {
                         $rowErrors[] = "classroom_id '$classroomId' no existe.";
                     }
 
-                    if (! in_array($weekday, self::VALID_WEEKDAYS, true)) {
-                        $rowErrors[] = "weekday '$weekday' no válido. Use: ".implode(', ', self::VALID_WEEKDAYS);
+                    if (! in_array($weekday, Weekday::values(), true)) {
+                        $rowErrors[] = "weekday '$weekday' no válido. Use: ".implode(', ', Weekday::values());
                     }
 
                     if (! preg_match('/^\d{2}:\d{2}$/', $startTime) || ! preg_match('/^\d{2}:\d{2}$/', $endTime)) {
@@ -150,7 +159,18 @@ class GamaScheduleImportService
                     }
 
                     if (! empty($rowErrors)) {
-                        $report[] = ['row' => $rowNum, 'error' => implode('; ', $rowErrors)];
+                        $report[] = [
+                            'row' => $rowNum,
+                            'ok' => false,
+                            'status' => 'discarded',
+                            'classroomName' => $rowData['classroom_id'] ?? '-',
+                            'teacherExternalId' => $teacherExternalId ?: '-',
+                            'subjectName' => $subjectName ?: '-',
+                            'weekday' => $weekday ?: '-',
+                            'startTime' => $startTime ?: '-',
+                            'endTime' => $endTime ?: '-',
+                            'error' => implode('; ', $rowErrors),
+                        ];
 
                         continue;
                     }
@@ -168,6 +188,19 @@ class GamaScheduleImportService
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
+
+                    $report[] = [
+                        'row' => $rowNum,
+                        'ok' => true,
+                        'status' => 'imported',
+                        'classroomName' => $classroom ? $classroom->name : $classroomId,
+                        'teacherExternalId' => $teacherExternalId,
+                        'subjectName' => $subjectName,
+                        'weekday' => $weekday,
+                        'startTime' => $startTime,
+                        'endTime' => $endTime,
+                        'error' => null,
+                    ];
                 }
 
                 if (! empty($toInsert)) {
@@ -177,12 +210,8 @@ class GamaScheduleImportService
             });
         }
 
-        $reportPath = null;
-        if (! empty($report)) {
-            $uuid = Str::uuid()->toString();
-            $reportPath = "imports/{$uuid}.json";
-            Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
-        }
+        $reportPath = "imports/{$batchId}.json";
+        Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
         return [
             'imported' => $imported,

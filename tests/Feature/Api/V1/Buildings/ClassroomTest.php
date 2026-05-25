@@ -149,7 +149,10 @@ it('excludes classrooms of soft-deleted buildings', function (): void {
 it('can update a classroom level and other fields', function (): void {
     $this->loginAsAdmin();
     $classroom = Classroom::factory()->create(['building_id' => $this->building->id]);
-    $newLevel = Level::factory()->create(['building_id' => $this->building->id]);
+    $newLevel = Level::factory()->create([
+        'building_id' => $this->building->id,
+        'name' => 'Level-Unique-Update',
+    ]);
 
     $data = [
         'building_id' => $this->building->id,

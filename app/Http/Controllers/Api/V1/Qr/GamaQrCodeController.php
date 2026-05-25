@@ -33,6 +33,8 @@ use App\Models\QrCode;
 use App\Services\Qr\GamaQrCodeService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -52,13 +54,28 @@ class GamaQrCodeController extends Controller
             $force = (bool) $request->input('force_regenerate', false);
             $qrCode = $this->service->generateForClassroom($classroomId, $force);
 
-            return $this->success(new QrCodeResource($qrCode), 'QR code generated successfully.', 201);
+            return $this->success(new QrCodeResource($qrCode), 'Código QR generado exitosamente.', 201);
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
         } catch (\RuntimeException $e) {
             $statusCode = (int) $e->getCode() ?: 422;
 
-            return $statusCode === 409
-                ? $this->error($e->getMessage(), 409)
-                : $this->error($e->getMessage(), $statusCode);
+            if ($statusCode === 409) {
+                $activeQr = $this->service->getActiveQr($classroomId);
+
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 409,
+                    'message' => 'Ya existe un QR activo para esta aula. Use force_regenerate (forceRegenerate) para reemplazarlo.',
+                    'data' => [
+                        'existingQrId' => $activeQr?->id,
+                        'generatedAt' => $activeQr?->generated_at?->toISOString(),
+                    ],
+                    'errors' => [],
+                ], 409);
+            }
+
+            return $this->error($e->getMessage(), $statusCode);
         }
     }
 
@@ -66,11 +83,11 @@ class GamaQrCodeController extends Controller
     {
         $qrCode = $this->service->getActiveQr($classroomId);
         if (! $qrCode) {
-            return $this->error('No active QR code found for this classroom.', 404);
+            return $this->error('No hay un código QR activo para esta aula.', 404);
         }
         $this->authorize('view', $qrCode);
 
-        return $this->success(new QrCodeResource($qrCode), 'QR code retrieved successfully.');
+        return $this->success(new QrCodeResource($qrCode), 'Código QR recuperado.');
     }
 
     public function download(DownloadQrRequest $request): JsonResponse
@@ -81,19 +98,91 @@ class GamaQrCodeController extends Controller
         $format = $request->input('format');
         $batchId = (string) Str::uuid();
 
+        Cache::put("qr_batch_{$batchId}", [
+            'status' => 'pending',
+            'progress' => 0,
+        ], 600);
+
         GenerateQrBatchJob::dispatch($classroomIds, $format, $batchId);
 
-        return $this->success(['batchId' => $batchId], 'Download batch queued successfully.');
+        return $this->success(['batchId' => $batchId], 'Descarga por lote encolada exitosamente.');
     }
 
-    public function file(int $id): mixed
+    public function downloadStatus(string $batchId): JsonResponse
+    {
+        $this->authorize('viewAny', QrCode::class);
+
+        $status = Cache::get("qr_batch_{$batchId}");
+        if (! $status) {
+            $status = [
+                'status' => 'failed',
+                'progress' => 0,
+                'error' => 'Batch not found in cache.',
+            ];
+        }
+
+        return $this->success($status, 'Estado del lote recuperado exitosamente.');
+    }
+
+    public function downloadFile(string $batchId): mixed
+    {
+        $dir = "downloads/{$batchId}";
+        try {
+            $files = Storage::disk('local')->files($dir);
+            if (empty($files)) {
+                return response()->json([
+                    'message' => 'No se pudo generar el archivo',
+                    'error' => 'No files found in batch directory.',
+                ], 500);
+            }
+            $filePath = $files[0];
+            $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+
+            return Storage::disk('local')->download($filePath, "qr-codes-batch.{$extension}");
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'No se pudo generar el archivo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function file(int $id, Request $request): mixed
     {
         $qrCode = $this->service->findById($id);
-        if (! $qrCode || ! $qrCode->file_path || ! Storage::disk('local')->exists($qrCode->file_path)) {
-            return $this->error('File not found.', 404);
+        if (! $qrCode) {
+            return $this->error('Archivo no encontrado.', 404);
         }
-        $this->authorize('view', $qrCode);
 
-        return Storage::disk('local')->download($qrCode->file_path, "qr-{$qrCode->token}.png");
+        $format = $request->query('format', 'png');
+
+        try {
+            if ($format === 'pdf') {
+                $pdfPath = $this->service->downloadBatch([$qrCode->classroom_id], 'pdf');
+                if (Storage::disk('local')->exists($pdfPath)) {
+                    return Storage::disk('local')->download($pdfPath, "qr-{$qrCode->token}.pdf");
+                }
+            } else {
+                if ($qrCode->file_path && Storage::disk('local')->exists($qrCode->file_path)) {
+                    if ($request->query('download') || $request->query('format') === 'png') {
+                        return Storage::disk('local')->download($qrCode->file_path, "qr-{$qrCode->token}.png", [
+                            'Content-Type' => 'image/svg+xml',
+                        ]);
+                    }
+
+                    return Storage::disk('local')->response($qrCode->file_path, null, [
+                        'Content-Type' => 'image/svg+xml',
+                        'Content-Disposition' => 'inline',
+                    ]);
+                }
+            }
+
+            return $this->error('Archivo no encontrado.', 404);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'No se pudo generar el archivo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿{{--
+{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -98,6 +98,33 @@
     border-bottom: 1px solid var(--mist-blue);
   }
   .search-item:hover { background: var(--light-orange); }
+  
+  /* Autocomplete Docentes */
+  .autocomplete-container { position: relative; width: 100%; }
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--mist-blue, #cbd5e1);
+    border-radius: var(--radius-md, 8px);
+    margin-top: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 50;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  }
+  .autocomplete-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left;
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover { background: var(--ice-blue, #f1f5f9); }
+  .autocomplete-name { font-weight: 600; color: var(--midnight, #0f172a); font-size: 13px; }
+  .autocomplete-meta { font-size: 11px; color: var(--soft-steel, #64748b); }
   .grid-wrap { overflow-x: auto; }
   .week-grid {
     width: 100%;
@@ -151,6 +178,27 @@
   <div class="manual-header">
     <h1 class="manual-title">Horarios Manuales</h1>
     <p class="manual-subtitle">Formulario manual + grilla semanal de referencia para prevenir empalmes.</p>
+
+    <!-- Info del semestre vigente (RF-05) -->
+    <div style="margin-top: 12px;">
+      <template x-if="semesterActivo">
+        <div class="note ok" style="margin: 0; padding: 10px 12px; border-left: 4px solid var(--status-active); background: rgba(90,154,90,0.12); border-radius: var(--radius-md); font-size: 13px;">
+          <span style="font-weight: 600; color: var(--status-active);">Semestre vigente activo: </span>
+          <span x-text="semesterActivo.name + ' (' + formatDate(semesterActivo.startDate) + ' a ' + formatDate(semesterActivo.endDate) + ')'"></span>
+        </div>
+      </template>
+      <template x-if="!semesterActivo">
+        <div class="note error" style="margin: 0; padding: 12px 14px; border-left: 4px solid #B00000; background: rgba(255,0,0,0.08); border-radius: var(--radius-md); font-size: 13px;">
+          <div style="display: flex; align-items: start;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 16px; margin-right: 10px; margin-top: 2px; color: #B00000;"></i>
+            <div>
+              <strong style="font-size: 14px; display: block; margin-bottom: 3px; color: #B00000;">No existe un semestre vigente</strong>
+              <span>No se pueden registrar ni modificar horarios en semestres cuya fecha fin haya sido superada. Contacte al administrador para habilitar un nuevo semestre.</span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 
   <div class="manual-grid">
@@ -159,7 +207,7 @@
       <div class="panel-body">
         <div class="field">
           <label>Edificio *</label>
-          <select x-model="form.edificioId" @change="onEdificioChange()">
+          <select x-model="form.edificioId" @change="onEdificioChange()" :disabled="!semesterActivo || saving">
             <option value="">Selecciona...</option>
             <template x-for="e in edificiosActivos" :key="e.id">
               <option :value="String(e.id)" x-text="e.nombre"></option>
@@ -170,7 +218,7 @@
 
         <div class="field">
           <label>Aula *</label>
-          <select x-model="form.aulaId">
+          <select x-model="form.aulaId" :disabled="!semesterActivo || saving">
             <option value="">Selecciona...</option>
             <template x-for="a in aulasFiltradas" :key="a.id">
               <option :value="String(a.id)" x-text="a.nombre"></option>
@@ -179,21 +227,45 @@
           <div class="err" x-show="errors.aula" x-text="errors.aula"></div>
         </div>
 
-        <div class="field">
-          <label>ID Docente (SAM) *</label>
-          <input type="text" x-model="form.docenteExterno" placeholder="Ej. SAM-00123" autocomplete="off">
+        <div class="field" @click.away="showDocentes = false">
+          <label>Docente (Docentes locales registrados) *</label>
+          <div class="autocomplete-container">
+            <input 
+              type="text" 
+              x-model="docenteSearch" 
+              placeholder="Buscar docente registrado (Nombre, correo, ID)..." 
+              autocomplete="off" 
+              :disabled="!semesterActivo || saving"
+              @input.debounce.300ms="buscarDocentesLocales()"
+              @focus="showDocentes = true"
+            >
+            <div class="autocomplete-dropdown" x-show="showDocentes && docentesFiltrados.length > 0" style="display: none;">
+              <template x-for="t in docentesFiltrados" :key="t.externalId">
+                <div class="autocomplete-item" @click="selectDocente(t)">
+                  <div class="autocomplete-name" x-text="t.fullName"></div>
+                  <div class="autocomplete-meta" x-text="'ID: ' + t.externalId + ' | ' + t.email"></div>
+                </div>
+              </template>
+            </div>
+            <div class="autocomplete-dropdown" x-show="showDocentes && docentesFiltrados.length === 0 && docenteSearch.trim().length >= 2" style="display: none;">
+              <div style="padding: 10px; text-align: center; color: var(--soft-steel); font-size: 12px;">
+                Sin resultados en docentes registrados.
+              </div>
+            </div>
+          </div>
+          <input type="hidden" x-model="form.docenteExterno">
           <div class="err" x-show="errors.docente" x-text="errors.docente"></div>
         </div>
 
         <div class="field">
           <label>Materia *</label>
-          <input type="text" x-model="form.subjectName" placeholder="Ej. Matemáticas I" autocomplete="off">
+          <input type="text" x-model="form.subjectName" placeholder="Ej. Matemáticas I" autocomplete="off" :disabled="!semesterActivo || saving">
           <div class="err" x-show="errors.materia" x-text="errors.materia"></div>
         </div>
 
         <div class="field">
           <label>Grupo *</label>
-          <input type="text" x-model="form.grupo" placeholder="Ej. 3A">
+          <input type="text" x-model="form.grupo" placeholder="Ej. 3A" :disabled="!semesterActivo || saving">
           <div class="err" x-show="errors.grupo" x-text="errors.grupo"></div>
         </div>
 
@@ -201,7 +273,7 @@
           <label>Día(s) de la semana *</label>
           <div class="days-wrap">
             <template x-for="d in diasCatalogo" :key="d.key">
-              <button type="button" class="day-chip" :class="{ 'active': form.dias.includes(d.key) }" @click="toggleDia(d.key)" x-text="d.label"></button>
+              <button type="button" class="day-chip" :class="{ 'active': form.dias.includes(d.key), 'opacity-50 cursor-not-allowed': !semesterActivo || saving }" @click="toggleDia(d.key)" x-text="d.label" :disabled="!semesterActivo || saving"></button>
             </template>
           </div>
           <div class="err" x-show="errors.dias" x-text="errors.dias"></div>
@@ -210,7 +282,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field">
             <label>Hora inicio *</label>
-            <select x-model="form.horaInicio">
+            <select x-model="form.horaInicio" :disabled="!semesterActivo || saving">
               <option value="">Selecciona...</option>
               <template x-for="h in horasDisponibles" :key="'i'+h">
                 <option :value="h" x-text="h"></option>
@@ -220,7 +292,7 @@
           </div>
           <div class="field">
             <label>Hora fin *</label>
-            <select x-model="form.horaFin">
+            <select x-model="form.horaFin" :disabled="!semesterActivo || saving">
               <option value="">Selecciona...</option>
               <template x-for="h in horasDisponibles" :key="'f'+h">
                 <option :value="h" x-text="h"></option>
@@ -230,9 +302,9 @@
           </div>
         </div>
 
-        <button class="btn btn-primary btn-md" style="width:100%;" @click="guardarHorario()" :disabled="saving">
+        <button class="btn btn-primary btn-md" style="width:100%;" @click="guardarHorario()" :disabled="!semesterActivo || saving" :class="{ 'opacity-50 cursor-not-allowed': !semesterActivo || saving }">
           <i class="fas fa-save"></i>
-          <span>Guardar Horario</span>
+          <span x-text="saving ? 'Guardando...' : 'Guardar Horario'"></span>
         </button>
 
         <div class="note error" x-show="mensajeError" x-text="mensajeError"></div>
@@ -302,6 +374,7 @@ function pant05HorarioManual() {
     },
     docenteSearch: '',
     showDocentes: false,
+    docentesFiltrados: [],
     errors: {},
     conflictos: [],
     mensajeError: '',
@@ -343,16 +416,12 @@ function pant05HorarioManual() {
       if (!res.ok) throw { status: res.status, json };
       return json;
     },
-        ...opts,
-      });
-      if (res.status === 401) {
-        localStorage.clear();
-        window.location.href = '/';
-        return;
-      }
-      const json = await res.json();
-      if (!res.ok) throw { status: res.status, json };
-      return json;
+
+    formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
     },
 
     async loadCatalogos() {
@@ -418,20 +487,20 @@ function pant05HorarioManual() {
       }
     },
 
-    /* â”€â”€ Horas disponibles â”€â”€ */
+    /* ── Horas disponibles ── */
     get horasDisponibles() {
       const out = [];
-      for (let h = 7; h <= 21; h++) {
+      for (let h = 7; h <= 22; h++) {
         out.push(String(h).padStart(2, '0') + ':00');
-        out.push(String(h).padStart(2, '0') + ':30');
       }
       return out;
     },
     get slotsGrid() {
-      return this.horasDisponibles.filter(h => h >= '07:00' && h <= '20:30');
+      return this.horasDisponibles.filter(h => h >= '07:00' && h <= '21:00');
     },
 
     toggleDia(dia) {
+      if (!this.semesterActivo) return;
       if (this.form.dias.includes(dia))
         this.form.dias = this.form.dias.filter(d => d !== dia);
       else
@@ -446,6 +515,27 @@ function pant05HorarioManual() {
       return this.toMin(aS) < this.toMin(bE) && this.toMin(aE) > this.toMin(bS);
     },
 
+    async buscarDocentesLocales() {
+      const q = this.docenteSearch.trim();
+      if (q.length < 2) {
+        this.docentesFiltrados = [];
+        return;
+      }
+      try {
+        const res = await this.apiFetch(`/api/v1/sam-identities/teachers?q=${encodeURIComponent(q)}`);
+        this.docentesFiltrados = res.data ?? [];
+      } catch (err) {
+        console.error('Error al buscar docentes locales:', err);
+      }
+    },
+
+    selectDocente(t) {
+      this.form.docenteExterno = t.externalId;
+      this.docenteSearch = `${t.fullName} (${t.externalId})`;
+      this.showDocentes = false;
+      this.errors.docente = '';
+    },
+
     validateBase() {
       this.errors = {};
       this.mensajeError = '';
@@ -453,7 +543,7 @@ function pant05HorarioManual() {
       this.conflictos = [];
       if (!this.form.edificioId)     this.errors.edificio    = 'Selecciona un edificio.';
       if (!this.form.aulaId)         this.errors.aula        = 'Selecciona un aula.';
-      if (!this.form.docenteExterno.trim()) this.errors.docente = 'El ID de docente es obligatorio.';
+      if (!this.form.docenteExterno.trim()) this.errors.docente = 'Debe seleccionar un docente registrado en el sistema.';
       if (!this.form.subjectName.trim()) this.errors.materia  = 'El nombre de materia es obligatorio.';
       if (!this.form.grupo.trim())   this.errors.grupo       = 'El grupo es obligatorio.';
       if (this.form.dias.length === 0) this.errors.dias      = 'Selecciona al menos un día.';
@@ -525,6 +615,7 @@ function pant05HorarioManual() {
           docenteExterno: '', subjectName: '', grupo: '',
           dias: [], horaInicio: '', horaFin: '',
         };
+        this.docenteSearch = '';
         this.errors = {};
         this.conflictos = [];
       } catch(err) {
@@ -539,7 +630,7 @@ function pant05HorarioManual() {
     horariosEnCelda(dia, slot) {
       const aulaId = Number(this.form.aulaId || 0);
       if (!aulaId) return [];
-      const endMin = this.toMin(slot) + 30;
+      const endMin = this.toMin(slot) + 60;
       const end = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0');
       return this.horariosActivos.filter(h =>
         h.aula_id === aulaId && h.dia === dia && this.overlaps(slot, end, h.hora_inicio, h.hora_fin)
@@ -548,7 +639,7 @@ function pant05HorarioManual() {
 
     isConflictCell(dia, slot) {
       if (this.conflictos.length === 0) return false;
-      const endMin = this.toMin(slot) + 30;
+      const endMin = this.toMin(slot) + 60;
       const end = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0');
       return this.conflictos.some(c => c.dia === dia && this.overlaps(slot, end, c.hora_inicio, c.hora_fin));
     },

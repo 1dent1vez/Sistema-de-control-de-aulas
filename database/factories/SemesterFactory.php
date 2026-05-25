@@ -1,5 +1,25 @@
 <?php
 
+/**
+ * @descripcion  Factory para la generación de datos falsos del modelo Semester.
+ *
+ * @autor        Agente OpenCode
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Agente OpenCode
+ *
+ * @mantenimiento Agente OpenCode
+ *
+ * @version      1.0.1
+ *
+ * @creado       2026-05-24
+ *
+ * @modificado   2026-05-24
+ *
+ * @cambios      2026-05-24 - Adición de prólogo reglamentario
+ */
+
 declare(strict_types=1);
 
 namespace Database\Factories;

@@ -71,7 +71,7 @@ it('can create schedule', function () {
         'teacher_external_id' => 'TEACHER-001',
         'subject_name' => 'Math',
         'group_name' => 'A1',
-        'weekday' => 'Lunes',
+        'weekday' => 'monday',
         'start_time' => '08:00',
         'end_time' => '10:00',
     ];
@@ -91,7 +91,7 @@ it('throws exception if semester does not exist', function () {
         'teacher_external_id' => 'TEACHER-001',
         'subject_name' => 'Math',
         'group_name' => 'A1',
-        'weekday' => 'Lunes',
+        'weekday' => 'monday',
         'start_time' => '08:00',
         'end_time' => '10:00',
     ];
@@ -103,7 +103,7 @@ it('throws exception on create with time overlap', function () {
     ClassSchedule::factory()->create([
         'semester_id' => $this->semester->id,
         'classroom_id' => $this->classroom->id,
-        'weekday' => 'Lunes',
+        'weekday' => 'monday',
         'start_time' => '08:00',
         'end_time' => '10:00',
     ]);
@@ -114,7 +114,7 @@ it('throws exception on create with time overlap', function () {
         'teacher_external_id' => 'TEACHER-002',
         'subject_name' => 'Physics',
         'group_name' => 'A2',
-        'weekday' => 'Lunes',
+        'weekday' => 'monday',
         'start_time' => '09:00', // Overlaps
         'end_time' => '11:00',
     ];
@@ -138,7 +138,7 @@ it('throws exception on update with time overlap', function () {
     $schedule1 = ClassSchedule::factory()->create([
         'semester_id' => $this->semester->id,
         'classroom_id' => $this->classroom->id,
-        'weekday' => 'Lunes',
+        'weekday' => 'monday',
         'start_time' => '08:00',
         'end_time' => '10:00',
     ]);
@@ -146,7 +146,7 @@ it('throws exception on update with time overlap', function () {
     $schedule2 = ClassSchedule::factory()->create([
         'semester_id' => $this->semester->id,
         'classroom_id' => $this->classroom->id,
-        'weekday' => 'Lunes',
+        'weekday' => 'monday',
         'start_time' => '10:00',
         'end_time' => '12:00',
     ]);

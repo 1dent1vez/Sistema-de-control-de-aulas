@@ -11,19 +11,21 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-14
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-14 - Creación inicial del Resource
+ *               2026-05-25 - Adición de la relación classSchedules cargada dinámicamente.
  */
 
 declare(strict_types=1);
 
 namespace App\Http\Resources\TeacherStatus;
 
+use App\Http\Resources\Schedules\ClassScheduleResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -44,6 +46,7 @@ class TeacherAbsenceResource extends JsonResource
                 'name' => $this->absenceType->name,
                 'code' => $this->absenceType->code,
             ]),
+            'classSchedules' => ClassScheduleResource::collection($this->whenLoaded('classSchedules')),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
         ];

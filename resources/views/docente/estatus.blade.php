@@ -219,14 +219,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function apiGet(url) {
     return fetch(url, { method: 'GET', headers: apiHeaders() }).then(function (r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); }
       return r.json().then(function (d) { if (!r.ok) throw d; return d; });
     });
   }
 
   function apiPost(url, body) {
     return fetch(url, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(body) }).then(function (r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); }
       return r.json().then(function (d) { if (!r.ok) throw d; return d; });
     });
   }

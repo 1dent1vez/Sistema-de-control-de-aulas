@@ -3,277 +3,639 @@
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
  *
- * @descripcion    Usuarios y Roles conectado a API SAM identities
+ * @descripcion    Gestión de Usuarios y Roles con buscador en tiempo real a la BD de SAM y Alpine.js autocomplete.
  * @autor          Rubén Alejandro Nolasco Ruiz, Equipo GAMA
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
- * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.1.0
+ * @mantenimiento  Antigravity
+ * @version        2.0.0
  * @creado         07/05/2026
- * @modificado     19/05/2026
- * @cambios        19/05/2026 - Conexión a API REST, eliminación de datos mock
+ * @modificado     24/05/2026
+ * @cambios        24/05/2026 - Reesctritura completa con Alpine.js, conexión directa a BD SAM y optimización de caché local.
  */
 --}}
 
 @extends('layouts.app')
 
-@section('title', 'Usuarios y Roles - GAMA Solutions')
+@section('title', 'Gestión de Usuarios y Roles — GAMA')
 
 @section('content')
 <style>
-  .usr-main { margin-left: var(--sidebar-width, 240px); min-height: 100vh; background: var(--ice-blue); padding: 28px 32px; }
-  .usr-head { margin-bottom: 16px; }
-  .usr-title { font-size: 26px; font-weight: 700; color: var(--midnight); margin-bottom: 4px; }
-  .usr-sub { color: var(--soft-steel); font-size: 14px; }
-  .usr-card { background:#fff; border:1px solid var(--mist-blue); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 14px; }
-  .usr-body { padding: 16px; }
-  .usr-row { display: grid; grid-template-columns: minmax(260px, 1fr) 220px auto; gap: 10px; align-items: center; }
-  .usr-input, .usr-select {
+  .usr-main { margin-left: var(--sidebar-width, 260px); min-height: 100vh; background: var(--gama-gris-100); padding: 32px; transition: margin-left var(--transition-normal); }
+  .usr-head { margin-bottom: 24px; }
+  .usr-title { font-size: 28px; font-weight: 700; color: var(--gama-azul-profundo); margin-bottom: 6px; }
+  .usr-sub { color: var(--gama-gris-500); font-size: 14px; }
+  
+  .usr-card { background: #fff; border: 1px solid var(--gama-gris-200); border-radius: var(--border-radius-lg); overflow: visible; margin-bottom: 24px; box-shadow: var(--shadow-sm); transition: box-shadow var(--transition-fast); }
+  .usr-card:hover { box-shadow: var(--shadow-md); }
+  .usr-body { padding: 24px; position: relative; }
+  
+  .autocomplete-container { position: relative; width: 100%; }
+  .usr-row { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: flex-start; }
+  
+  .usr-input {
     width: 100%;
-    border: 1px solid var(--mist-blue);
-    background: var(--ice-blue);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
+    border: 1px solid var(--gama-gris-300);
+    background: #fff;
+    border-radius: var(--border-radius-md);
+    padding: 12px 16px;
     font-size: 14px;
-    font-family: var(--font-main);
+    font-family: var(--font-family);
     outline: none;
+    transition: all var(--transition-fast);
   }
-  .usr-input:focus, .usr-select:focus { border-color: var(--corp-orange); }
-  .usr-hint { font-size: 12px; color: var(--soft-steel); margin-top: 8px; }
+  .usr-input:focus { border-color: var(--gama-azul-profundo); box-shadow: 0 0 0 3px rgba(19, 68, 116, 0.1); }
+  
+  /* Autocomplete Dropdown List */
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--gama-gris-300);
+    border-radius: var(--border-radius-md);
+    margin-top: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 50;
+    box-shadow: var(--shadow-lg);
+  }
+  .autocomplete-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--gama-gris-100);
+    transition: background var(--transition-fast);
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover { background: var(--gama-azul-claro); }
+  .autocomplete-name { font-weight: 600; color: var(--gama-azul-profundo); font-size: 14px; }
+  .autocomplete-meta { font-size: 12px; color: var(--gama-gris-500); }
+  
+  /* Employee Card Detail */
+  .selected-emp-card {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(232, 244, 252, 0.4) 0%, rgba(255, 255, 255, 1) 100%);
+    border: 1px solid var(--gama-azul-claro);
+    border-radius: var(--border-radius-md);
+    display: grid;
+    grid-template-columns: 1fr 200px auto;
+    gap: 20px;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .emp-info-title { font-size: 16px; font-weight: 700; color: var(--gama-azul-profundo); margin-bottom: 4px; }
+  .emp-info-sub { font-size: 13px; color: var(--gama-gris-600); }
+  
+  .usr-select {
+    width: 100%;
+    border: 1px solid var(--gama-gris-300);
+    background: #fff;
+    border-radius: var(--border-radius-md);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: var(--font-family);
+    outline: none;
+    cursor: pointer;
+  }
+  .usr-select:focus { border-color: var(--gama-azul-profundo); }
+
+  .usr-hint { font-size: 12px; color: var(--gama-gris-500); margin-top: 12px; }
+  
+  /* Table Styles */
   .usr-table-wrap { overflow-x: auto; }
-  .usr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .usr-table thead th { background: var(--deep-blue); color:#fff; text-align:left; padding: 11px 12px; }
-  .usr-table tbody tr:nth-child(odd) { background: var(--light-blue); }
-  .usr-table tbody tr:nth-child(even) { background: #fff; }
-  .usr-table tbody tr:hover { background: var(--light-orange); }
-  .usr-table td { padding: 11px 12px; border-bottom: 1px solid var(--mist-blue); vertical-align: middle; }
-  .usr-table tr.selected { outline: 2px solid var(--corp-orange); outline-offset: -2px; }
-  .role-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-  .role-admin { background: rgba(19,68,116,.14); color: #134474; }
-  .role-docente { background: rgba(30,90,138,.14); color: #1E5A8A; }
-  .role-none { background: rgba(108,117,125,.15); color: #6c757d; }
-  .usr-actions { display:flex; gap: 6px; align-items:center; }
-  .usr-msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: var(--radius-md); display: none; }
-  .usr-msg.error { display:block; background: rgba(255,0,0,.08); border:1px solid rgba(255,0,0,.35); color:#b00000; }
-  .usr-empty { padding: 24px; text-align: center; color: var(--soft-steel); }
-  .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--mist-blue); border-top-color:var(--deep-blue); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .loading-row td { text-align:center; padding:20px; color:var(--soft-steel); }
-  @media (max-width: 1024px) { .usr-main { margin-left: 0; } }
-  @media (max-width: 860px) { .usr-row { grid-template-columns: 1fr; } .usr-row .btn { width: 100%; justify-content: center; } }
+  .usr-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .usr-table thead th { background: var(--gama-azul-profundo); color: #fff; text-align: left; padding: 14px 16px; font-weight: 600; }
+  .usr-table tbody tr { border-bottom: 1px solid var(--gama-gris-200); transition: background var(--transition-fast); }
+  .usr-table tbody tr:nth-child(even) { background: var(--gama-gris-100); }
+  .usr-table tbody tr:hover { background: rgba(242, 139, 44, 0.05); }
+  .usr-table td { padding: 14px 16px; vertical-align: middle; }
+  
+  /* Badges */
+  .role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+  .role-admin { background: rgba(19, 68, 116, 0.1); color: var(--gama-azul-profundo); }
+  .role-docente { background: rgba(242, 139, 44, 0.1); color: var(--gama-naranja); }
+  
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--gama-gris-300); border-top-color: var(--gama-azul-profundo); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  .usr-empty { padding: 40px; text-align: center; color: var(--gama-gris-500); font-size: 14px; }
+  
+  @media (max-width: 1024px) {
+    .usr-main { margin-left: 0; }
+  }
+  @media (max-width: 768px) {
+    .selected-emp-card { grid-template-columns: 1fr; gap: 16px; }
+    .usr-row { grid-template-columns: 1fr; }
+  }
 </style>
 
-<div class="usr-main">
+<div class="usr-main" x-data="usuariosRolesApp()">
   <div class="usr-head">
-    <h1 class="usr-title">Usuarios y Roles</h1>
-    <p class="usr-sub">Fuente única SAM: búsqueda, asignación y revocación de roles con control administrativo.</p>
+    <h1 class="usr-title">Gestión de Usuarios y Roles</h1>
+    <p class="usr-sub">Buscador directo en SAM. Las identidades se almacenan a nivel mínimo local para la autenticación.</p>
   </div>
 
+  <!-- Alerta de Contraseña No Configurada -->
+  <template x-if="adminNeedsPassword">
+    <div style="background: rgba(220, 38, 38, 0.15); border: 1px solid rgba(220, 38, 38, 0.4); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-exclamation-triangle" style="color: #dc2626; font-size: 20px;"></i>
+        <div>
+          <strong style="color: #1e293b; font-size: 15px; display: block;">¡Contraseña Local de Administrador Requerida!</strong>
+          <span style="color: var(--gama-gris-600); font-size: 13px;">Debes configurar tu contraseña de administrador para realizar asignaciones o eliminaciones críticas.</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" @click="showSetPasswordModal = true">
+        Configurar Contraseña
+      </button>
+    </div>
+  </template>
+
+  <!-- Buscador en tiempo real de SAM -->
   <section class="usr-card">
     <div class="usr-body">
       <div class="usr-row">
-        <input id="searchSam" class="usr-input" placeholder="Buscar usuario en SAM (nombre o correo institucional)...">
-        <select id="roleSelect" class="usr-select">
-          <option value="">Selecciona rol...</option>
-          <option value="admin">Administrador</option>
-          <option value="teacher">Docente</option>
-        </select>
-        <button id="btnAsignar" class="btn btn-primary btn-md"><i class="fas fa-user-shield"></i><span>Asignar Rol</span></button>
+        <div class="autocomplete-container" @click.away="showDropdown = false">
+          <input 
+            type="text" 
+            class="usr-input" 
+            placeholder="Buscar empleado en la base de datos de SAM (ej: Nombre, Apellidos, Usuario)..."
+            x-model="searchTerm"
+            @input.debounce.300ms="searchEmployees()"
+            @focus="if(results.length > 0) showDropdown = true"
+          >
+          
+          <!-- Spinner de Carga -->
+          <div class="absolute right-4 top-4" x-show="loading" style="display: none;">
+            <span class="spinner"></span>
+          </div>
+
+          <!-- Dropdown Flotante -->
+          <div class="autocomplete-dropdown" x-show="showDropdown && results.length > 0" style="display: none;">
+            <template x-for="emp in results" :key="emp.externalId">
+              <div class="autocomplete-item" @click="selectEmployee(emp)">
+                <div>
+                  <div class="autocomplete-name" x-text="emp.fullName"></div>
+                  <div class="autocomplete-meta">
+                    Usuario: <strong x-text="emp.usuario"></strong> | Correo: <span x-text="emp.correo"></span>
+                  </div>
+                </div>
+                <div>
+                  <span class="badge badge-activo" style="font-size: 11px;">SAM</span>
+                </div>
+              </div>
+            </template>
+          </div>
+          
+          <div class="autocomplete-dropdown" x-show="showDropdown && results.length === 0 && searchTerm.trim().length >= 2 && !loading" style="display: none;">
+            <div class="p-4 text-center text-gray-500 text-sm">
+              <i class="fas fa-search-minus mr-2"></i> Sin resultados en la BD de SAM.
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Tarjeta de Empleado Seleccionado -->
+      <div class="selected-emp-card" x-show="selectedEmployee !== null" style="display: none;">
+        <div>
+          <div class="emp-info-title" x-text="selectedEmployee?.fullName"></div>
+          <div class="emp-info-sub">
+            <i class="far fa-user mr-1"></i> Empleado: <strong x-text="selectedEmployee?.usuario"></strong> | 
+            <i class="far fa-envelope class-icon mr-1"></i> Correo: <span x-text="selectedEmployee?.correo"></span>
+          </div>
+        </div>
+        <div>
+          <template x-if="isLocalAdmin(selectedEmployee?.externalId)">
+            <div style="color: var(--gama-azul-profundo); font-weight: bold; font-size: 14px; padding: 10px 0; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-user-shield" style="color: var(--gama-azul-profundo);"></i> Administrador (No se puede degradar)
+            </div>
+          </template>
+          <template x-if="!isLocalAdmin(selectedEmployee?.externalId)">
+            <select class="usr-select" x-model="selectedRole">
+              <option value="teacher">Docente</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </template>
+        </div>
+        <div>
+          <template x-if="!isLocalAdmin(selectedEmployee?.externalId)">
+            <button class="btn btn-primary btn-md" @click="assignRole()">
+              <i class="fas fa-save mr-1"></i><span>Asignar Rol</span>
+            </button>
+          </template>
+        </div>
+      </div>
+
       <div class="usr-hint">
-        RN-04: El rol <strong>Alumno</strong> no se asigna manualmente; se determina automáticamente por SAM.
+        <strong>Regla del Sistema (RN-04):</strong> Los alumnos no se gestionan manualmente en el panel; SAM determina automáticamente su estatus durante el login móvil.
       </div>
-      <div id="msgBox" class="usr-msg"></div>
     </div>
   </section>
 
+  <!-- Listado de Identidades Locales con Detalles SAM -->
   <section class="usr-card">
-    <div class="usr-table-wrap">
-      <table class="usr-table">
-        <thead>
-          <tr>
-            <th>Nombre completo</th>
-            <th>Correo institucional</th>
-            <th>Rol actual</th>
-            <th style="width:130px;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="usersBody"></tbody>
-      </table>
+    <div class="usr-body p-0">
+      <div class="usr-table-wrap">
+        <table class="usr-table">
+          <thead>
+            <tr>
+              <th style="width: 120px;">N° Empleado</th>
+              <th>Nombre completo</th>
+              <th>Correo institucional</th>
+              <th style="width: 160px;">Rol local</th>
+              <th style="width: 120px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Loader Tabla -->
+            <template x-if="identitiesLoading">
+              <tr>
+                <td colspan="5" class="text-center py-8 text-gray-500">
+                  <span class="spinner mr-2"></span> Cargando usuarios locales con perfiles SAM...
+                </td>
+              </tr>
+            </template>
+
+            <!-- Registros -->
+            <template x-if="!identitiesLoading && identities.length > 0">
+              <template x-for="identity in identities" :key="identity.externalId">
+                <tr>
+                  <td><strong x-text="identity.externalId"></strong></td>
+                  <td x-text="identity.fullName"></td>
+                  <td x-text="identity.email"></td>
+                  <td>
+                    <span 
+                      :class="identity.role === 'admin' ? 'role-badge role-admin' : 'role-badge role-docente'"
+                    >
+                      <i :class="identity.role === 'admin' ? 'fas fa-user-shield mr-1' : 'fas fa-chalkboard-teacher mr-1'"></i>
+                      <span x-text="identity.role === 'admin' ? 'Administrador' : 'Docente'"></span>
+                    </span>
+                  </td>
+                  <td style="text-align: center;">
+                    <div class="usr-actions" style="justify-content: center; gap: 8px;">
+                      <button 
+                        class="btn btn-outline btn-sm btn-icon" 
+                        title="Restablecer a Docente"
+                        @click="revokeRole(identity.externalId)"
+                        :disabled="identity.role === 'teacher'"
+                        x-show="identity.role !== 'admin'"
+                      >
+                        <i class="fas fa-user-minus"></i>
+                      </button>
+                      <button 
+                        class="btn btn-outline btn-sm btn-icon" 
+                        style="color: var(--gama-rojo-500, #dc2626); border-color: rgba(220, 38, 38, 0.2);"
+                        title="Eliminar Físicamente"
+                        @click="confirmPhysicalDelete(identity.externalId)"
+                      >
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </template>
+
+            <!-- Estado Vacío -->
+            <template x-if="!identitiesLoading && identities.length === 0">
+              <tr>
+                <td colspan="5" class="usr-empty">
+                  <i class="fas fa-users-slash text-3xl mb-3 block"></i>
+                  No hay usuarios locales registrados en el sistema.
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
+  <!-- Modal de Contraseña (Genérico para Confirmación) -->
+  <div x-show="showPasswordModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none;">
+    <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+      <h3 style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: #fff;" x-text="passwordModalTitle">Confirmar Acción</h3>
+      <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;" x-text="passwordModalDesc"></p>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: #94a3b8;">Tu contraseña de Administrador</label>
+        <input type="password" class="form-input" x-model="confirmPasswordInput" placeholder="Ingresa tu contraseña actual" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="btn btn-outline btn-sm" @click="closePasswordModal()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" @click="submitPasswordConfirm()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Configurar Contraseña de Admin por primera vez -->
+  <div x-show="showSetPasswordModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none;">
+    <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+      <h3 style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: #fff;">Configurar Contraseña Local</h3>
+      <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;">
+        Para realizar acciones críticas (como asignar administradores o eliminar usuarios), debes configurar primero tu contraseña local en este sistema.
+      </p>
+      
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: #94a3b8;">Nueva Contraseña</label>
+        <input type="password" class="form-input" x-model="newPassword" placeholder="Mínimo 8 caracteres" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: #94a3b8;">Confirmar Contraseña</label>
+        <input type="password" class="form-input" x-model="newPassword_confirmation" placeholder="Repite la contraseña" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="btn btn-outline btn-sm" @click="showSetPasswordModal = false">Cancelar</button>
+        <button class="btn btn-primary btn-sm" @click="savePassword()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor global de Toasts -->
   <div class="toast-container" id="toastContainer"></div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var TOKEN = localStorage.getItem('auth_token');
-  if (!TOKEN) { window.location.href = '/'; return; }
-
-  var roleLabels = { admin: 'Administrador', teacher: 'Docente' };
-  var allIdentities = [];
-  var displayedRows = [];
-  var selectedExternalId = null;
-  var searchTimer = null;
-
-  var $ = function (id) { return document.getElementById(id); };
-  var body = $('usersBody');
-  var search = $('searchSam');
-  var roleSelect = $('roleSelect');
-  var msgBox = $('msgBox');
-
-  function apiHeaders() {
-    return { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
-  }
-
-  function apiGet(url) {
-    return fetch(url, { method: 'GET', headers: apiHeaders() }).then(function (r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
-      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
-    });
-  }
-
-  function apiPost(url, body) {
-    return fetch(url, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(body) }).then(function (r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
-      return r.json().then(function (d) { if (!r.ok) throw d; return d; });
-    });
-  }
-
-  function showError(message) {
-    msgBox.className = 'usr-msg error';
-    msgBox.textContent = message;
-  }
-  function clearError() {
-    msgBox.className = 'usr-msg';
-    msgBox.textContent = '';
-  }
-
-  function roleBadge(role) {
-    if (role === 'admin') return '<span class="role-badge role-admin">Administrador</span>';
-    if (role === 'teacher') return '<span class="role-badge role-docente">Docente</span>';
-    return '<span class="role-badge role-none">Sin rol</span>';
-  }
-
-  function toast(title, message) {
-    var t = document.createElement('div');
-    t.className = 'toast success';
-    t.innerHTML = '<div class="toast-icon"><i class="fas fa-check"></i></div><div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-message">' + message + '</div></div><button class="toast-close"><i class="fas fa-times"></i></button>';
-    $('toastContainer').appendChild(t);
-    setTimeout(function () { t.classList.add('show'); }, 10);
-    var rm = function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 260); };
-    var tm = setTimeout(rm, 4500);
-    t.querySelector('.toast-close').addEventListener('click', function () { clearTimeout(tm); rm(); });
-  }
-
-  function normalizeIdentity(item) {
+  function usuariosRolesApp() {
     return {
-      externalId: item.externalId || item.external_id || '',
-      fullName: item.fullName || item.full_name || 'Sin nombre',
-      email: item.email || '',
-      role: item.role || null
+      searchTerm: '',
+      results: [],
+      showDropdown: false,
+      loading: false,
+      selectedEmployee: null,
+      selectedRole: 'teacher',
+      identities: [],
+      identitiesLoading: false,
+
+      // Propiedades de Seguridad de Contraseña
+      adminNeedsPassword: false,
+      showSetPasswordModal: false,
+      newPassword: '',
+      newPassword_confirmation: '',
+      showPasswordModal: false,
+      passwordModalTitle: '',
+      passwordModalDesc: '',
+      confirmPasswordInput: '',
+      passwordConfirmAction: null,
+
+      init() {
+        this.loadIdentities();
+        this.checkAdminPasswordStatus();
+      },
+
+      isLocalAdmin(extId) {
+        if (!extId) return false;
+        const local = this.identities.find(i => String(i.externalId) === String(extId));
+        return local && local.role === 'admin';
+      },
+
+      async checkAdminPasswordStatus() {
+        try {
+          const resp = await this.apiGet('/api/v1/auth/me');
+          this.adminNeedsPassword = !resp.data.hasPassword;
+        } catch (err) {
+          console.error('Error al consultar estado de contraseña:', err);
+        }
+      },
+
+      async savePassword() {
+        if (!this.newPassword || this.newPassword.length < 8) {
+          this.showToast('error', 'La contraseña debe tener al menos 8 caracteres.');
+          return;
+        }
+        if (this.newPassword !== this.newPassword_confirmation) {
+          this.showToast('error', 'Las contraseñas no coinciden.');
+          return;
+        }
+        try {
+          await this.apiPost('/api/v1/sam-identities/set-password', {
+            password: this.newPassword,
+            password_confirmation: this.newPassword_confirmation
+          });
+          this.showToast('success', 'Contraseña configurada con éxito.');
+          this.showSetPasswordModal = false;
+          this.newPassword = '';
+          this.newPassword_confirmation = '';
+          this.checkAdminPasswordStatus();
+        } catch (err) {
+          this.showToast('error', err.message || 'Error al guardar contraseña.');
+        }
+      },
+
+      closePasswordModal() {
+        this.showPasswordModal = false;
+        this.confirmPasswordInput = '';
+        this.passwordConfirmAction = null;
+      },
+
+      submitPasswordConfirm() {
+        if (!this.confirmPasswordInput) {
+          this.showToast('error', 'Por favor ingresa tu contraseña.');
+          return;
+        }
+        if (this.passwordConfirmAction) {
+          this.passwordConfirmAction(this.confirmPasswordInput);
+        }
+      },
+
+      async loadIdentities() {
+        this.identitiesLoading = true;
+        try {
+          const resp = await this.apiGet('/api/v1/sam-identities');
+          this.identities = resp.data || [];
+        } catch (err) {
+          this.showToast('error', 'Error al cargar usuarios locales.');
+        } finally {
+          this.identitiesLoading = false;
+        }
+      },
+
+      async searchEmployees() {
+        const q = this.searchTerm.trim();
+        if (q.length < 2) {
+          this.results = [];
+          this.showDropdown = false;
+          return;
+        }
+        this.loading = true;
+        try {
+          const resp = await this.apiGet('/api/v1/sam/empleados?q=' + encodeURIComponent(q));
+          this.results = resp.data || [];
+          this.showDropdown = true;
+        } catch (err) {
+          this.results = [];
+          this.showToast('error', err.message || 'Error al buscar en SAM.');
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      selectEmployee(emp) {
+        this.selectedEmployee = emp;
+        this.searchTerm = emp.fullName;
+        this.showDropdown = false;
+        this.selectedRole = emp.role || 'teacher';
+      },
+
+      async assignRole() {
+        if (!this.selectedEmployee) {
+          this.showToast('error', 'Por favor selecciona un empleado de SAM.');
+          return;
+        }
+
+        const performAssignment = async (password = null) => {
+          try {
+            const payload = { role: this.selectedRole };
+            if (password) {
+              payload.current_password = password;
+            }
+            await this.apiPost(`/api/v1/sam-identities/${this.selectedEmployee.externalId}/assign-role`, payload);
+            this.showToast('success', 'Rol asignado correctamente.');
+            this.selectedEmployee = null;
+            this.searchTerm = '';
+            this.loadIdentities();
+            this.closePasswordModal();
+          } catch (err) {
+            this.showToast('error', err.message || 'Error al asignar el rol.');
+          }
+        };
+
+        if (this.selectedRole === 'admin') {
+          if (this.adminNeedsPassword) {
+            this.showToast('error', 'Debes configurar tu contraseña de administrador antes de asignar este rol.');
+            this.showSetPasswordModal = true;
+            return;
+          }
+          this.passwordModalTitle = 'Confirmar Asignación de Administrador';
+          this.passwordModalDesc = 'Estás a punto de asignar privilegios de Administrador. Confirma con tu contraseña actual.';
+          this.passwordConfirmAction = (password) => performAssignment(password);
+          this.showPasswordModal = true;
+        } else {
+          performAssignment();
+        }
+      },
+
+      async revokeRole(externalId) {
+        if (!confirm('¿Confirma revocar el rol especial de este usuario? Se restablecerá a Docente.')) return;
+        try {
+          await this.apiPost(`/api/v1/sam-identities/${externalId}/assign-role`, {
+            role: 'teacher'
+          });
+          this.showToast('success', 'Rol restablecido a Docente.');
+          this.loadIdentities();
+        } catch (err) {
+          this.showToast('error', err.message || 'Error al revocar el rol.');
+        }
+      },
+
+      confirmPhysicalDelete(externalId) {
+        if (this.adminNeedsPassword) {
+          this.showToast('error', 'Debes configurar tu contraseña de administrador antes de eliminar usuarios.');
+          this.showSetPasswordModal = true;
+          return;
+        }
+        this.passwordModalTitle = 'Eliminar Usuario Físicamente';
+        this.passwordModalDesc = 'Esta acción eliminará de forma física y permanente la identidad seleccionada del sistema local. Confirma con tu contraseña.';
+        this.passwordConfirmAction = async (password) => {
+          try {
+            await this.apiDelete(`/api/v1/sam-identities/${externalId}`, {
+              current_password: password
+            });
+            this.showToast('success', 'Usuario eliminado físicamente.');
+            this.loadIdentities();
+            this.closePasswordModal();
+          } catch (err) {
+            this.showToast('error', err.message || 'Error al eliminar el usuario.');
+          }
+        };
+        this.showPasswordModal = true;
+      },
+
+      // Fetch Wrapper Helpers
+      apiHeaders() {
+        const token = localStorage.getItem('auth_token');
+        return {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        };
+      },
+
+      async apiGet(url) {
+        const r = await fetch(url, { method: 'GET', headers: this.apiHeaders() });
+        if (r.status === 401) {
+          localStorage.clear();
+          window.location.href = '/';
+          throw new Error('Sesión expirada.');
+        }
+        const d = await r.json();
+        if (!r.ok) throw d;
+        return d;
+      },
+
+      async apiPost(url, body) {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: this.apiHeaders(),
+          body: JSON.stringify(body)
+        });
+        if (r.status === 401) {
+          localStorage.clear();
+          window.location.href = '/';
+          throw new Error('Sesión expirada.');
+        }
+        const d = await r.json();
+        if (!r.ok) throw d;
+        return d;
+      },
+
+      async apiDelete(url, body) {
+        const r = await fetch(url, {
+          method: 'DELETE',
+          headers: this.apiHeaders(),
+          body: JSON.stringify(body)
+        });
+        if (r.status === 401) {
+          localStorage.clear();
+          window.location.href = '/';
+          throw new Error('Sesión expirada.');
+        }
+        const d = await r.json();
+        if (!r.ok) throw d;
+        return d;
+      },
+
+      showToast(type, msg) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast ${type === 'success' ? 'success' : 'error'}`;
+        toast.innerHTML = `
+          <div class="toast-icon"><i class="fas ${type === 'success' ? 'fa-check' : 'fa-times'}"></i></div>
+          <div class="toast-content">
+            <div class="toast-title">${type === 'success' ? 'Éxito' : 'Error'}</div>
+            <div class="toast-message">${msg}</div>
+          </div>
+          <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 4500);
+      }
     };
   }
-
-  function renderRows(rows) {
-    displayedRows = rows;
-    if (!rows.length) {
-      body.innerHTML = '<tr><td colspan="4" class="usr-empty">Sin resultados en SAM</td></tr>';
-      return;
-    }
-    body.innerHTML = rows.map(function (u) {
-      var hasRole = u.role ? true : false;
-      return '<tr data-select="' + u.externalId + '" class="' + (selectedExternalId === u.externalId ? 'selected' : '') + '">' +
-        '<td>' + u.fullName + '</td>' +
-        '<td>' + u.email + '</td>' +
-        '<td>' + roleBadge(u.role) + '</td>' +
-        '<td><div class="usr-actions">' +
-        '<button class="btn btn-secondary btn-sm" data-revoke="' + u.externalId + '" ' + (!hasRole ? 'disabled' : '') + '>' +
-        '<i class="fas fa-user-minus"></i></button></div></td></tr>';
-    }).join('');
-  }
-
-  function loadAll() {
-    body.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Cargando usuarios...</td></tr>';
-    apiGet('/api/v1/sam-identities').then(function (resp) {
-      var raw = (resp.data && resp.data.data) ? resp.data.data : (Array.isArray(resp.data) ? resp.data : []);
-      allIdentities = raw.map(normalizeIdentity);
-      renderRows(allIdentities);
-    })['catch'](function (err) {
-      body.innerHTML = '<tr><td colspan="4" class="usr-empty">Error al cargar usuarios.</td></tr>';
-      if (err && err.message) showError(err.message);
-    });
-  }
-
-  function doSearch() {
-    clearError();
-    var q = search.value.trim();
-    if (!q) {
-      renderRows(allIdentities);
-      return;
-    }
-    body.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Buscando...</td></tr>';
-    apiGet('/api/v1/sam-identities/search?q=' + encodeURIComponent(q)).then(function (resp) {
-      var raw = Array.isArray(resp.data) ? resp.data : [];
-      var results = raw.map(normalizeIdentity);
-      if (!results.some(function (r) { return r.externalId === selectedExternalId; })) selectedExternalId = null;
-      renderRows(results);
-    })['catch'](function (err) {
-      body.innerHTML = '<tr><td colspan="4" class="usr-empty">Error en la búsqueda.</td></tr>';
-      if (err && err.message) showError(err.message);
-    });
-  }
-
-  search.addEventListener('input', function () {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(doSearch, 300);
-  });
-
-  body.addEventListener('click', function (e) {
-    var row = e.target.closest('[data-select]');
-    if (row) {
-      selectedExternalId = row.dataset.select;
-      renderRows(displayedRows);
-      clearError();
-      return;
-    }
-    var revoke = e.target.closest('[data-revoke]');
-    if (revoke) {
-      var target = revoke.dataset.revoke;
-      var user = displayedRows.find(function (u) { return u.externalId === target; });
-      if (!window.confirm('Confirma revocar rol de ' + (user ? user.fullName : 'usuario') + '?')) return;
-      apiPost('/api/v1/sam-identities/' + encodeURIComponent(target) + '/assign-role', { role: 'teacher' }).then(function () {
-        if (user) user.role = 'teacher';
-        renderRows(displayedRows);
-        toast('Rol revocado', 'El rol se ha restablecido a Docente.');
-      })['catch'](function (err) {
-        if (err && err.message) showError(err.message);
-      });
-    }
-  });
-
-  $('btnAsignar').addEventListener('click', function () {
-    clearError();
-    if (!selectedExternalId) {
-      showError('Selecciona un usuario de la tabla para asignar rol.');
-      return;
-    }
-    if (!roleSelect.value) {
-      showError('Selecciona un rol antes de asignar.');
-      return;
-    }
-    apiPost('/api/v1/sam-identities/' + encodeURIComponent(selectedExternalId) + '/assign-role', { role: roleSelect.value }).then(function () {
-      var user = displayedRows.find(function (u) { return u.externalId === selectedExternalId; });
-      if (user) user.role = roleSelect.value;
-      renderRows(displayedRows);
-      toast('Rol asignado', 'Rol ' + (roleLabels[roleSelect.value] || roleSelect.value) + ' asignado correctamente.');
-    })['catch'](function (err) {
-      if (err && err.message) showError(err.message);
-    });
-  });
-
-  loadAll();
-});
 </script>
 @endsection

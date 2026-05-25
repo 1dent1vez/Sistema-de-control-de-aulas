@@ -57,9 +57,9 @@ class OverlapRequiredException extends \RuntimeException
     public function getOverlapDetails(): array
     {
         return $this->overlaps->map(function (TeacherAbsence $absence): string {
-            $type = $absence->absenceType?->name ?? 'Unknown';
+            $type = $absence->absenceType?->name ?? 'Desconocido';
 
-            return "Existing absence {$type} from {$absence->start_date->format('Y-m-d')} to {$absence->end_date->format('Y-m-d')}";
+            return "Ausencia existente {$type} del {$absence->start_date->format('Y-m-d')} al {$absence->end_date->format('Y-m-d')}";
         })->toArray();
     }
 }

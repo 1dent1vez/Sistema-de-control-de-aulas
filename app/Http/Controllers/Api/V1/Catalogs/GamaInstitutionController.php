@@ -50,7 +50,7 @@ class GamaInstitutionController extends Controller
     {
         $institution = $this->service->getById($id);
         if (! $institution) {
-            return $this->error('Institution not found.', 404);
+            return $this->error('Institución no encontrada.', 404);
         }
 
         return $this->success(new InstitutionResource($institution));
@@ -68,7 +68,7 @@ class GamaInstitutionController extends Controller
         $this->authorize('update', Institution::class);
         $institution = $this->service->update($id, $request->validated());
         if (! $institution) {
-            return $this->error('Institution not found.', 404);
+            return $this->error('Institución no encontrada.', 404);
         }
 
         return $this->success(new InstitutionResource($institution));
@@ -79,9 +79,9 @@ class GamaInstitutionController extends Controller
         $this->authorize('delete', Institution::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Institution not found.', 404);
+            return $this->error('Institución no encontrada.', 404);
         }
 
-        return $this->success(null, 'Institution deleted successfully.');
+        return $this->success(null, 'Institución eliminada exitosamente.');
     }
 }

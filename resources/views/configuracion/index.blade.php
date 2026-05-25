@@ -167,14 +167,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function apiGet(url) {
     return fetch(url, { method: 'GET', headers: apiHeaders() }).then(function (r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); }
       return r.json().then(function (d) { if (!r.ok) throw d; return d; });
     });
   }
 
   function apiPut(url, body) {
     return fetch(url, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(body) }).then(function (r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); }
       return r.json().then(function (d) { if (!r.ok) throw d; return d; });
     });
   }

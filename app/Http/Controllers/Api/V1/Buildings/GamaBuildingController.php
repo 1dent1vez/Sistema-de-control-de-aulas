@@ -51,7 +51,7 @@ class GamaBuildingController extends Controller
     {
         $building = $this->service->getById($id);
         if (! $building) {
-            return $this->error('Building not found.', 404);
+            return $this->error('Edificio no encontrado.', 404);
         }
 
         return $this->success(new BuildingResource($building));
@@ -69,7 +69,7 @@ class GamaBuildingController extends Controller
         $this->authorize('update', Building::class);
         $building = $this->service->update($id, $request->validated());
         if (! $building) {
-            return $this->error('Building not found.', 404);
+            return $this->error('Edificio no encontrado.', 404);
         }
 
         return $this->success(new BuildingResource($building));
@@ -80,10 +80,10 @@ class GamaBuildingController extends Controller
         $this->authorize('delete', Building::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Building not found.', 404);
+            return $this->error('Edificio no encontrado.', 404);
         }
 
-        return $this->success(null, 'Building deleted successfully.');
+        return $this->success(null, 'Edificio eliminado exitosamente.');
     }
 
     public function levels(int $buildingId): JsonResponse

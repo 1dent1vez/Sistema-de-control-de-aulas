@@ -38,6 +38,11 @@ class SamAuthMiddleware
 {
     public function handle(Request $request, Closure $next): mixed
     {
+        // Evitar redirección circular si ya estamos en la ruta login
+        if ($request->route() && $request->route()->named('login')) {
+            return $next($request);
+        }
+
         $bearer = $request->bearerToken();
         $cookie = $request->cookie('sam_token');
         $token = $bearer ?? $cookie;
@@ -50,9 +55,7 @@ class SamAuthMiddleware
         ]));
 
         if ($token) {
-            $tokenPrefix = substr($token, 0, 10).'...';
             Log::channel('sam_auth')->debug('[SAM-AUTH] Extracción de token | Context: '.json_encode([
-                'token_prefix' => $tokenPrefix,
                 'source' => $bearer !== null ? 'bearer' : 'cookie',
             ]));
 
@@ -90,9 +93,9 @@ class SamAuthMiddleware
                     ]));
 
                     if (! $request->expectsJson()) {
-                        return redirect('/')->with('error', 'Sesión expirada');
+                        return redirect()->route('login')->with('error', 'Sesión expirada')->withoutCookie('sam_token');
                     }
-                    throw new AuthenticationException('Session expired.', ['sanctum']);
+                    throw new AuthenticationException('Sesión expirada.', ['sanctum']);
                 }
 
                 $identity = $accessToken->tokenable;
@@ -125,14 +128,13 @@ class SamAuthMiddleware
                     ]));
 
                     if (! $request->expectsJson()) {
-                        return redirect('/')->with('error', 'Identidad no válida');
+                        return redirect()->route('login')->with('error', 'Identidad no válida')->withoutCookie('sam_token');
                     }
-                    throw new AuthenticationException('Invalid identity.', ['sanctum']);
+                    throw new AuthenticationException('Identidad no válida.', ['sanctum']);
                 }
             } else {
                 Log::channel('sam_auth')->debug('[SAM-AUTH] Consulta DB | Context: '.json_encode([
                     'found' => false,
-                    'token_prefix' => $tokenPrefix,
                 ]));
 
                 Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
@@ -141,9 +143,9 @@ class SamAuthMiddleware
                 ]));
 
                 if (! $request->expectsJson()) {
-                    return redirect('/')->with('error', 'Token inválido');
+                    return redirect()->route('login')->with('error', 'Token inválido')->withoutCookie('sam_token');
                 }
-                throw new AuthenticationException('Unauthenticated.', ['sanctum']);
+                throw new AuthenticationException('No autenticado.', ['sanctum']);
             }
         } else {
             Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
@@ -152,9 +154,9 @@ class SamAuthMiddleware
             ]));
 
             if (! $request->expectsJson()) {
-                return redirect('/')->with('error', 'Sesión no iniciada');
+                return redirect()->route('login')->with('error', 'Sesión no iniciada')->withoutCookie('sam_token');
             }
-            throw new AuthenticationException('Unauthenticated.', ['sanctum']);
+            throw new AuthenticationException('No autenticado.', ['sanctum']);
         }
     }
 }

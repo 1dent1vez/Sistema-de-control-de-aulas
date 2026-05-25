@@ -44,7 +44,7 @@ class GamaAbsenceTypeController extends Controller
 
         return $this->success(
             AbsenceTypeResource::collection($absenceTypes),
-            'Absence types retrieved successfully.'
+            'Tipos de ausencia recuperados.'
         );
     }
 
@@ -53,12 +53,12 @@ class GamaAbsenceTypeController extends Controller
         $absenceType = $this->service->getById($id);
 
         if (! $absenceType) {
-            return $this->error('Absence type not found.', 404);
+            return $this->error('Tipo de ausencia no encontrado.', 404);
         }
 
         return $this->success(
             new AbsenceTypeResource($absenceType),
-            'Absence type retrieved successfully.'
+            'Tipo de ausencia recuperado.'
         );
     }
 }

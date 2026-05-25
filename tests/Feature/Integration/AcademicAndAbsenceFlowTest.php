@@ -53,28 +53,29 @@ it('executes the academic and teacher absence flow correctly', function () {
     $response->assertStatus(201);
     $semesterId = $response->json('data.id');
 
-    // 3. Asignar un horario (Lunes 08:00 a 10:00)
+    // 3. Asignar un horario (3 días de hoy, de 08:00 a 10:00)
+    $dynamicDay = strtolower(Carbon::now()->addDays(3)->format('l'));
     $response = $this->postJson('/api/v1/class-schedules', [
         'semester_id' => $semesterId,
         'classroom_id' => $classroom->id,
         'teacher_external_id' => 'TEACHER-INT',
         'subject_name' => 'Física Cuántica',
         'group_name' => 'Q1',
-        'weekday' => 'monday',
+        'weekday' => $dynamicDay,
         'start_time' => '08:00',
         'end_time' => '10:00',
     ]);
 
     $response->assertStatus(201);
 
-    // 4. Intentar asignar horario que se empalma en la misma aula (Lunes 09:00 a 11:00)
+    // 4. Intentar asignar horario que se empalma en la misma aula
     $response = $this->postJson('/api/v1/class-schedules', [
         'semester_id' => $semesterId,
         'classroom_id' => $classroom->id,
         'teacher_external_id' => 'TEACHER-OTHER',
         'subject_name' => 'Química',
         'group_name' => 'Q2',
-        'weekday' => 'monday',
+        'weekday' => $dynamicDay,
         'start_time' => '09:00',
         'end_time' => '11:00',
     ]);

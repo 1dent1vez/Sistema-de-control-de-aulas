@@ -11,19 +11,22 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-13 - Registro de bindings de repositorios
+ *               2026-05-25 - Registro de listener NotifyAdminOnAbsence para el evento TeacherAbsenceRegistered.
  */
 
 declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\TeacherAbsenceRegistered;
+use App\Listeners\NotifyAdminOnAbsence;
 use App\Models\Building;
 use App\Models\Classroom;
 use App\Models\ClassSchedule;
@@ -62,6 +65,7 @@ use App\Repositories\Schedules\GamaSemesterRepository;
 use App\Repositories\TeacherStatus\GamaTeacherAbsenceRepository;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -84,6 +88,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Event::listen(
+            TeacherAbsenceRegistered::class,
+            NotifyAdminOnAbsence::class
+        );
+
         Gate::policy(Institution::class, InstitutionPolicy::class);
         Gate::policy(Building::class, BuildingPolicy::class);
         Gate::policy(Classroom::class, ClassroomPolicy::class);

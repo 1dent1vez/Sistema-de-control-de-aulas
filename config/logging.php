@@ -11,15 +11,16 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.3
+ * @version      1.0.4
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-22
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-22 - Configuración de canal sam_auth para auditoría de autenticación
  *               2026-05-22 - Adición de canal sam_debug para depuración del protocolo SAM docente
  *               2026-05-22 - Adición de canales de log sam y sam.debug para diagnóstico de perfiles SAM
+ *               2026-05-25 - Renombrar canal de log sam.debug a sam_debug para evitar problemas con notación de punto.
  */
 
 declare(strict_types=1);
@@ -161,13 +162,6 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'sam_debug' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/sam-debug.log'),
-            'level' => 'debug',
-            'replace_placeholders' => true,
-        ],
-
         'sam' => [
             'driver' => 'daily',
             'path' => storage_path('logs/sam.log'),
@@ -176,7 +170,7 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'sam.debug' => [
+        'sam_debug' => [
             'driver' => 'daily',
             'path' => storage_path('logs/sam-debug.log'),
             'level' => 'debug',

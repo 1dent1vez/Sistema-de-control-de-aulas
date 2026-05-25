@@ -43,7 +43,7 @@ class GamaClassScheduleController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['semester_id', 'classroom_id', 'teacher_external_id']);
+        $filters = $request->only(['semester_id', 'classroom_id', 'teacher_external_id', 'building_id']);
 
         return $this->success(ClassScheduleResource::collection($this->service->getAll($filters)));
     }
@@ -52,7 +52,7 @@ class GamaClassScheduleController extends Controller
     {
         $schedule = $this->service->getById($id);
         if (! $schedule) {
-            return $this->error('Class schedule not found.', 404);
+            return $this->error('Horario no encontrado.', 404);
         }
 
         return $this->success(new ClassScheduleResource($schedule));
@@ -62,7 +62,7 @@ class GamaClassScheduleController extends Controller
     {
         $this->authorize('create', ClassSchedule::class);
         try {
-            return $this->success(new ClassScheduleResource($this->service->create($request->validated())), 'Class schedule created successfully.', 201);
+            return $this->success(new ClassScheduleResource($this->service->create($request->validated())), 'Horario creado exitosamente.', 201);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -74,10 +74,10 @@ class GamaClassScheduleController extends Controller
         try {
             $schedule = $this->service->update($id, $request->validated());
             if (! $schedule) {
-                return $this->error('Class schedule not found.', 404);
+                return $this->error('Horario no encontrado.', 404);
             }
 
-            return $this->success(new ClassScheduleResource($schedule), 'Class schedule updated successfully.');
+            return $this->success(new ClassScheduleResource($schedule), 'Horario actualizado exitosamente.');
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -88,9 +88,9 @@ class GamaClassScheduleController extends Controller
         $this->authorize('delete', ClassSchedule::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Class schedule not found.', 404);
+            return $this->error('Horario no encontrado.', 404);
         }
 
-        return $this->success(null, 'Class schedule deleted successfully.');
+        return $this->success(null, 'Horario eliminado exitosamente.');
     }
 }

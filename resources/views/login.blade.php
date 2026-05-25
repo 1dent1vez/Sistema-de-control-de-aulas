@@ -8,15 +8,16 @@
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela  
  * @mantenimiento  Ghael Garcia Manjarrez 
- * @version        1.0.0
+ * @version        1.1.0
  * @creado         11/04/2026
- * @modificado     11/04/2026
+ * @modificado     24/05/2026
  *
  * @cambios
  * Fecha       | Autor             | Descripción
  * ------------|-------------------|------------------------------------------
  * 11/04/2026  | Rubén Alejandro   | Implementación de vista de Login/Registro con validaciones JS.
  * 11/04/2026  | Rubén Alejandro   | Estandarización de prólogo según manual GAMA-MPL-03.
+ * 24/05/2026  | GAMA Agent        | Warning banner al detectar login con fallback a mock.
  */
 --}}
 
@@ -33,12 +34,12 @@
     <link rel="stylesheet" href="css/gama-login.css">
     <script src="js/auth-tabs.js" defer></script>
     <script>
-        // If already authenticated, redirect to dashboard
-        (function() {
-            if (localStorage.getItem('auth_token')) {
-                window.location.href = '/dashboard';
-            }
-        })();
+        @if(session('error'))
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+        @endif
+
+        // No auto-redirect — evitar bucle con SamAuthMiddleware
     </script>
 </head>
 <body class="auth-page">
@@ -207,17 +208,43 @@
                         localStorage.setItem('auth_token', data.data.accessToken);
                         localStorage.setItem('auth_user', JSON.stringify(data.data.user || {}));
                         document.cookie = 'sam_token=' + data.data.accessToken + '; path=/; max-age=86400; SameSite=Lax';
-                        window.location.href = data.data.redirectUrl || '/dashboard';
+                        
+                        if (data.data.usingMockFallback || data.data.using_mock_fallback) {
+                            var errorDiv = document.getElementById('loginError');
+                            errorDiv.style.color = '#856404';
+                            errorDiv.style.backgroundColor = '#fff3cd';
+                            errorDiv.style.border = '1px solid #ffeeba';
+                            errorDiv.style.padding = '10px';
+                            errorDiv.style.borderRadius = '4px';
+                            errorDiv.style.display = 'block';
+                            errorDiv.textContent = 'El servidor de autenticación principal no responde. Se ha utilizado el modo de respaldo para permitir el acceso.';
+                            
+                            setTimeout(function() {
+                                window.location.href = data.data.redirectUrl || '/dashboard';
+                            }, 2000);
+                        } else {
+                            window.location.href = data.data.redirectUrl || '/dashboard';
+                        }
                     } else {
                         document.getElementById('captchaCode').value = '';
-                        document.getElementById('loginError').textContent = data.message || 'Error al iniciar sesión';
-                        document.getElementById('loginError').style.display = 'block';
+                        var errorDiv = document.getElementById('loginError');
+                        errorDiv.style.color = 'var(--gama-rojo-500, #dc2626)';
+                        errorDiv.style.backgroundColor = 'transparent';
+                        errorDiv.style.border = 'none';
+                        errorDiv.style.padding = '0';
+                        errorDiv.textContent = data.message || 'Error al iniciar sesión';
+                        errorDiv.style.display = 'block';
                         loadCaptcha();
                     }
                 })
                 .catch(function() {
-                    document.getElementById('loginError').textContent = 'Error de conexión con el servidor.';
-                    document.getElementById('loginError').style.display = 'block';
+                    var errorDiv = document.getElementById('loginError');
+                    errorDiv.style.color = 'var(--gama-rojo-500, #dc2626)';
+                    errorDiv.style.backgroundColor = 'transparent';
+                    errorDiv.style.border = 'none';
+                    errorDiv.style.padding = '0';
+                    errorDiv.textContent = 'Error de conexión con el servidor.';
+                    errorDiv.style.display = 'block';
                     loadCaptcha();
                 })
                 .finally(function() {

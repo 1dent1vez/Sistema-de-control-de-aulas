@@ -13,15 +13,20 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.3.0
+ * @version      1.6.1
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-22
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-21 - Refactor: cookies SAM en cache con UUID, sesión vía cookie propia
  *               2026-05-22 - Extracción de token robusta multicapa con logs de diagnóstico y captura de HTML crudo ante errores.
  *               2026-05-22 - Reescritura robusta de obtenerPerfil() con fallbacks secuenciales, parsing multinivel de JSON y logging quirúrgico.
+ *               2026-05-24 - Timeout estricto vía config (5s/3s) + reintentos con requestWithRetry y logs en canal sam.
+ *               2026-05-24 - Corrección: soporte de RequestException en retry y timeouts estandarizados en solicitudes.
+ *               2026-05-24 - Forzar IPv4 para Windows, resolver localhost a 127.0.0.1, requestWithRetry mejorado y logs de error.
+ *               2026-05-24 - Corrección de deadlock en obtenerPerfil al redireccionar consultas locales al servidor SAM correcto y forzar IPv4.
+ *               2026-05-25 - Renombrado canal de log sam.debug a sam_debug.
  */
 
 declare(strict_types=1);
@@ -31,11 +36,13 @@ namespace App\Services\Auth;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
 
 class SamService
 {
@@ -54,12 +61,13 @@ class SamService
     ) {
         $this->cookieJar = new CookieJar;
         $this->client = new Client([
-            'base_uri' => rtrim((string) env('SAM_URL', 'http://192.168.1.74:8090/SAM'), '/').'/',
-            'timeout' => 30,
-            'connect_timeout' => 10,
+            'base_uri' => str_replace('localhost', '127.0.0.1', config('sam.url')),
+            'timeout' => config('sam.timeout', 5.0),
+            'connect_timeout' => config('sam.connect_timeout', 3.0),
+            'force_ip_resolve' => config('sam.force_ip_resolve', 'v4'),
             'cookies' => $this->cookieJar,
             'http_errors' => false,
-            'verify' => false,
+            'verify' => config('sam.verify_ssl', false),
         ]);
 
         $this->restoreFromCache();
@@ -82,6 +90,25 @@ class SamService
     }
 
     /**
+     * Verifica la conectividad con el servidor SAM externo.
+     */
+    public function checkConnection(): bool
+    {
+        try {
+            $response = $this->requestWithRetry('GET', 'app/login/captcha.png', [
+                'timeout' => config('sam.timeout', 5.0),
+                'connect_timeout' => config('sam.connect_timeout', 3.0),
+            ]);
+
+            return $response->getStatusCode() === 200;
+        } catch (\Throwable $e) {
+            Log::channel('sam')->error('[SAM] Conectividad fallida con el servidor SAM: '.$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Obtiene el captcha PNG desde SAM.
      *
      * @return array{png: string|null, sessionId: string|null}
@@ -89,7 +116,7 @@ class SamService
     public function obtenerCaptcha(): array
     {
         try {
-            $response = $this->client->get('app/login/captcha.png');
+            $response = $this->requestWithRetry('GET', 'app/login/captcha.png');
 
             if ($response->getStatusCode() !== 200) {
                 return ['png' => null, 'sessionId' => null];
@@ -112,7 +139,7 @@ class SamService
     public function validarCaptcha(string $codigo): bool
     {
         try {
-            $response = $this->client->post('app/login/validarCaptcha.do', [
+            $response = $this->requestWithRetry('POST', 'app/login/validarCaptcha.do', [
                 'form_params' => ['inpCaptcha' => $codigo],
             ]);
             $this->saveToCache();
@@ -138,7 +165,7 @@ class SamService
     public function login(string $usuario, string $password, string $captcha): array
     {
         try {
-            $response = $this->client->post('app/empleado.do?accion=verificar', [
+            $response = $this->requestWithRetry('POST', 'app/empleado.do?accion=verificar', [
                 'form_params' => [
                     'itt_username' => $usuario,
                     'itt_password' => $password,
@@ -149,10 +176,13 @@ class SamService
 
             $body = (string) $response->getBody();
 
-            // Guardar copia del HTML
-            $timestamp = now()->format('Ymd_His');
-            $rawLogPath = storage_path("logs/sam_raw_response_{$timestamp}.html");
-            @file_put_contents($rawLogPath, $body);
+            // Guardar copia del HTML si es ambiente local
+            $rawLogPath = null;
+            if (app()->isLocal()) {
+                $timestamp = now()->format('Ymd_His');
+                $rawLogPath = storage_path("logs/sam_raw_response_{$timestamp}.html");
+                @file_put_contents($rawLogPath, $body);
+            }
 
             // Loguear respuesta cruda
             Log::channel('sam_debug')->debug('[SAM] Respuesta recibida de empleado.do?accion=verificar', [
@@ -233,7 +263,7 @@ class SamService
             'sistemaUrl' => $sistemaUrl,
         ];
         Log::channel('sam')->info('[SAM-PERFIL] Iniciando obtención de perfil', $logContext);
-        Log::channel('sam.debug')->info('[SAM-PERFIL] Iniciando obtención de perfil', $logContext);
+        Log::channel('sam_debug')->info('[SAM-PERFIL] Iniciando obtención de perfil', $logContext);
 
         try {
             // 1. Construcción segura de URL
@@ -243,11 +273,32 @@ class SamService
             $port = isset($parsedUrl['port']) ? ':'.$parsedUrl['port'] : '';
             $path = rtrim($parsedUrl['path'] ?? '', '/');
 
-            if (preg_match('#^(.*?/app)#i', $path, $matches)) {
-                $basePath = $matches[1];
+            // Evitar deadlock en desarrollo local si apunta a la app local
+            $samParsed = parse_url(config('sam.url'));
+            $samHost = $samParsed['host'] ?? '127.0.0.1';
+            if ($samHost === 'localhost') {
+                $samHost = '127.0.0.1';
+            }
+            $samPort = isset($samParsed['port']) ? ':'.$samParsed['port'] : '';
+            $samScheme = $samParsed['scheme'] ?? 'http';
+
+            if (($host === 'localhost' || $host === '127.0.0.1') && $port === ':8000') {
+                $host = $samHost;
+                $port = $samPort;
+                $scheme = $samScheme;
+                $samPath = rtrim($samParsed['path'] ?? '', '/');
+                $basePath = $samPath.'/app';
             } else {
-                $basePath = preg_replace('#/[^/]+\.do$#i', '', $path);
-                $basePath = rtrim($basePath, '/').'/app';
+                if (preg_match('#^(.*?/app)#i', $path, $matches)) {
+                    $basePath = $matches[1];
+                } else {
+                    $basePath = preg_replace('#/[^/]+\.do$#i', '', $path);
+                    $basePath = rtrim($basePath, '/').'/app';
+                }
+            }
+
+            if ($host === 'localhost') {
+                $host = '127.0.0.1';
             }
 
             $baseUrl = "{$scheme}://{$host}{$port}".rtrim($basePath, '/');
@@ -311,7 +362,7 @@ class SamService
                     'query' => $intento['query'],
                     'form_params_keys' => array_keys($intento['form_params']),
                 ]);
-                Log::channel('sam.debug')->debug("[SAM-PERFIL] Ejecutando intento #{$numIntento}", [
+                Log::channel('sam_debug')->debug("[SAM-PERFIL] Ejecutando intento #{$numIntento}", [
                     'method' => $intento['method'],
                     'endpoint' => $endpoint,
                     'query' => $intento['query'],
@@ -320,7 +371,9 @@ class SamService
 
                 try {
                     $options = [
-                        'timeout' => 15,
+                        'timeout' => config('sam.timeout', 5.0),
+                        'connect_timeout' => config('sam.connect_timeout', 3.0),
+                        'force_ip_resolve' => config('sam.force_ip_resolve', 'v4'),
                         'allow_redirects' => [
                             'track_redirects' => true,
                         ],
@@ -338,22 +391,25 @@ class SamService
                         $options['form_params'] = $intento['form_params'];
                     }
 
-                    $response = $this->client->request($intento['method'], $endpoint, $options);
+                    $response = $this->requestWithRetry($intento['method'], $endpoint, $options);
                     $status = $response->getStatusCode();
                     $body = (string) $response->getBody();
 
-                    // Guardar respuesta cruda para depuración
-                    $timestamp = now()->format('Ymd_His');
-                    $uniqueId = uniqid();
-                    $debugFile = storage_path("logs/sam_perfil_{$timestamp}_{$uniqueId}_intento_{$numIntento}.txt");
-                    @file_put_contents($debugFile, "STATUS: {$status}\nHEADERS: ".json_encode($response->getHeaders())."\n\nBODY:\n{$body}");
+                    // Guardar respuesta cruda para depuración si es ambiente local
+                    $debugFile = null;
+                    if (app()->isLocal()) {
+                        $timestamp = now()->format('Ymd_His');
+                        $uniqueId = uniqid();
+                        $debugFile = storage_path("logs/sam_perfil_{$timestamp}_{$uniqueId}_intento_{$numIntento}.txt");
+                        @file_put_contents($debugFile, "STATUS: {$status}\nHEADERS: ".json_encode($response->getHeaders())."\n\nBODY:\n{$body}");
+                    }
 
                     Log::channel('sam')->debug("[SAM-PERFIL] Intento #{$numIntento} respuesta recibida", [
                         'status' => $status,
                         'body_length' => strlen($body),
                         'debug_file' => $debugFile,
                     ]);
-                    Log::channel('sam.debug')->debug("[SAM-PERFIL] Intento #{$numIntento} respuesta recibida", [
+                    Log::channel('sam_debug')->debug("[SAM-PERFIL] Intento #{$numIntento} respuesta recibida", [
                         'status' => $status,
                         'body_length' => strlen($body),
                         'debug_file' => $debugFile,
@@ -367,7 +423,7 @@ class SamService
                         Log::channel('sam')->error("[SAM-PERFIL] Intento #{$numIntento} devolvió HTML en vez de JSON", [
                             'primeros_200_chars' => substr(strip_tags($body), 0, 200),
                         ]);
-                        Log::channel('sam.debug')->error("[SAM-PERFIL] Intento #{$numIntento} devolvió HTML en vez de JSON", [
+                        Log::channel('sam_debug')->error("[SAM-PERFIL] Intento #{$numIntento} devolvió HTML en vez de JSON", [
                             'primeros_200_chars' => substr(strip_tags($body), 0, 200),
                         ]);
                         throw new \RuntimeException('SAM devolvió página HTML en lugar de JSON de perfil.');
@@ -379,7 +435,7 @@ class SamService
                             'json_error' => json_last_error_msg(),
                             'body_sample' => substr($body, 0, 300),
                         ]);
-                        Log::channel('sam.debug')->error("[SAM-PERFIL] Intento #{$numIntento} JSON inválido", [
+                        Log::channel('sam_debug')->error("[SAM-PERFIL] Intento #{$numIntento} JSON inválido", [
                             'json_error' => json_last_error_msg(),
                             'body_sample' => substr($body, 0, 300),
                         ]);
@@ -389,7 +445,7 @@ class SamService
                     Log::channel('sam')->debug("[SAM-PERFIL] Intento #{$numIntento} JSON parseado", [
                         'top_level_keys' => is_array($data) ? array_keys($data) : 'no-array',
                     ]);
-                    Log::channel('sam.debug')->debug("[SAM-PERFIL] Intento #{$numIntento} JSON parseado", [
+                    Log::channel('sam_debug')->debug("[SAM-PERFIL] Intento #{$numIntento} JSON parseado", [
                         'top_level_keys' => is_array($data) ? array_keys($data) : 'no-array',
                     ]);
 
@@ -427,7 +483,7 @@ class SamService
                             'estrategia' => $estrategia,
                             'perfil_keys' => array_keys($perfil),
                         ]);
-                        Log::channel('sam.debug')->info("[SAM-PERFIL] Éxito en intento #{$numIntento}", [
+                        Log::channel('sam_debug')->info("[SAM-PERFIL] Éxito en intento #{$numIntento}", [
                             'estrategia' => $estrategia,
                             'perfil_keys' => array_keys($perfil),
                         ]);
@@ -437,7 +493,7 @@ class SamService
                     Log::channel('sam')->error("[SAM-PERFIL] Intento #{$numIntento} sin estructura de perfil", [
                         'json_keys' => array_keys($data),
                     ]);
-                    Log::channel('sam.debug')->error("[SAM-PERFIL] Intento #{$numIntento} sin estructura de perfil", [
+                    Log::channel('sam_debug')->error("[SAM-PERFIL] Intento #{$numIntento} sin estructura de perfil", [
                         'json_keys' => array_keys($data),
                     ]);
                     throw new \RuntimeException('SAM respondió JSON válido pero sin estructura de perfil reconocida');
@@ -445,7 +501,7 @@ class SamService
                     Log::channel('sam')->warning("[SAM-PERFIL] Falló intento #{$numIntento}", [
                         'error' => $e->getMessage(),
                     ]);
-                    Log::channel('sam.debug')->warning("[SAM-PERFIL] Falló intento #{$numIntento}", [
+                    Log::channel('sam_debug')->warning("[SAM-PERFIL] Falló intento #{$numIntento}", [
                         'error' => $e->getMessage(),
                     ]);
                     $lastException = $e;
@@ -464,7 +520,7 @@ class SamService
                 'has_response' => $e->hasResponse(),
                 'response_status' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null,
             ]);
-            Log::channel('sam.debug')->error('[SAM-PERFIL] Error de conexión Guzzle', [
+            Log::channel('sam_debug')->error('[SAM-PERFIL] Error de conexión Guzzle', [
                 'message' => $e->getMessage(),
                 'has_response' => $e->hasResponse(),
                 'response_status' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null,
@@ -475,7 +531,7 @@ class SamService
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            Log::channel('sam.debug')->error('[SAM-PERFIL] Error inesperado al obtener perfil', [
+            Log::channel('sam_debug')->error('[SAM-PERFIL] Error inesperado al obtener perfil', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -523,7 +579,7 @@ class SamService
     public function logout(): void
     {
         try {
-            $this->client->get('app/login.do?accion=salir');
+            $this->requestWithRetry('GET', 'app/login.do?accion=salir');
         } catch (\Throwable) {
             // Ignorar errores en logout SAM
         }
@@ -572,6 +628,47 @@ class SamService
         if ($sessionId !== null) {
             Cache::forget(self::CACHE_PREFIX.$sessionId);
         }
+    }
+
+    /**
+     * Ejecuta una petición HTTP con reintentos automáticos ante errores de conexión o timeout.
+     */
+    private function requestWithRetry(string $method, string $uri, array $options = []): ResponseInterface
+    {
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            try {
+                $mergedOptions = array_merge([
+                    'timeout' => config('sam.timeout', 5.0),
+                    'connect_timeout' => config('sam.connect_timeout', 3.0),
+                    'force_ip_resolve' => config('sam.force_ip_resolve', 'v4'),
+                ], $options);
+
+                return $this->client->request($method, $uri, $mergedOptions);
+            } catch (ConnectException|RequestException $e) {
+                $lastException = $e;
+
+                Log::channel('sam')->warning("SAM request attempt {$attempt} failed", [
+                    'uri' => $uri,
+                    'method' => $method,
+                    'error' => $e->getMessage(),
+                ]);
+
+                if ($attempt === 1) {
+                    usleep(500000); // 500ms antes de reintentar
+                }
+            }
+        }
+
+        Log::channel('sam')->error('SAM request failed', [
+            'uri' => $uri,
+            'method' => $method,
+            'attempt' => 2,
+            'error' => $lastException->getMessage(),
+        ]);
+
+        throw $lastException;
     }
 
     private function extraerToken(string $html): ?array

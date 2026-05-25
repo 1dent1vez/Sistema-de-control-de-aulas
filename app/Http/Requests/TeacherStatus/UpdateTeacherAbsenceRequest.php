@@ -38,7 +38,7 @@ class UpdateTeacherAbsenceRequest extends FormRequest
         return [
             'teacher_external_id' => ['string', 'max:50'],
             'absence_type_id' => ['integer', 'exists:gama_absence_types,id'],
-            'start_date' => ['date', 'before_or_equal:end_date'],
+            'start_date' => ['date', 'before_or_equal:end_date', 'after_or_equal:today'],
             'end_date' => ['date', 'after_or_equal:start_date'],
             'observations' => ['nullable', 'string', 'max:500'],
             'is_confirmed' => ['sometimes', 'boolean'],
@@ -52,6 +52,7 @@ class UpdateTeacherAbsenceRequest extends FormRequest
             'absence_type_id.exists' => 'El tipo de ausencia seleccionado no existe.',
             'start_date.date' => 'La fecha de inicio no es válida.',
             'start_date.before_or_equal' => 'La fecha de inicio debe ser igual o anterior a la fecha de fin.',
+            'start_date.after_or_equal' => 'La fecha de inicio no puede ser anterior al día de hoy.',
             'end_date.date' => 'La fecha de fin no es válida.',
             'end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
             'observations.max' => 'Las observaciones no deben exceder :max caracteres.',

@@ -16,9 +16,10 @@
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-17
+ * @modificado   2026-05-24
  *
  * @cambios      2026-05-17 - Creación inicial del Resource
+ *               2026-05-24 - Adición de usingMockFallback para control en contingencia.
  */
 
 declare(strict_types=1);
@@ -37,7 +38,10 @@ class AuthResource extends JsonResource
             'tokenType' => $this['tokenType'],
             'expiresAt' => $this['expiresAt'],
             'role' => $this['role'],
+            'needsRole' => $this['needsRole'] ?? false,
             'redirectUrl' => $this['redirectUrl'],
+            'usingMockFallback' => $this['using_mock_fallback'] ?? false,
+            'using_mock_fallback' => $this['using_mock_fallback'] ?? false,
             'user' => $this['user'],
         ];
     }

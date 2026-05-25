@@ -11,20 +11,20 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.2.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-25
  *
- * @cambios      2026-05-18 - Refactorización: compactación
+ * @cambios      2026-05-14 - Creación inicial del controlador
+ *               2026-05-25 - Refactorización para cumplir con el límite de 100 líneas y cargar relaciones.
  */
 
 declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\TeacherStatus;
 
-use App\Enums\Auth\SamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TeacherStatus\StoreTeacherAbsenceRequest;
 use App\Http\Requests\TeacherStatus\UpdateTeacherAbsenceRequest;
@@ -40,73 +40,74 @@ class GamaTeacherAbsenceController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(
-        private readonly GamaTeacherAbsenceService $service
-    ) {}
+    public function __construct(private readonly GamaTeacherAbsenceService $service) {}
 
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', TeacherAbsence::class);
-
         $filters = $request->only(['teacher_external_id', 'start_date', 'end_date']);
+        $absences = $this->service->getAll($filters, $request->user())->load('absenceType', 'classSchedules');
 
-        if ($request->user()->role !== SamRole::ADMIN) {
-            $filters['teacher_external_id'] = $request->user()->external_id;
-        }
-
-        return $this->success(TeacherAbsenceResource::collection($this->service->getAll($filters)));
+        return $this->success(TeacherAbsenceResource::collection($absences));
     }
 
     public function show(int $id): JsonResponse
     {
         $absence = $this->service->getById($id);
         if (! $absence) {
-            return $this->error('Teacher absence not found.', 404);
+            return $this->error('Ausencia no encontrada.', 404);
         }
         $this->authorize('view', $absence);
 
-        return $this->success(new TeacherAbsenceResource($absence));
+        return $this->success(new TeacherAbsenceResource($absence->load('absenceType', 'classSchedules')));
     }
 
     public function store(StoreTeacherAbsenceRequest $request): JsonResponse
     {
         $this->authorize('create', TeacherAbsence::class);
 
-        try {
-            return $this->created(new TeacherAbsenceResource($this->service->store(array_merge($request->validated(), ['teacher_external_id' => $request->user()->external_id]))));
-        } catch (OverlapRequiredException $e) {
-            return $this->error($e->getMessage(), 422, ['overlap' => $e->getOverlapDetails()]);
-        } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        return $this->executeAction(function () use ($request) {
+            $data = array_merge($request->validated(), ['teacher_external_id' => $request->user()->external_id]);
+
+            return $this->created(new TeacherAbsenceResource($this->service->store($data)));
+        });
     }
 
     public function update(UpdateTeacherAbsenceRequest $request, int $id): JsonResponse
     {
         $absence = $this->service->getById($id);
         if (! $absence) {
-            return $this->error('Teacher absence not found.', 404);
+            return $this->error('Ausencia no encontrada.', 404);
         }
         $this->authorize('update', $absence);
 
-        try {
-            return $this->success(new TeacherAbsenceResource($this->service->update($id, array_merge($request->validated(), ['teacher_external_id' => $absence->teacher_external_id]))), 'Teacher absence updated successfully.');
-        } catch (OverlapRequiredException $e) {
-            return $this->error($e->getMessage(), 422, ['overlap' => $e->getOverlapDetails()]);
-        } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        return $this->executeAction(function () use ($request, $id, $absence) {
+            $data = array_merge($request->validated(), ['teacher_external_id' => $absence->teacher_external_id]);
+
+            return $this->success(new TeacherAbsenceResource($this->service->update($id, $data)), 'Ausencia actualizada exitosamente.');
+        });
     }
 
     public function destroy(int $id): JsonResponse
     {
         $absence = $this->service->getById($id);
         if (! $absence) {
-            return $this->error('Teacher absence not found.', 404);
+            return $this->error('Ausencia no encontrada.', 404);
         }
         $this->authorize('delete', $absence);
         $this->service->delete($id);
 
-        return $this->success(null, 'Teacher absence deleted successfully.');
+        return $this->success(null, 'Ausencia eliminada exitosamente.');
+    }
+
+    private function executeAction(callable $action): JsonResponse
+    {
+        try {
+            return $action();
+        } catch (OverlapRequiredException $e) {
+            return $this->error($e->getMessage(), 422, ['overlap' => $e->getOverlapDetails()]);
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
     }
 }

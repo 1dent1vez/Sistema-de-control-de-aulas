@@ -71,6 +71,10 @@ class GamaClassScheduleService
             throw new \RuntimeException('El semestre seleccionado no existe.');
         }
 
+        if (! $semester->isActive()) {
+            throw new \RuntimeException('El semestre seleccionado no está vigente.');
+        }
+
         if ($this->repository->hasOverlap(
             (int) $data['classroom_id'],
             $data['weekday'],
@@ -88,7 +92,7 @@ class GamaClassScheduleService
      *
      * @param  array<string, mixed>  $data
      *
-     * @throws \RuntimeException Si hay empalme de horario
+     * @throws \RuntimeException Si hay empalme de horario o el semestre no está vigente
      */
     public function update(int $id, array $data): ?ClassSchedule
     {
@@ -96,6 +100,13 @@ class GamaClassScheduleService
 
         if (! $schedule) {
             return null;
+        }
+
+        $semesterId = (int) ($data['semester_id'] ?? $schedule->semester_id);
+        $semester = $this->semesterRepository->findById($semesterId);
+
+        if (! $semester || ! $semester->isActive()) {
+            throw new \RuntimeException('El semestre seleccionado no está vigente o no existe.');
         }
 
         $classroomId = (int) ($data['classroom_id'] ?? $schedule->classroom_id);

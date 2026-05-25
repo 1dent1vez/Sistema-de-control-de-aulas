@@ -31,6 +31,7 @@ use App\Models\ClassSchedule;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GamaScheduleImportController extends Controller
 {
@@ -42,10 +43,15 @@ class GamaScheduleImportController extends Controller
 
         $file = $request->file('file');
         $semesterId = (int) $request->input('semester_id');
-        $path = $file->store('imports');
-        ProcessScheduleImportJob::dispatch($path, $file->getClientOriginalName(), $semesterId);
+        $batchId = Str::uuid()->toString();
 
-        return $this->success(['file' => $path], 'Import scheduled successfully. Check logs for results.');
+        $path = $file->storeAs('imports', $batchId.'.'.$file->getClientOriginalExtension());
+        ProcessScheduleImportJob::dispatch($path, $file->getClientOriginalName(), $semesterId, $batchId);
+
+        return $this->success([
+            'batchId' => $batchId,
+            'file' => $path,
+        ], 'La importación ha sido programada exitosamente.', 202);
     }
 
     public function report(string $batchId): JsonResponse
@@ -54,7 +60,7 @@ class GamaScheduleImportController extends Controller
 
         $path = "imports/{$batchId}.json";
         if (! Storage::disk('local')->exists($path)) {
-            return $this->error('Report not found.', 404);
+            return $this->success(null, 'El archivo se está procesando. Por favor, espere...', 202);
         }
         $content = json_decode(Storage::disk('local')->get($path), true);
 

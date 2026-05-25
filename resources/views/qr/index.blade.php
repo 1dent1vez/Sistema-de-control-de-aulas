@@ -29,12 +29,7 @@
                             <h1 class="page-title">Generacion de Codigos QR</h1>
                             <p class="page-subtitle">Genere, visualice y descargue codigos QR estaticos por aula para control de asistencia. Los QR generados estan listos para impresion.</p>
                         </div>
-                        <div class="header-actions">
-                            <button class="btn btn-outline" id="btnPrint" title="Imprimir seleccionados">
-                                <i class="fas fa-print"></i>
-                                <span>Imprimir</span>
-                            </button>
-                        </div>
+
                     </div>
                 </div>
 
@@ -69,14 +64,18 @@
                             Limpiar seleccion
                         </button>
                     </div>
-                    <div class="selection-actions">
+                    <div class="selection-actions" style="display: flex; align-items: center; gap: 8px;">
                         <button class="btn btn-primary btn-md" id="btnGenerarQRBulk">
                             <i class="fas fa-qrcode"></i>
                             Generar QR
                         </button>
+                        <select id="bulkFormat" style="padding: 10px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--mist-blue); font-size: 13px; outline: none; background: #fff; cursor: pointer;">
+                            <option value="png">PNG (ZIP)</option>
+                            <option value="pdf">PDF</option>
+                        </select>
                         <button class="btn btn-secondary btn-md" id="btnDescargarZIP">
                             <i class="fas fa-download"></i>
-                            Descargar ZIP
+                            Descargar Lote
                         </button>
                     </div>
                 </div>
@@ -140,7 +139,6 @@
             const btnClearSel     = document.getElementById('btnClearSelection');
             const btnGenerarBulk  = document.getElementById('btnGenerarQRBulk');
             const btnDescargarZIP = document.getElementById('btnDescargarZIP');
-            const btnPrint        = document.getElementById('btnPrint');
             const modalRegenerar  = document.getElementById('modalRegenerar');
             const modalAulaName   = document.getElementById('modalAulaName');
             const toastContainer  = document.getElementById('toastContainer');
@@ -157,7 +155,7 @@
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrf(), 'Authorization': token ? 'Bearer ' + token : '', ...(opts.headers ?? {}) },
                     ...opts,
                 });
-                if (res.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); }
+                if (res.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); }
                 const json = await res.json();
                 if (!res.ok) throw { status: res.status, json };
                 return json;
@@ -213,7 +211,7 @@
                     renderGallery();
                 } catch (e) {
                     qrGallery.innerHTML =
-                        '<div style="text-align:center;padding:48px;color:var(--status-inactive);width:100%;">Error al cargar datos desde la API.</div>';
+                        '<div style="text-align:center;padding:48px;color:var(--status-inactive);width:100%;">No se pudo cargar el listado</div>';
                     showToast('Error', 'No se pudieron cargar las aulas.', 'error');
                 }
             }
@@ -268,9 +266,13 @@
                     : '<i class="fas fa-clock"></i> Pendiente';
 
                 const actions = c.hasActiveQr
-                    ? `<button class="btn btn-outline btn-sm" data-action="regenerar" data-id="${c.id}" title="Regenerar QR">
-                           <i class="fas fa-sync-alt"></i> Regenerar
+                    ? `<button class="btn btn-outline btn-sm" data-action="regenerar" data-id="${c.id}" title="Regenerar QR" style="padding: 0 8px;">
+                           <i class="fas fa-sync-alt"></i>
                        </button>
+                       <select id="format-${c.id}" style="padding: 4px 6px; border-radius: var(--border-radius-sm); border: 1px solid var(--mist-blue); font-size: 11px; outline: none; background: #fff; cursor: pointer; height: 30px;">
+                           <option value="png">PNG</option>
+                           <option value="pdf">PDF</option>
+                       </select>
                        <button class="btn btn-secondary btn-sm" data-action="descargar" data-id="${c.id}" title="Descargar QR">
                            <i class="fas fa-download"></i> Descargar
                        </button>`
@@ -424,46 +426,96 @@
             async function descargarQR(classroomId, btn) {
                 const c = allClassrooms.find(x => x.id === classroomId);
                 if (!c?.qrId) { showToast('Sin QR', 'El aula no tiene un QR generado.', 'warning'); return; }
+                const format = document.getElementById(`format-${classroomId}`)?.value ?? 'png';
                 const orig = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 try {
+                    const token = localStorage.getItem('auth_token');
+                    const url = `/api/v1/qr-codes/${c.qrId}/file?format=${format}`;
+                    
+                    const res = await fetch(url, {
+                        headers: {
+                            'Authorization': token ? 'Bearer ' + token : ''
+                        }
+                    });
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.message || 'No se pudo descargar');
+                    }
+                    const blob = await res.blob();
+                    
                     const a = document.createElement('a');
-                    a.href = `/api/v1/qr-codes/${c.qrId}/file`;
-                    a.download = `QR_${c.nombre}.png`;
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `QR_${c.nombre}.${format}`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
                     showToast('Descarga iniciada', `Preparando QR del aula ${c.nombre}.`, 'success');
+                } catch (e) {
+                    showToast('Error', 'No se pudo generar el archivo', 'error');
                 } finally {
-                    setTimeout(() => { btn.disabled = false; btn.innerHTML = orig; }, 1500);
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
                 }
             }
 
             /* ---- Generar QR masivo ---- */
-            btnGenerarBulk.addEventListener('click', async () => {
+            async function generarBulk(force = false) {
                 const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
-                const pendientes = selectedCards.filter(card => {
-                    const id = Number(card.dataset.classroomId);
-                    return !allClassrooms.find(c => c.id === id)?.hasActiveQr;
-                });
-
-                if (!pendientes.length) {
-                    showToast('Sin pendientes', 'Todas las aulas seleccionadas ya tienen QR generado.', 'warning');
+                if (!selectedCards.length) {
+                    showToast('Sin selección', 'Por favor seleccione al menos un aula.', 'warning');
                     return;
                 }
+
+                const conQrActivo = selectedCards.filter(card => {
+                    const id = Number(card.dataset.classroomId);
+                    return allClassrooms.find(c => c.id === id)?.hasActiveQr;
+                });
+
+                let targets = selectedCards;
+                if (!force && conQrActivo.length > 0) {
+                    targets = selectedCards.filter(card => {
+                        const id = Number(card.dataset.classroomId);
+                        return !allClassrooms.find(c => c.id === id)?.hasActiveQr;
+                    });
+
+                    if (conQrActivo.length === selectedCards.length) {
+                        const forceBtn = document.createElement('button');
+                        forceBtn.className = 'btn btn-primary btn-sm';
+                        forceBtn.style.marginTop = '8px';
+                        forceBtn.textContent = 'Forzar regeneración para todas';
+                        forceBtn.onclick = () => { forceBtn.remove(); generarBulk(true); };
+                        
+                        showToast('Omitidas', `${conQrActivo.length} aulas ya tenían QR activo y fueron omitidas.`, 'warning');
+                        toastContainer.lastChild.querySelector('.toast-content').appendChild(forceBtn);
+                        return;
+                    } else if (targets.length > 0) {
+                        showToast('Omitidas', `${conQrActivo.length} aulas ya tenían QR activo y fueron omitidas.`, 'warning');
+                    }
+                }
+
+                if (!targets.length) return;
 
                 btnGenerarBulk.disabled = true;
                 btnGenerarBulk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
                 let ok = 0, fail = 0;
-                for (const card of pendientes) {
+                for (const card of targets) {
                     const id = Number(card.dataset.classroomId);
                     try {
-                        const res = await apiFetch(`/api/v1/classrooms/${id}/qr`, { method: 'POST' });
+                        const res = await apiFetch(`/api/v1/classrooms/${id}/qr`, { 
+                            method: 'POST',
+                            body: JSON.stringify({ force_regenerate: force })
+                        });
                         const qr = res.data ?? {};
                         const c = allClassrooms.find(x => x.id === id);
-                        if (c) { c.hasActiveQr = true; c.qrId = qr.id ?? qr.qrId ?? null; c.qrImageUrl = qr.imagePath ?? null; }
+                        if (c) { 
+                            c.hasActiveQr = true; 
+                            c.qrId = qr.id ?? qr.qrId ?? null; 
+                            c.qrImageUrl = qr.imagePath ?? qr.imageUrl ?? null; 
+                        }
                         ok++;
                     } catch (_) { fail++; }
                 }
@@ -474,78 +526,113 @@
 
                 if (ok > 0) showToast('QR generados', `${ok} codigo(s) QR generado(s) exitosamente.`, 'success');
                 if (fail > 0) showToast('Errores parciales', `${fail} aula(s) no pudieron generarse.`, 'warning');
-            });
+            }
 
-            /* ---- Descargar ZIP ---- */
+            btnGenerarBulk.addEventListener('click', () => generarBulk(false));
+
+            /* ---- Descargar ZIP/PDF Lote ---- */
             btnDescargarZIP.addEventListener('click', async () => {
                 const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
-                const conQr = selectedCards
+                const classroomIds = selectedCards
                     .map(card => Number(card.dataset.classroomId))
-                    .filter(id => allClassrooms.find(c => c.id === id)?.qrId)
-                    .map(id => allClassrooms.find(c => c.id === id).qrId);
+                    .filter(id => allClassrooms.find(c => c.id === id)?.qrId);
 
-                if (!conQr.length) {
+                if (!classroomIds.length) {
                     showToast('Sin QR para descargar', 'Seleccione aulas con QR activo para descargar.', 'warning');
                     return;
                 }
+
+                const format = document.getElementById('bulkFormat').value;
 
                 btnDescargarZIP.disabled = true;
                 btnDescargarZIP.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
 
                 try {
+                    const token = localStorage.getItem('auth_token');
                     const res = await fetch('/api/v1/qr-codes/download', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/octet-stream', 'X-CSRF-TOKEN': getCsrf() },
-                        body: JSON.stringify({ classroom_ids: conQr }),
+                        headers: { 
+                            'Content-Type': 'application/json', 
+                            'Accept': 'application/json', 
+                            'X-CSRF-TOKEN': getCsrf(),
+                            'Authorization': token ? 'Bearer ' + token : ''
+                        },
+                        body: JSON.stringify({ classroom_ids: classroomIds, format: format }),
                     });
-                    if (!res.ok) throw new Error('Error en descarga');
-                    const blob = await res.blob();
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = 'codigos_qr.zip';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(a.href);
-                    showToast('Descarga iniciada', `ZIP con ${conQr.length} codigos QR listo.`, 'success');
+                    if (!res.ok) throw new Error('Error al iniciar la descarga.');
+                    const data = await res.json();
+                    const batchId = data.data?.batchId ?? data.batchId;
+
+                    if (!batchId) throw new Error('No se recibió el identificador del lote.');
+
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusRes = await fetch(`/api/v1/qr-codes/download/${batchId}/status`, {
+                                headers: { 
+                                    'Accept': 'application/json',
+                                    'Authorization': token ? 'Bearer ' + token : ''
+                                }
+                            });
+                            if (!statusRes.ok) throw new Error();
+                            const statusData = await statusRes.json();
+                            const batch = statusData.data;
+
+                            if (batch.status === 'completed') {
+                                clearInterval(pollInterval);
+                                
+                                const fileRes = await fetch(batch.downloadUrl, {
+                                    headers: {
+                                        'Authorization': token ? 'Bearer ' + token : ''
+                                    }
+                                });
+                                if (!fileRes.ok) throw new Error();
+                                const blob = await fileRes.blob();
+                                
+                                const ext = format === 'pdf' ? 'pdf' : 'zip';
+                                const a = document.createElement('a');
+                                a.href = URL.createObjectURL(blob);
+                                a.download = `QR_Lote.${ext}`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(a.href);
+
+                                btnDescargarZIP.disabled = false;
+                                btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
+                                showToast('Descarga lista', 'El lote de códigos QR se ha generado con éxito.', 'success');
+                            } else if (batch.status === 'failed') {
+                                clearInterval(pollInterval);
+                                btnDescargarZIP.disabled = false;
+                                btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
+                                showToast('Error', 'No se pudo generar el archivo', 'error');
+                            } else {
+                                btnDescargarZIP.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Procesando (${batch.progress}%)...`;
+                            }
+                        } catch (e) {
+                            clearInterval(pollInterval);
+                            btnDescargarZIP.disabled = false;
+                            btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
+                            showToast('Error', 'No se pudo generar el archivo', 'error');
+                        }
+                    }, 2000);
+
+                    setTimeout(() => {
+                        clearInterval(pollInterval);
+                        if (btnDescargarZIP.disabled) {
+                            btnDescargarZIP.disabled = false;
+                            btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
+                            showToast('Timeout', 'La generación del lote tardó demasiado tiempo.', 'warning');
+                        }
+                    }, 300000);
+
                 } catch (err) {
-                    showToast('Error', 'No se pudo generar el ZIP.', 'error');
-                } finally {
                     btnDescargarZIP.disabled = false;
-                    btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar ZIP';
+                    btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
+                    showToast('Error', 'No se pudo generar el archivo', 'error');
                 }
             });
 
-            /* ---- Imprimir ---- */
-            btnPrint.addEventListener('click', () => {
-                const selected = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
-                const visible  = Array.from(qrGallery.querySelectorAll('.qr-card'));
-                const toPrint  = selected.length > 0 ? selected : visible;
 
-                if (!toPrint.length) { showToast('Sin resultados', 'No hay aulas para imprimir.', 'warning'); return; }
-
-                const printWin = window.open('', '_blank', 'width=1000,height=700');
-                if (!printWin) { showToast('Bloqueado', 'Permita ventanas emergentes para imprimir.', 'error'); return; }
-
-                const cardsHtml = toPrint.map(card => {
-                    const titulo    = card.querySelector('.qr-card-title')?.textContent ?? '';
-                    const subtitulo = card.querySelector('.qr-card-subtitle')?.textContent ?? '';
-                    const preview   = card.querySelector('.qr-preview')?.outerHTML ?? '';
-                    return `<div class="print-item"><div class="print-header"><h2>${titulo}</h2><p>${subtitulo}</p></div>${preview}</div>`;
-                }).join('');
-
-                printWin.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Impresion QR</title>
-                <style>body{font-family:Arial,sans-serif;margin:20px}.print-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-                .print-item{border:1px solid #ccc;padding:15px;text-align:center;border-radius:8px}
-                .print-header h2{margin:0;font-size:18px}.print-header p{margin:4px 0 10px;font-size:13px;color:#555}
-                .qr-preview img{width:140px;height:140px}@media print{body{margin:10mm}.print-item{break-inside:avoid}}</style>
-                </head><body>
-                <div style="text-align:center;margin-bottom:20px"><h1 style="margin:0;font-size:22px">Codigos QR - GAMA</h1></div>
-                <div class="print-grid">${cardsHtml}</div></body></html>`);
-                printWin.document.close();
-                printWin.focus();
-                setTimeout(() => { printWin.print(); printWin.close(); }, 300);
-            });
 
             /* ---- Escape cierra modal ---- */
             document.addEventListener('keydown', e => {

@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return base + (q ? '?' + q : '');
   }
 
-  function handleUnauthorized(r) { if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('Unauthenticated'); } return r; }
+  function handleUnauthorized(r) { if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); } return r; }
 
   function fetchJson(url) {
     return fetch(url, { headers: HEADERS }).then(handleUnauthorized).then(function (r) { return r.ok ? r.json() : { data: [] }; });

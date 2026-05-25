@@ -46,6 +46,12 @@ class GamaClassScheduleRepository implements ClassScheduleRepositoryInterface
             $query->where('teacher_external_id', $filters['teacher_external_id']);
         }
 
+        if (! empty($filters['building_id'])) {
+            $query->whereHas('classroom', function ($q) use ($filters): void {
+                $q->where('building_id', $filters['building_id']);
+            });
+        }
+
         return $query->get();
     }
 

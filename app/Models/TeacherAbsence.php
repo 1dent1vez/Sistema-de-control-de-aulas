@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-14
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-14 - Creación inicial del modelo
+ *               2026-05-25 - Adición de la relación classSchedules (N:M).
  */
 
 declare(strict_types=1);
@@ -27,6 +28,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TeacherAbsence extends Model
@@ -56,5 +58,15 @@ class TeacherAbsence extends Model
     public function absenceType(): BelongsTo
     {
         return $this->belongsTo(AbsenceType::class);
+    }
+
+    public function classSchedules(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ClassSchedule::class,
+            'gama_class_schedule_teacher_absence',
+            'teacher_absence_id',
+            'class_schedule_id'
+        );
     }
 }

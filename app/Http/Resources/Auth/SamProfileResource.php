@@ -31,14 +31,17 @@ class SamProfileResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $profile = $this->getProfileFromSam();
+
         return [
             'externalId' => $this->external_id,
-            'fullName' => $this->full_name,
-            'email' => $this->email,
+            'fullName' => $profile['fullName'],
+            'email' => $profile['email'],
             'position' => $this->position ?? null,
             'department' => $this->department ?? null,
             'building' => $this->building ?? null,
             'role' => $this->role?->value,
+            'hasPassword' => $this->password !== null,
         ];
     }
 }

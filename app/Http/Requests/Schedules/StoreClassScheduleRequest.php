@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Schedules;
 
 use App\Enums\Schedules\Weekday;
+use App\Models\Semester;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,14 +39,26 @@ class StoreClassScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'semester_id' => ['required', 'integer', 'exists:gama_semesters,id'],
+            'semester_id' => [
+                'required',
+                'integer',
+                Rule::exists('gama_semesters', 'id')->whereNull('deleted_at'),
+                function ($attribute, $value, $fail) {
+                    $isActive = Semester::where('id', $value)
+                        ->current()
+                        ->exists();
+                    if (! $isActive) {
+                        $fail('El semestre seleccionado no está vigente.');
+                    }
+                },
+            ],
             'classroom_id' => ['required', 'integer', 'exists:gama_classrooms,id'],
             'teacher_external_id' => ['required', 'string', 'max:50'],
             'subject_name' => ['required', 'string', 'max:100'],
             'group_name' => ['required', 'string', 'max:10'],
             'weekday' => ['required', 'string', Rule::in(Weekday::values())],
-            'start_time' => ['required', 'date_format:H:i', 'before:end_time'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'start_time' => ['required', 'date_format:H:i', 'before:end_time', 'regex:/^\d{2}:00$/'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time', 'regex:/^\d{2}:00$/'],
             'status' => ['boolean'],
         ];
     }
@@ -67,9 +80,11 @@ class StoreClassScheduleRequest extends FormRequest
             'start_time.required' => 'La hora de inicio es obligatoria.',
             'start_time.date_format' => 'La hora de inicio debe tener formato HH:MM.',
             'start_time.before' => 'La hora de inicio debe ser anterior a la hora de fin.',
+            'start_time.regex' => 'La hora de inicio debe ser una hora completa (minutos :00).',
             'end_time.required' => 'La hora de fin es obligatoria.',
             'end_time.date_format' => 'La hora de fin debe tener formato HH:MM.',
             'end_time.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
+            'end_time.regex' => 'La hora de fin debe ser una hora completa (minutos :00).',
         ];
     }
 

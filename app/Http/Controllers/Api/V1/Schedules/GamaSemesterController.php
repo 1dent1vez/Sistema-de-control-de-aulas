@@ -51,7 +51,7 @@ class GamaSemesterController extends Controller
 
         return $semester
             ? $this->success(new SemesterResource($semester))
-            : $this->error('No active semester found.', 404);
+            : $this->error('No hay un semestre vigente.', 404);
     }
 
     public function show(int $id): JsonResponse
@@ -60,7 +60,7 @@ class GamaSemesterController extends Controller
 
         return $semester
             ? $this->success(new SemesterResource($semester))
-            : $this->error('Semester not found.', 404);
+            : $this->error('Semestre no encontrado.', 404);
     }
 
     public function store(StoreSemesterRequest $request): JsonResponse
@@ -83,7 +83,7 @@ class GamaSemesterController extends Controller
 
             return $semester
                 ? $this->success(new SemesterResource($semester))
-                : $this->error('Semester not found.', 404);
+                : $this->error('Semestre no encontrado.', 404);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -94,7 +94,7 @@ class GamaSemesterController extends Controller
         $this->authorize('delete', Semester::class);
 
         return $this->service->delete($id)
-            ? $this->success(null, 'Semester deleted successfully.')
-            : $this->error('Semester not found.', 404);
+            ? $this->success(null, 'Semestre eliminado exitosamente.')
+            : $this->error('Semestre no encontrado.', 404);
     }
 }

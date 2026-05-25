@@ -23,6 +23,8 @@
 declare(strict_types=1);
 
 use App\Models\AbsenceType;
+use App\Models\ClassSchedule;
+use App\Models\Semester;
 use App\Models\TeacherAbsence;
 use App\Services\TeacherStatus\GamaTeacherAbsenceService;
 use App\Services\TeacherStatus\OverlapRequiredException;
@@ -31,6 +33,22 @@ use Carbon\Carbon;
 beforeEach(function () {
     $this->service = app(GamaTeacherAbsenceService::class);
     $this->absenceType = AbsenceType::factory()->create();
+
+    // Crear semestre y horarios por defecto para TEACHER-001 para pasar validación de clases
+    $semester = Semester::factory()->create([
+        'start_date' => now()->subMonths(3)->format('Y-m-d'),
+        'end_date' => now()->addMonths(3)->format('Y-m-d'),
+    ]);
+
+    $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    foreach ($days as $day) {
+        ClassSchedule::factory()->create([
+            'semester_id' => $semester->id,
+            'teacher_external_id' => 'TEACHER-001',
+            'weekday' => $day,
+            'status' => true,
+        ]);
+    }
 });
 
 it('can get all absences', function () {

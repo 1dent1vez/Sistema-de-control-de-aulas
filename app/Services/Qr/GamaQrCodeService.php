@@ -57,6 +57,10 @@ class GamaQrCodeService
             throw new \RuntimeException('El aula seleccionada no existe.', 404);
         }
 
+        if ($classroom->building_id === null || $classroom->classroom_name === null || $classroom->classroom_name === '') {
+            throw new \InvalidArgumentException('El aula debe tener nombre y edificio definidos para generar un QR.', 422);
+        }
+
         $active = $this->repository->findActiveByClassroom($classroomId);
 
         if ($active && ! $force) {
@@ -131,7 +135,7 @@ class GamaQrCodeService
      *
      * @throws \RuntimeException Si no hay QRs activos o formato inválido
      */
-    public function downloadBatch(array $classroomIds, string $format): string
+    public function downloadBatch(array $classroomIds, string $format, ?string $batchId = null): string
     {
         $qrCodes = $this->repository->getActiveByClassroomIds($classroomIds);
 
@@ -139,7 +143,7 @@ class GamaQrCodeService
             throw new \RuntimeException('No se encontraron códigos QR activos para las aulas especificadas.', 404);
         }
 
-        $batchId = (string) Str::uuid();
+        $batchId = $batchId ?: (string) Str::uuid();
         $batchDir = "downloads/{$batchId}";
         Storage::disk('local')->makeDirectory($batchDir);
 
@@ -168,7 +172,7 @@ class GamaQrCodeService
 
         if ($format === 'pdf') {
             $classrooms = $qrCodes->map(fn ($qr) => [
-                'classroomName' => $qr->classroom?->classroom_name ?? 'Unknown',
+                'classroomName' => $qr->classroom?->classroom_name ?? 'Desconocido',
                 'buildingName' => $qr->classroom?->building?->name ?? '',
                 'qrPath' => Storage::disk('local')->path($qr->file_path),
             ]);

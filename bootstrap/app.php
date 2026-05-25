@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\SamOfflineException;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\SamAuthMiddleware;
 use App\Http\Middleware\SecurityHeadersMiddleware;
@@ -39,7 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 404,
-                    'message' => 'Resource not found.',
+                    'message' => 'Recurso no encontrado.',
                     'data' => null,
                     'errors' => [],
                 ], 404);
@@ -59,7 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 403,
-                    'message' => 'Forbidden.',
+                    'message' => 'Acceso denegado.',
                     'data' => null,
                     'errors' => [],
                 ], 403);
@@ -78,7 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 401,
-                    'message' => 'Unauthenticated.',
+                    'message' => 'No autenticado.',
                     'data' => null,
                     'errors' => [],
                 ], 401);
@@ -97,10 +98,36 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 422,
-                    'message' => 'Validation failed.',
+                    'message' => 'Error de validación.',
                     'data' => null,
                     'errors' => $e->errors(),
                 ], 422);
+            }
+        });
+
+        $exceptions->render(function (SamOfflineException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 503,
+                    'message' => $e->getMessage(),
+                    'data' => null,
+                    'errors' => [],
+                ], 503);
+            }
+        });
+
+        $exceptions->render(function (ValueError $e, Request $request) {
+            if ($request->expectsJson()) {
+                if (str_contains($e->getMessage(), 'App\\Enums\\Auth\\SamRole') || str_contains($e->getMessage(), 'SamRole')) {
+                    return response()->json([
+                        'success' => false,
+                        'statusCode' => 422,
+                        'message' => 'Rol no contemplado en el sistema.',
+                        'data' => null,
+                        'errors' => ['role' => ['Rol no contemplado en el sistema.']],
+                    ], 422);
+                }
             }
         });
 
@@ -115,7 +142,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 429,
-                    'message' => 'Too many requests.',
+                    'message' => 'Demasiadas solicitudes. Por favor, inténtelo de nuevo más tarde.',
                     'data' => null,
                     'errors' => [],
                 ], 429);
@@ -127,7 +154,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 500,
-                    'message' => 'Internal server error.',
+                    'message' => 'Error interno del servidor. Contacte al administrador.',
                     'data' => null,
                     'errors' => [],
                 ], 500);

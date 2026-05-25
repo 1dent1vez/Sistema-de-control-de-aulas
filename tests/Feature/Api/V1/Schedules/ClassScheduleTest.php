@@ -117,3 +117,22 @@ it('can filter schedules by filters', function (): void {
     $response->assertStatus(200)
         ->assertJsonCount(1, 'data');
 });
+
+it('rejects schedules with non-zero minutes', function (): void {
+    $this->loginAsAdmin();
+    $data = [
+        'semester_id' => $this->semester->id,
+        'classroom_id' => $this->classroom->id,
+        'teacher_external_id' => 'TCH001',
+        'subject_name' => 'Mathematics',
+        'group_name' => 'A1',
+        'weekday' => 'monday',
+        'start_time' => '08:30',
+        'end_time' => '10:00',
+    ];
+
+    $response = $this->postJson($this->endpoint, $data);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['start_time']);
+});

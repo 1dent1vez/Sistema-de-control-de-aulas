@@ -35,22 +35,37 @@ class ProcessScheduleImportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    public int $timeout = 600;
+
+    public int $tries = 3;
+
     public function __construct(
         private readonly string $filePath,
         private readonly string $originalName,
         private readonly int $semesterId,
+        private readonly string $batchId,
     ) {}
 
     public function handle(GamaScheduleImportService $importService): void
     {
         $file = new UploadedFile($this->filePath, $this->originalName);
 
-        $result = $importService->import($file, $this->semesterId);
+        $result = $importService->import($file, $this->semesterId, $this->batchId);
 
         logger('Schedule import completed', [
+            'batchId' => $this->batchId,
             'imported' => $result['imported'],
             'errors' => count($result['errors']),
             'report_path' => $result['report_path'],
+        ]);
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        logger()->error("ProcessScheduleImportJob failed for semester ID: {$this->semesterId}, batch ID: {$this->batchId}", [
+            'filePath' => $this->filePath,
+            'originalName' => $this->originalName,
+            'error' => $exception->getMessage(),
         ]);
     }
 }

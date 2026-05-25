@@ -50,7 +50,7 @@ class GamaClassroomController extends Controller
     {
         $classroom = $this->service->getById($id);
         if (! $classroom) {
-            return $this->error('Classroom not found.', 404);
+            return $this->error('Aula no encontrada.', 404);
         }
 
         return $this->success(new ClassroomResource($classroom));
@@ -68,7 +68,7 @@ class GamaClassroomController extends Controller
         $this->authorize('update', Classroom::class);
         $classroom = $this->service->update($id, $request->validated());
         if (! $classroom) {
-            return $this->error('Classroom not found.', 404);
+            return $this->error('Aula no encontrada.', 404);
         }
 
         return $this->success(new ClassroomResource($classroom));
@@ -79,10 +79,10 @@ class GamaClassroomController extends Controller
         $this->authorize('delete', Classroom::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Classroom not found.', 404);
+            return $this->error('Aula no encontrada.', 404);
         }
 
-        return $this->success(null, 'Classroom deleted successfully.');
+        return $this->success(null, 'Aula eliminada exitosamente.');
     }
 
     public function byBuilding(int $buildingId): JsonResponse

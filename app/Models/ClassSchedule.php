@@ -63,4 +63,9 @@ class ClassSchedule extends Model
     {
         return $this->belongsTo(Classroom::class);
     }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(SamIdentity::class, 'teacher_external_id', 'external_id');
+    }
 }

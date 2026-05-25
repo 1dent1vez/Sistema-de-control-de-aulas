@@ -1,5 +1,26 @@
 <?php
 
+/**
+ * @descripcion  Pruebas de autenticación y login contra el servicio SAM.
+ *
+ * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
+ *
+ * @version      1.1.0
+ *
+ * @creado       2026-05-17
+ *
+ * @modificado   2026-05-25
+ *
+ * @cambios      2026-05-17 - Creación inicial del archivo de pruebas de login
+ *               2026-05-25 - Adición de prueba para validar el fallback local si obtenerPerfil falla
+ */
+
 declare(strict_types=1);
 
 use App\Services\Auth\SamService;
@@ -104,10 +125,11 @@ it('assigns teacher role as fallback when sam returns unknown role', function ()
     ]);
 
     $response->assertStatus(200)
-        ->assertJsonPath('data.role', 'teacher');
+        ->assertJsonPath('data.role', null)
+        ->assertJsonPath('data.redirectUrl', '/espera-rol');
 });
 
-it('fails when sam is down', function () {
+it('fails with service error when sam is down', function () {
     $samServiceMock = Mockery::mock(SamService::class);
     $samServiceMock->shouldReceive('validarCaptcha')->andReturn(true);
     $samServiceMock->shouldReceive('login')->andReturn([
@@ -123,5 +145,38 @@ it('fails when sam is down', function () {
         'captchaCode' => '1234',
     ]);
 
-    $response->assertStatus(503);
+    $response->assertStatus(500)
+        ->assertJsonFragment([
+            'success' => false,
+            'message' => 'Ocurrió un error inesperado. Contacta al administrador.',
+        ]);
+});
+
+it('falls back to local database when obtenerPerfil fails', function () {
+    $samServiceMock = Mockery::mock(SamService::class);
+    $samServiceMock->shouldReceive('validarCaptcha')->andReturn(true);
+    $samServiceMock->shouldReceive('login')->andReturn([
+        'success' => true,
+        'rol' => 'empleado',
+        'token' => 'some-token',
+        'sistemaUrl' => 'http://test',
+    ]);
+    $samServiceMock->shouldReceive('obtenerPerfil')->andThrow(new RuntimeException('SAM real profile endpoint failed'));
+
+    $this->instance(SamService::class, $samServiceMock);
+
+    $response = $this->postJson('/api/v1/auth/login', [
+        'username' => 'NEW_TCH_001',
+        'password' => 'pass',
+        'captchaCode' => '1234',
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJsonPath('data.role', 'teacher')
+        ->assertJsonPath('data.redirectUrl', '/docente/dashboard');
+
+    $this->assertDatabaseHas('gama_sam_identities', [
+        'external_id' => 'NEW_TCH_001',
+        'role' => 'teacher',
+    ]);
 });

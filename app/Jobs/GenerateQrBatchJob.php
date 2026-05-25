@@ -29,6 +29,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Cache;
 
 class GenerateQrBatchJob implements ShouldQueue
 {
@@ -42,6 +43,26 @@ class GenerateQrBatchJob implements ShouldQueue
 
     public function handle(GamaQrCodeService $service): void
     {
-        $service->downloadBatch($this->classroomIds, $this->format);
+        Cache::put("qr_batch_{$this->batchId}", [
+            'status' => 'processing',
+            'progress' => 50,
+        ], 600);
+
+        try {
+            $service->downloadBatch($this->classroomIds, $this->format, $this->batchId);
+
+            Cache::put("qr_batch_{$this->batchId}", [
+                'status' => 'completed',
+                'progress' => 100,
+                'downloadUrl' => url("api/v1/qr-codes/download/file/{$this->batchId}"),
+            ], 600);
+        } catch (\Throwable $e) {
+            Cache::put("qr_batch_{$this->batchId}", [
+                'status' => 'failed',
+                'progress' => 0,
+                'error' => $e->getMessage(),
+            ], 600);
+            throw $e;
+        }
     }
 }

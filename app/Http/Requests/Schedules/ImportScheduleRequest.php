@@ -24,7 +24,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Schedules;
 
+use App\Models\Semester;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ImportScheduleRequest extends FormRequest
 {
@@ -37,7 +39,19 @@ class ImportScheduleRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'mimes:csv,xlsx', 'max:10240'],
-            'semester_id' => ['required', 'integer', 'exists:gama_semesters,id'],
+            'semester_id' => [
+                'required',
+                'integer',
+                Rule::exists('gama_semesters', 'id')->whereNull('deleted_at'),
+                function ($attribute, $value, $fail) {
+                    $isActive = Semester::where('id', $value)
+                        ->current()
+                        ->exists();
+                    if (! $isActive) {
+                        $fail('El semestre seleccionado no está vigente.');
+                    }
+                },
+            ],
         ];
     }
 

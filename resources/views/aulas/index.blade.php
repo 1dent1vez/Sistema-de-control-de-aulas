@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
       showToast('Sesión expirada', 'Por favor inicie sesión nuevamente.', 'error');
       localStorage.clear();
       setTimeout(() => { window.location.href = '/'; }, 1500);
-      return Promise.reject(new Error('Unauthorized'));
+      return Promise.reject(new Error('No autorizado'));
     }
 
     const json = await res.json();

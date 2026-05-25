@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Enums\Auth\SamRole;
 use App\Models\AbsenceType;
+use App\Models\ClassSchedule;
 use App\Models\Institution;
 use App\Models\SamIdentity;
+use App\Models\Semester;
 use App\Models\TeacherAbsence;
 use Laravel\Sanctum\Sanctum;
 
@@ -39,6 +41,21 @@ it('allows admin to create building', function () {
 it('allows teacher to create own absence', function () {
     $teacher = SamIdentity::factory()->create(['role' => SamRole::TEACHER]);
     Sanctum::actingAs($teacher, ['teacher']);
+
+    // Crear semestre y horarios para este docente
+    $semester = Semester::factory()->create([
+        'start_date' => now()->subMonths(3)->format('Y-m-d'),
+        'end_date' => now()->addMonths(3)->format('Y-m-d'),
+    ]);
+    $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    foreach ($days as $day) {
+        ClassSchedule::factory()->create([
+            'semester_id' => $semester->id,
+            'teacher_external_id' => $teacher->external_id,
+            'weekday' => $day,
+            'status' => true,
+        ]);
+    }
 
     $response = $this->postJson('/api/v1/teacher-absences', [
         'teacher_external_id' => $teacher->external_id,

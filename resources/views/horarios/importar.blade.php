@@ -1,4 +1,4 @@
-﻿{{--
+{{--
 /**
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
@@ -196,26 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return json;
   }
 
-  /* CSRF */
-  function getCsrf() {
-    return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-  }
 
-  /* API helper */
-  async function apiFetch(url, opts = {}) {
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${authToken}`, 'X-CSRF-TOKEN': getCsrf(), ...(opts.headers ?? {}) },
-      ...opts,
-    });
-    if (res.status === 401) {
-      localStorage.clear();
-      window.location.href = '/';
-      return;
-    }
-    const json = await res.json();
-    if (!res.ok) throw { status: res.status, json };
-    return json;
-  }
 
   /* -- Toast -- */
   function toast(title, message, type = 'success') {
@@ -240,16 +221,41 @@ document.addEventListener('DOMContentLoaded', function () {
   async function loadSemesters() {
     const sel = $('semestreDestino');
     try {
+      // Primero obtener el semestre activo/vigente
+      let currentSemester = null;
+      try {
+        const curRes = await apiFetch('/api/v1/semesters/current');
+        currentSemester = curRes.data ?? null;
+      } catch (e) {
+        // Si no hay semestre activo o da 404, se queda null
+      }
+
       const res = await apiFetch('/api/v1/semesters');
       const semesters = res.data ?? [];
+      
       if (!semesters.length) {
         sel.innerHTML = '<option value="">Sin semestres registrados</option>';
+        showMsg('error', 'No hay semestres registrados en el sistema. Cree un semestre primero.');
+        $('btnProcesar').disabled = true;
+        $('dropzone').style.pointerEvents = 'none';
+        $('dropzone').style.opacity = '0.5';
         return;
       }
+
       sel.innerHTML = '<option value="">Selecciona semestre destino...</option>' +
-        semesters.map(s =>
-          `<option value="${s.id}">${s.name}${s.isActive ? ' activo' : ''}</option>`
-        ).join('');
+        semesters.map(s => {
+          const isCurrent = currentSemester && s.id === currentSemester.id;
+          return `<option value="${s.id}" ${isCurrent ? 'selected' : ''}>${s.name}${isCurrent ? ' (Vigente)' : ''}</option>`;
+        }).join('');
+
+      if (!currentSemester) {
+        showMsg('error', 'Atención: No existe ningún semestre vigente en el sistema. Debe crear o activar un semestre antes de poder registrar o importar horarios.');
+        $('btnProcesar').disabled = true;
+        $('dropzone').style.pointerEvents = 'none';
+        $('dropzone').style.opacity = '0.5';
+      } else {
+        sel.value = currentSemester.id;
+      }
     } catch (e) {
       sel.innerHTML = '<option value="">Error al cargar semestres</option>';
       showMsg('error', 'No se pudieron cargar los semestres desde la API.');
@@ -282,8 +288,8 @@ document.addEventListener('DOMContentLoaded', function () {
   /* -- Plantilla descargable (columnas que espera la API) -- */
   $('btnPlantilla').addEventListener('click', () => {
     const csv =
-      'classroom_name,teacher_external_id,subject_name,group_label,weekdays,start_time,end_time\n' +
-      'Aula 101,SAM-00123,Matematicas I,1A,monday|wednesday,08:00,09:30\n';
+      'classroom_id,teacher_external_id,subject_name,group_name,weekday,start_time,end_time\n' +
+      '1,SAM-00123,Matematicas I,1A,monday,08:00,09:30\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -311,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
       formData.append('file', selectedFile);
       formData.append('semester_id', semId);
 
-      /* No incluir Content-Type: el navegador agrega el boundary correcto */
       const res = await fetch('/api/v1/class-schedules/import', {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${authToken}`, 'X-CSRF-TOKEN': getCsrf() },
@@ -320,25 +325,53 @@ document.addEventListener('DOMContentLoaded', function () {
       const json = await res.json();
       if (!res.ok) throw { status: res.status, json };
 
-      /* Si la API devuelve batchId, obtener el reporte detallado */
-      const batchId  = json.data?.batchId ?? json.data?.batch_id ?? null;
-      let reportRows = json.data?.rows ?? (Array.isArray(json.data) ? json.data : []);
+      const batchId = json.data?.batchId ?? json.data?.batch_id ?? null;
 
-      if (batchId && !reportRows.length) {
-        try {
-          const rpt = await apiFetch(`/api/v1/class-schedules/import/${batchId}/report`);
-          reportRows = rpt.data ?? [];
-        } catch (_) { /* usar lo que tenemos */ }
+      if (batchId) {
+        let attempts = 0;
+        const maxAttempts = 30; // 30 segundos máximo
+
+        const pollReport = async () => {
+          try {
+            const rptRes = await apiFetch(`/api/v1/class-schedules/import/${batchId}/report`);
+            if (rptRes.statusCode === 202) {
+              if (attempts < maxAttempts) {
+                attempts++;
+                setTimeout(pollReport, 1000);
+              } else {
+                showMsg('error', 'La importación está tardando demasiado. Por favor, consulte los logs más tarde.');
+                procBtn.disabled = false;
+                procBtn.innerHTML = '<i class="fas fa-cogs"></i><span>Procesar Archivo</span>';
+              }
+            } else {
+              const reportRows = rptRes.data ?? [];
+              renderReport(reportRows, json.message ?? 'Importación completada.');
+              toast('Importación completada', json.message ?? 'Archivo procesado exitosamente.', 'success');
+              procBtn.disabled = false;
+              procBtn.innerHTML = '<i class="fas fa-cogs"></i><span>Procesar Archivo</span>';
+            }
+          } catch (e) {
+            const msg = e.json?.message ?? 'Error al recuperar el reporte de importación.';
+            showMsg('error', msg);
+            toast('Error de importación', msg, 'error');
+            procBtn.disabled = false;
+            procBtn.innerHTML = '<i class="fas fa-cogs"></i><span>Procesar Archivo</span>';
+          }
+        };
+
+        setTimeout(pollReport, 1000);
+      } else {
+        const reportRows = json.data?.rows ?? (Array.isArray(json.data) ? json.data : []);
+        renderReport(reportRows, json.message ?? 'Importación completada.');
+        toast('Importación completada', json.message ?? 'Archivo procesado exitosamente.', 'success');
+        procBtn.disabled = false;
+        procBtn.innerHTML = '<i class="fas fa-cogs"></i><span>Procesar Archivo</span>';
       }
-
-      renderReport(reportRows, json.message ?? 'Importacion completada.');
-      toast('Importacion completada', json.message ?? 'Archivo procesado exitosamente.', 'success');
 
     } catch (err) {
       const msg = err.json?.message ?? 'Error al procesar el archivo en el servidor.';
       showMsg('error', msg);
-      toast('Error de importacion', msg, 'error');
-    } finally {
+      toast('Error de importación', msg, 'error');
       procBtn.disabled = false;
       procBtn.innerHTML = '<i class="fas fa-cogs"></i><span>Procesar Archivo</span>';
     }
