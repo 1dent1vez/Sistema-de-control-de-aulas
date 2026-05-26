@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-14
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-14 - Creación inicial del FormRequest
+ *               2026-05-26 - Estandarización y traducción de mensajes de error de validación en español.
  */
 
 declare(strict_types=1);
@@ -48,17 +49,17 @@ class StoreTeacherAbsenceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'teacher_external_id.required' => 'El identificador del docente es obligatorio.',
+            'teacher_external_id.required' => 'El docente es obligatorio. Seleccione un docente del catalogo.',
             'teacher_external_id.max' => 'El identificador del docente no debe exceder :max caracteres.',
-            'absence_type_id.required' => 'El tipo de ausencia es obligatorio.',
-            'absence_type_id.exists' => 'El tipo de ausencia seleccionado no existe.',
+            'absence_type_id.required' => 'El tipo de estado es obligatorio.',
+            'absence_type_id.exists' => 'El tipo de estado seleccionado no es valido.',
             'start_date.required' => 'La fecha de inicio es obligatoria.',
-            'start_date.date' => 'La fecha de inicio no es válida.',
-            'start_date.before_or_equal' => 'La fecha de inicio debe ser igual o anterior a la fecha de fin.',
-            'start_date.after_or_equal' => 'La fecha de inicio no puede ser anterior al día de hoy.',
+            'start_date.date' => 'El formato de fecha no es valido. Use DD/MM/AAAA o AAAA-MM-DD.',
+            'start_date.before_or_equal' => 'La fecha de inicio debe ser anterior a la fecha de fin.',
+            'start_date.after_or_equal' => 'La fecha de inicio no puede ser anterior a la fecha actual.',
             'end_date.required' => 'La fecha de fin es obligatoria.',
-            'end_date.date' => 'La fecha de fin no es válida.',
-            'end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
+            'end_date.date' => 'El formato de fecha no es valido. Use DD/MM/AAAA o AAAA-MM-DD.',
+            'end_date.after_or_equal' => 'La fecha de fin debe ser posterior a la fecha de inicio.',
             'observations.max' => 'Las observaciones no deben exceder :max caracteres.',
             'is_confirmed.boolean' => 'La confirmación debe ser verdadero o falso.',
         ];

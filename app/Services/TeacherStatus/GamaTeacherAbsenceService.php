@@ -11,14 +11,15 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.1.0
+ * @version      1.2.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-25
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-14 - Creación inicial del servicio
  *               2026-05-25 - Implementación de RF-08: asociación automática a class_schedules, validaciones de rango y estadísticas.
+ *               2026-05-26 - Estandarización y traducción de excepciones y mensajes de error en español.
  */
 
 declare(strict_types=1);
@@ -91,7 +92,7 @@ class GamaTeacherAbsenceService
         $teacherExternalId = $data['teacher_external_id'];
 
         if ($endDate < now()->format('Y-m-d')) {
-            throw new \RuntimeException('La ausencia no puede estar completamente en el pasado.');
+            throw new \RuntimeException('La fecha de inicio no puede ser anterior a la fecha actual.');
         }
 
         // Buscar clases afectadas en el rango
@@ -104,7 +105,7 @@ class GamaTeacherAbsenceService
 
         if ($overlaps->isNotEmpty() && empty($data['is_confirmed'])) {
             throw new OverlapRequiredException(
-                'El rango de fechas se traslapa con ausencias existentes.',
+                'El docente ya tiene una ausencia registrada en ese periodo.',
                 $overlaps
             );
         }
@@ -144,7 +145,7 @@ class GamaTeacherAbsenceService
         $endDate = $data['end_date'] ?? $absence->end_date->format('Y-m-d');
 
         if ($startDate < now()->format('Y-m-d')) {
-            throw new \RuntimeException('No se puede modificar una ausencia que ya inició.');
+            throw new \RuntimeException('Este estado ya fue procesado y no puede modificarse.');
         }
 
         $teacherExternalId = $data['teacher_external_id'] ?? $absence->teacher_external_id;
@@ -159,7 +160,7 @@ class GamaTeacherAbsenceService
 
         if ($overlaps->isNotEmpty() && empty($data['is_confirmed'])) {
             throw new OverlapRequiredException(
-                'El rango de fechas se traslapa con ausencias existentes.',
+                'El docente ya tiene una ausencia registrada en ese periodo.',
                 $overlaps
             );
         }

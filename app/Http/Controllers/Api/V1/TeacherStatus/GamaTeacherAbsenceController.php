@@ -11,14 +11,15 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.2.0
+ * @version      1.3.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-25
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-14 - Creación inicial del controlador
  *               2026-05-25 - Refactorización para cumplir con el límite de 100 líneas y cargar relaciones.
+ *               2026-05-26 - Estandarización y traducción de mensajes de error de la API en español.
  */
 
 declare(strict_types=1);
@@ -55,7 +56,7 @@ class GamaTeacherAbsenceController extends Controller
     {
         $absence = $this->service->getById($id);
         if (! $absence) {
-            return $this->error('Ausencia no encontrada.', 404);
+            return $this->error('El estado de docente solicitado no existe o fue eliminado.', 404);
         }
         $this->authorize('view', $absence);
 
@@ -77,7 +78,7 @@ class GamaTeacherAbsenceController extends Controller
     {
         $absence = $this->service->getById($id);
         if (! $absence) {
-            return $this->error('Ausencia no encontrada.', 404);
+            return $this->error('El estado de docente solicitado no existe o fue eliminado.', 404);
         }
         $this->authorize('update', $absence);
 
@@ -92,7 +93,7 @@ class GamaTeacherAbsenceController extends Controller
     {
         $absence = $this->service->getById($id);
         if (! $absence) {
-            return $this->error('Ausencia no encontrada.', 404);
+            return $this->error('El estado de docente solicitado no existe o fue eliminado.', 404);
         }
         $this->authorize('delete', $absence);
         $this->service->delete($id);

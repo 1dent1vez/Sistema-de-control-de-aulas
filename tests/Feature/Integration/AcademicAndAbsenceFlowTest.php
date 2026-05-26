@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-14
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-14 - Creación de la prueba de integración
+ *               2026-05-26 - Actualización de aserción de mensaje de solapamiento para alinearse a la traducción en español.
  */
 
 declare(strict_types=1);
@@ -102,7 +103,7 @@ it('executes the academic and teacher absence flow correctly', function () {
     ]);
 
     $response->assertStatus(422);
-    $this->assertStringContainsString('traslapa', $response->json('message'));
+    $this->assertStringContainsString('registrada', $response->json('message'));
 
     // 6. Confirmar la ausencia (bypass del traslape)
     $response = $this->postJson('/api/v1/teacher-absences', [

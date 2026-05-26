@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-14
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-14 - Creación de pruebas unitarias
+ *               2026-05-26 - Actualización de aserciones de mensajes de error en español para reflejar el comportamiento actual.
  */
 
 declare(strict_types=1);
@@ -89,7 +90,7 @@ it('throws exception if absence is entirely in the past', function () {
         'end_date' => Carbon::now()->subDays(1)->format('Y-m-d'),
     ];
 
-    expect(fn () => $this->service->store($data))->toThrow(RuntimeException::class, 'La ausencia no puede estar completamente en el pasado.');
+    expect(fn () => $this->service->store($data))->toThrow(RuntimeException::class, 'La fecha de inicio no puede ser anterior a la fecha actual.');
 });
 
 it('throws OverlapRequiredException on overlap without confirmation', function () {
@@ -154,7 +155,7 @@ it('throws exception if updating an absence that already started', function () {
     ]);
 
     expect(fn () => $this->service->update($absence->id, ['end_date' => Carbon::now()->addDays(6)->format('Y-m-d')]))
-        ->toThrow(RuntimeException::class, 'No se puede modificar una ausencia que ya inició.');
+        ->toThrow(RuntimeException::class, 'Este estado ya fue procesado y no puede modificarse.');
 });
 
 it('can delete absence', function () {
