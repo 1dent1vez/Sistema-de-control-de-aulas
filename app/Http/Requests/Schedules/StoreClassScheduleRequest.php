@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-13 - Creación inicial del FormRequest
+ *               2026-05-26 - Actualización de validaciones de semestre y mensajes de error en español según requerimientos.
  */
 
 declare(strict_types=1);
@@ -50,7 +51,7 @@ class StoreClassScheduleRequest extends FormRequest
                         $semesters = Semester::vigente($today)->get();
 
                         if ($semesters->isEmpty()) {
-                            $fail('No existe semestre vigente');
+                            $fail('No existe un semestre vigente. Cree un semestre antes de registrar horarios.');
 
                             return;
                         }
@@ -61,11 +62,11 @@ class StoreClassScheduleRequest extends FormRequest
 
                         $semestreVigente = $semesters->first();
                         if ((int) $value !== $semestreVigente->id) {
-                            $fail('El semestre seleccionado no está vigente.');
+                            $fail('El semestre ha caducado. No se pueden registrar ni modificar horarios.');
                         }
                     } catch (\Exception $e) {
                         Log::error('Error de BD al determinar el semestre vigente: '.$e->getMessage());
-                        $fail('Error al determinar el semestre vigente. No se puede registrar el horario.');
+                        $fail('Error al consultar la base de datos. Intente nuevamente.');
                     }
                 },
             ],
@@ -83,23 +84,23 @@ class StoreClassScheduleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'semester_id.required' => 'El semestre es obligatorio.',
-            'semester_id.exists' => 'El semestre seleccionado no existe.',
+            'semester_id.required' => 'Debe existir un semestre vigente para registrar horarios.',
+            'semester_id.exists' => 'No existe un semestre vigente. Cree un semestre antes de registrar horarios.',
             'classroom_id.required' => 'El aula es obligatoria.',
-            'classroom_id.exists' => 'El aula seleccionada no existe.',
-            'teacher_external_id.required' => 'El identificador del docente es obligatorio.',
+            'classroom_id.exists' => 'El aula seleccionada no existe o no esta disponible.',
+            'teacher_external_id.required' => 'El docente es obligatorio.',
             'subject_name.required' => 'El nombre de la materia es obligatorio.',
             'subject_name.max' => 'El nombre de la materia no debe exceder :max caracteres.',
-            'group_name.required' => 'El nombre del grupo es obligatorio.',
+            'group_name.required' => 'El grupo es obligatorio.',
             'group_name.max' => 'El nombre del grupo no debe exceder :max caracteres.',
-            'weekday.required' => 'El día de la semana es obligatorio.',
-            'weekday.in' => 'El día de la semana no es válido.',
+            'weekday.required' => 'El dia de la semana es obligatorio.',
+            'weekday.in' => 'El dia de la semana no es valido. Use: Lunes, Martes, Miercoles, Jueves, Viernes, Sabado o Domingo.',
             'start_time.required' => 'La hora de inicio es obligatoria.',
-            'start_time.date_format' => 'La hora de inicio debe tener formato HH:MM.',
-            'start_time.before' => 'La hora de inicio debe ser anterior a la hora de fin.',
+            'start_time.date_format' => 'El formato de hora no es valido. Use HH:MM (ejemplo: 08:00).',
+            'start_time.before' => 'La hora de inicio debe ser menor que la hora de fin.',
             'start_time.regex' => 'La hora de inicio debe ser una hora completa (minutos :00).',
             'end_time.required' => 'La hora de fin es obligatoria.',
-            'end_time.date_format' => 'La hora de fin debe tener formato HH:MM.',
+            'end_time.date_format' => 'El formato de hora no es valido. Use HH:MM (ejemplo: 10:00).',
             'end_time.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
             'end_time.regex' => 'La hora de fin debe ser una hora completa (minutos :00).',
         ];

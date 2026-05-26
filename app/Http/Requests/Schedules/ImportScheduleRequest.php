@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-13 - Creación inicial del FormRequest
+ *               2026-05-26 - Actualización de validaciones de semestre y mensajes de error en español según requerimientos.
  */
 
 declare(strict_types=1);
@@ -50,7 +51,7 @@ class ImportScheduleRequest extends FormRequest
                         $semesters = Semester::vigente($today)->get();
 
                         if ($semesters->isEmpty()) {
-                            $fail('No existe semestre vigente');
+                            $fail('No existe un semestre vigente. Cree un semestre antes de registrar horarios.');
 
                             return;
                         }
@@ -61,11 +62,11 @@ class ImportScheduleRequest extends FormRequest
 
                         $semestreVigente = $semesters->first();
                         if ((int) $value !== $semestreVigente->id) {
-                            $fail('El semestre seleccionado no está vigente.');
+                            $fail('El semestre ha caducado. No se pueden registrar ni modificar horarios.');
                         }
                     } catch (\Exception $e) {
                         Log::error('Error de BD al determinar el semestre vigente: '.$e->getMessage());
-                        $fail('Error al determinar el semestre vigente. No se puede registrar el horario.');
+                        $fail('Error al consultar la base de datos. Intente nuevamente.');
                     }
                 },
             ],
@@ -75,12 +76,12 @@ class ImportScheduleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'file.required' => 'El archivo es obligatorio.',
+            'file.required' => 'Debe seleccionar un archivo para importar.',
             'file.file' => 'Debe subir un archivo.',
-            'file.mimes' => 'El archivo debe ser CSV o XLSX.',
-            'file.max' => 'El archivo no debe exceder :max kilobytes.',
-            'semester_id.required' => 'El semestre es obligatorio.',
-            'semester_id.exists' => 'El semestre seleccionado no existe.',
+            'file.mimes' => 'Solo se aceptan archivos con extension .csv o .xlsx.',
+            'file.max' => 'El archivo es demasiado grande. El tamano maximo permitido es 5 MB.',
+            'semester_id.required' => 'Debe existir un semestre vigente para registrar horarios.',
+            'semester_id.exists' => 'No existe un semestre vigente. Cree un semestre antes de registrar horarios.',
         ];
     }
 }

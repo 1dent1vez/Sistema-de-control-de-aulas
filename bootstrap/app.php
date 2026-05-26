@@ -11,7 +11,7 @@
  *
  * @mantenimiento Antigravity <support@google.com>
  *
- * @version      1.3.0
+ * @version      1.4.0
  *
  * @creado       2026-05-26
  *
@@ -19,6 +19,7 @@
  *
  * @cambios      2026-05-26 - Actualización de manejadores de excepciones de autenticación y roles según RF-01 y RF-02.
  *               2026-05-26 - Actualización de manejadores de excepciones de base de datos y ModelNotFound según requerimientos de edificios y aulas.
+ *               2026-05-26 - Adición de manejo de ModelNotFoundException para Semester y ClassSchedule.
  */
 
 declare(strict_types=1);
@@ -171,7 +172,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 500,
-                    'message' => 'Error tecnico: no existe una vista asociada a su rol. El administrador ha sido notificado.',
+                    'message' => 'Error técnico: no existe una vista asociada a su rol. El administrador ha sido notificado.',
                     'data' => null,
                     'errors' => [],
                 ], 500);
@@ -204,6 +205,10 @@ return Application::configure(basePath: dirname(__DIR__))
                     $message = 'El edificio solicitado no existe o no esta registrado en el sistema.';
                 } elseif (str_contains($modelClass, 'Classroom')) {
                     $message = 'El aula solicitada no existe o no esta registrada en el sistema.';
+                } elseif (str_contains($modelClass, 'Semester')) {
+                    $message = 'El semestre solicitado no existe o fue eliminado.';
+                } elseif (str_contains($modelClass, 'ClassSchedule') || str_contains($modelClass, 'Schedule')) {
+                    $message = 'El horario solicitado no existe o fue eliminado.';
                 }
 
                 return response()->json([

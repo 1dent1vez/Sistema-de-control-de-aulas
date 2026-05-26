@@ -11,7 +11,7 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.2.0
+ * @version      1.3.0
  *
  * @creado       2026-05-18
  *
@@ -19,7 +19,7 @@
  *
  * @cambios      2026-05-18 - Creación inicial del controlador
  *               2026-05-25 - Adición de validación de rol de administrador y doble validación defensiva de extensión de archivo (.csv o .xlsx).
- *               2026-05-26 - Separación del flujo en Preview y Confirmación.
+ *               2026-05-26 - Separación del flujo en Preview y Confirmación, y actualización de mensajes de error de horarios.
  */
 
 declare(strict_types=1);
@@ -52,13 +52,13 @@ class GamaScheduleImportController extends Controller
         $this->authorize('create', ClassSchedule::class);
 
         if ($request->user()->role !== SamRole::ADMIN) {
-            return $this->error('No tiene permisos para acceder a esta función.', 403);
+            return $this->error('No tiene permisos para gestionar horarios. Contacte al administrador.', 403);
         }
 
         $file = $request->file('file');
         $extension = $file->getClientOriginalExtension();
         if (! in_array(strtolower($extension), ['csv', 'xlsx'], true)) {
-            return $this->error('Solo se aceptan archivos con extensión .csv o .xlsx', 422);
+            return $this->error('Solo se aceptan archivos con extension .csv o .xlsx.', 422);
         }
 
         $semesterId = (int) $request->input('semester_id');
@@ -78,7 +78,7 @@ class GamaScheduleImportController extends Controller
         $this->authorize('create', ClassSchedule::class);
 
         if (request()->user()->role !== SamRole::ADMIN) {
-            return $this->error('No tiene permisos para acceder a esta función.', 403);
+            return $this->error('No tiene permisos para gestionar horarios. Contacte al administrador.', 403);
         }
 
         $path = "imports/{$batchId}.json";
@@ -95,12 +95,12 @@ class GamaScheduleImportController extends Controller
         $this->authorize('create', ClassSchedule::class);
 
         if ($request->user()->role !== SamRole::ADMIN) {
-            return $this->error('No tiene permisos para acceder a esta función.', 403);
+            return $this->error('No tiene permisos para gestionar horarios. Contacte al administrador.', 403);
         }
 
         $batchId = $request->input('batch_id') ?? $request->input('batchId');
         if (! $batchId) {
-            return $this->error('El ID de lote es obligatorio.', 422);
+            return $this->error('El identificador proporcionado no es valido.', 422);
         }
 
         try {
@@ -112,7 +112,7 @@ class GamaScheduleImportController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al confirmar importacion de horarios: '.$e->getMessage());
 
-            return $this->error('Error al guardar los horarios. Intente nuevamente.', 500);
+            return $this->error('Error al guardar en la base de datos. Intente nuevamente o contacte al administrador.', 500);
         }
     }
 }

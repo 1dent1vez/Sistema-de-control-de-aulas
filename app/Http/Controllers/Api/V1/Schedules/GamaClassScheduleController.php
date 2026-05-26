@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Refactorización: extraído import/report a GamaScheduleImportController
+ *               2026-05-26 - Actualización de mensajes de error de API de horarios según requerimientos.
  */
 
 declare(strict_types=1);
@@ -54,7 +55,7 @@ class GamaClassScheduleController extends Controller
     {
         $schedule = $this->service->getById($id);
         if (! $schedule) {
-            return $this->error('Horario no encontrado.', 404);
+            return $this->error('El horario solicitado no existe o fue eliminado.', 404);
         }
 
         return $this->success(new ClassScheduleResource($schedule));
@@ -68,13 +69,13 @@ class GamaClassScheduleController extends Controller
             $semestreVigente = $this->semesterService->obtenerSemestreVigente();
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'DB_ERROR') {
-                return $this->error('Error al determinar el semestre vigente. No se puede registrar el horario.', 500);
+                return $this->error('Error al consultar la base de datos. Intente nuevamente.', 500);
             }
             throw $e;
         }
 
         if (! $semestreVigente) {
-            return $this->error('No existe semestre vigente', 422);
+            return $this->error('No existe un semestre vigente. Cree un semestre antes de registrar horarios.', 422);
         }
 
         try {
@@ -95,24 +96,24 @@ class GamaClassScheduleController extends Controller
             $semestreVigente = $this->semesterService->obtenerSemestreVigente();
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'DB_ERROR') {
-                return $this->error('Error al determinar el semestre vigente. No se puede registrar el horario.', 500);
+                return $this->error('Error al consultar la base de datos. Intente nuevamente.', 500);
             }
             throw $e;
         }
 
         if (! $semestreVigente) {
-            return $this->error('No existe semestre vigente', 422);
+            return $this->error('No existe un semestre vigente. Cree un semestre antes de registrar horarios.', 422);
         }
 
         try {
             $schedule = $this->service->getById($id);
             if (! $schedule) {
-                return $this->error('Horario no encontrado.', 404);
+                return $this->error('El horario solicitado no existe o fue eliminado.', 404);
             }
 
             $scheduleSemester = $schedule->semester;
             if ($scheduleSemester && now()->greaterThan($scheduleSemester->end_date)) {
-                return $this->error('No se pueden registrar ni modificar horarios en semestres cuya fecha fin ya haya sido superada.', 422);
+                return $this->error('El semestre ha caducado. No se pueden registrar ni modificar horarios.', 422);
             }
 
             $data = $request->validated();
@@ -120,7 +121,7 @@ class GamaClassScheduleController extends Controller
 
             $updatedSchedule = $this->service->update($id, $data);
             if (! $updatedSchedule) {
-                return $this->error('Horario no encontrado.', 404);
+                return $this->error('El horario solicitado no existe o fue eliminado.', 404);
             }
 
             return $this->success(new ClassScheduleResource($updatedSchedule), 'Horario actualizado exitosamente.');
@@ -134,7 +135,7 @@ class GamaClassScheduleController extends Controller
         $this->authorize('delete', ClassSchedule::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Horario no encontrado.', 404);
+            return $this->error('El horario solicitado no existe o fue eliminado.', 404);
         }
 
         return $this->success(null, 'Horario eliminado exitosamente.');

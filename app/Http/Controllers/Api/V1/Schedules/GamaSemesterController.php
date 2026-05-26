@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Refactorización: compactado a 100 líneas
+ *               2026-05-26 - Actualización de mensajes de error de API de semestres según requerimientos.
  */
 
 declare(strict_types=1);
@@ -51,7 +52,7 @@ class GamaSemesterController extends Controller
 
         return $semester
             ? $this->success(new SemesterResource($semester))
-            : $this->error('No hay un semestre vigente.', 404);
+            : $this->error('No existe un semestre vigente. Cree un semestre antes de registrar horarios.', 404);
     }
 
     public function show(int $id): JsonResponse
@@ -60,7 +61,7 @@ class GamaSemesterController extends Controller
 
         return $semester
             ? $this->success(new SemesterResource($semester))
-            : $this->error('Semestre no encontrado.', 404);
+            : $this->error('El recurso solicitado no existe o fue eliminado.', 404);
     }
 
     public function store(StoreSemesterRequest $request): JsonResponse
@@ -86,7 +87,7 @@ class GamaSemesterController extends Controller
 
             return $semester
                 ? $this->success(new SemesterResource($semester))
-                : $this->error('Semestre no encontrado.', 404);
+                : $this->error('El recurso solicitado no existe o fue eliminado.', 404);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422, [
                 'start_date' => [$e->getMessage()],
@@ -101,6 +102,6 @@ class GamaSemesterController extends Controller
 
         return $this->service->delete($id)
             ? $this->success(null, 'Semestre eliminado exitosamente.')
-            : $this->error('Semestre no encontrado.', 404);
+            : $this->error('El recurso solicitado no existe o fue eliminado.', 404);
     }
 }

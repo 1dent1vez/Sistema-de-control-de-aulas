@@ -11,7 +11,7 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.4.0
+ * @version      1.5.0
  *
  * @creado       2026-05-13
  *
@@ -22,6 +22,7 @@
  *               2026-05-26 - Optimización crítica de performance: pre-carga de aulas, docentes y horarios en memoria, y caché de búsquedas para eliminar N+1 consultas.
  *               2026-05-26 - Corrección de UNIQUE constraint al importar docentes duplicados y estandarización de reportes de errores de base de datos.
  *               2026-05-26 - Separación del flujo de importación en Preview (sólo lectura) y Confirmación (persistencia atómica) con resolves en JSON.
+ *               2026-05-26 - Estandarización y traducción de mensajes de error en español para validaciones e importación.
  */
 
 declare(strict_types=1);
@@ -74,7 +75,7 @@ class GamaScheduleImportService
             $today = now()->format('Y-m-d');
             $semestreVigente = Semester::vigente($today)->first();
             if (! $semestreVigente) {
-                $report = [['row' => 0, 'error' => 'No existe semestre vigente. No se puede registrar horarios hasta que se cree un semestre activo.']];
+                $report = [['row' => 0, 'error' => 'No existe un semestre vigente. Cree un semestre antes de registrar horarios.']];
                 $reportPath = "imports/{$batchId}.json";
                 Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
@@ -86,7 +87,7 @@ class GamaScheduleImportService
             }
         } catch (\Exception $e) {
             Log::error('Error de BD al determinar el semestre vigente: '.$e->getMessage());
-            $report = [['row' => 0, 'error' => 'Error al determinar el semestre vigente. Intente más tarde.']];
+            $report = [['row' => 0, 'error' => 'Error al consultar la base de datos. Intente nuevamente.']];
             $reportPath = "imports/{$batchId}.json";
             Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
@@ -111,7 +112,7 @@ class GamaScheduleImportService
             }));
         } catch (\Exception $e) {
             Log::error('Error leyendo archivo de horarios: '.$e->getMessage());
-            $report = [['row' => 0, 'error' => 'Archivo dañado, vuelva a cargar el archivo']];
+            $report = [['row' => 0, 'error' => 'El archivo esta danado o no se puede leer. Vuelva a cargar el archivo.']];
             $reportPath = "imports/{$batchId}.json";
             Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
@@ -123,7 +124,7 @@ class GamaScheduleImportService
         }
 
         if (empty($rows)) {
-            $report = [['row' => 0, 'error' => 'El archivo está vacío o no tiene datos.']];
+            $report = [['row' => 0, 'error' => 'La fila tiene datos incompletos. Verifique todas las columnas.']];
             $reportPath = "imports/{$batchId}.json";
             Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
@@ -141,15 +142,7 @@ class GamaScheduleImportService
         $extra = array_diff($header, self::REQUIRED_COLUMNS);
 
         if (! empty($missing) || ! empty($extra)) {
-            $expectedStr = implode(', ', self::REQUIRED_COLUMNS);
-            $foundStr = implode(', ', $header);
-            $errorMsg = "Columnas incorrectas. Esperadas: [{$expectedStr}]. Encontradas: [{$foundStr}].";
-            if (! empty($missing)) {
-                $errorMsg .= ' Faltantes: '.implode(', ', $missing).'.';
-            }
-            if (! empty($extra)) {
-                $errorMsg .= ' Extra: '.implode(', ', $extra).'.';
-            }
+            $errorMsg = 'El archivo no tiene las columnas requeridas. Descargue la plantilla de ejemplo.';
 
             $report = [['row' => 1, 'error' => $errorMsg]];
             $reportPath = "imports/{$batchId}.json";
@@ -210,7 +203,7 @@ class GamaScheduleImportService
             }
         } catch (\Exception $e) {
             Log::error('Error de BD al pre-cargar datos para importación: '.$e->getMessage());
-            $report = [['row' => 0, 'error' => 'Error al preparar la base de datos para procesar la importación.']];
+            $report = [['row' => 0, 'error' => 'Error al consultar la base de datos. Intente nuevamente.']];
             $reportPath = "imports/{$batchId}.json";
             Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
@@ -269,21 +262,21 @@ class GamaScheduleImportService
                         // 1. Aula existente (Búsqueda en memoria)
                         $classroom = null;
                         if (empty($aulaInput)) {
-                            $rowErrors[] = 'Aula es obligatoria.';
+                            $rowErrors[] = 'La fila tiene datos incompletos. Verifique todas las columnas.';
                         } else {
                             $classroom = $classroomsByName[$aulaInput] ?? null;
                             if (! $classroom && is_numeric($aulaInput)) {
                                 $classroom = $classroomsById[(int) $aulaInput] ?? null;
                             }
                             if (! $classroom) {
-                                $rowErrors[] = "Aula '{$aulaInput}' no encontrada.";
+                                $rowErrors[] = 'El aula seleccionada no existe o no esta disponible.';
                             }
                         }
 
                         // 2. Docente existente (Búsqueda en memoria + SAM)
                         $teacher = null;
                         if (empty($docenteInput)) {
-                            $rowErrors[] = 'Docente es obligatorio.';
+                            $rowErrors[] = 'La fila tiene datos incompletos. Verifique todas las columnas.';
                         } else {
                             if (array_key_exists($docenteInput, $teacherLookupCache)) {
                                 $teacher = $teacherLookupCache[$docenteInput];
@@ -340,20 +333,20 @@ class GamaScheduleImportService
                             }
 
                             if (! $teacher) {
-                                $rowErrors[] = "Docente '{$docenteInput}' no encontrado.";
+                                $rowErrors[] = 'El docente seleccionado no existe en el sistema.';
                             }
                         }
 
                         // 3. Materia obligatoria y válida
                         if (empty($materiaInput)) {
-                            $rowErrors[] = 'Materia es obligatoria.';
+                            $rowErrors[] = 'El nombre de la materia es obligatorio.';
                         } elseif (mb_strlen($materiaInput) > 100) {
                             $rowErrors[] = 'El nombre de la materia no debe exceder 100 caracteres.';
                         }
 
                         // 4. Grupo obligatorio y válido
                         if (empty($grupoInput)) {
-                            $rowErrors[] = 'Grupo es obligatorio.';
+                            $rowErrors[] = 'El grupo es obligatorio.';
                         } elseif (mb_strlen($grupoInput) > 10) {
                             $rowErrors[] = 'El código del grupo no debe exceder 10 caracteres.';
                         }
@@ -362,27 +355,27 @@ class GamaScheduleImportService
                         $startTimeShort = '';
                         $endTimeShort = '';
                         if (empty($startTimeInput) || empty($endTimeInput)) {
-                            $rowErrors[] = 'Hora de inicio y hora de fin son obligatorias.';
+                            $rowErrors[] = 'La fila tiene datos incompletos. Verifique todas las columnas.';
                         } elseif (! preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $startTimeInput) || ! preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $endTimeInput)) {
-                            $rowErrors[] = 'hora_inicio y hora_fin deben estar en formato HH:MM.';
+                            $rowErrors[] = 'El formato de hora no es valido. Use HH:MM (ejemplo: 08:00).';
                         } else {
                             $startTimeShort = substr($startTimeInput, 0, 5);
                             $endTimeShort = substr($endTimeInput, 0, 5);
                             if ($startTimeShort >= $endTimeShort) {
-                                $rowErrors[] = 'hora_inicio debe ser menor que hora_fin.';
+                                $rowErrors[] = 'La hora de inicio debe ser menor que la hora de fin.';
                             }
                         }
 
                         // 6. Días válidos
                         $parsedDays = [];
                         if (empty($diasInput)) {
-                            $rowErrors[] = 'Días de la semana son obligatorios.';
+                            $rowErrors[] = 'La fila tiene datos incompletos. Verifique todas las columnas.';
                         } else {
                             $parsedDays = $this->parseDays($diasInput);
                             if (isset($parsedDays['invalid'])) {
-                                $rowErrors[] = "Día inválido: '".implode(', ', $parsedDays['invalid'])."'.";
+                                $rowErrors[] = 'El dia de la semana no es valido. Use: Lunes, Martes, Miercoles, Jueves, Viernes, Sabado o Domingo.';
                             } elseif (empty($parsedDays)) {
-                                $rowErrors[] = 'El campo dias no contiene días válidos.';
+                                $rowErrors[] = 'El dia de la semana no es valido. Use: Lunes, Martes, Miercoles, Jueves, Viernes, Sabado o Domingo.';
                             }
                         }
 
@@ -403,7 +396,7 @@ class GamaScheduleImportService
                                 }
 
                                 if ($classroomOverlap) {
-                                    $rowErrors[] = "Solapamiento de horario en aula '{$classroom->classroom_name}' el día '{$dayLabel}'.";
+                                    $rowErrors[] = 'El aula ya tiene un horario asignado en ese dia y horario.';
                                 }
 
                                 // Solapamiento del docente en memoria
@@ -418,7 +411,7 @@ class GamaScheduleImportService
                                 }
 
                                 if ($teacherOverlap) {
-                                    $rowErrors[] = "El docente '".($teacher->full_name ?? $teacher->external_id)."' ya tiene horario asignado el día '{$dayLabel}' a esa hora.";
+                                    $rowErrors[] = 'El docente ya tiene un horario asignado en ese dia y horario.';
                                 }
                             }
                         }
@@ -506,7 +499,7 @@ class GamaScheduleImportService
             ]);
 
             $msg = $e->getMessage();
-            $friendlyMsg = 'Error en base de datos. Intente nuevamente o contacte al administrador.';
+            $friendlyMsg = 'Error al guardar en la base de datos. Intente nuevamente o contacte al administrador.';
             if (str_contains($msg, 'UNIQUE constraint failed') || str_contains($msg, 'Duplicate entry') || $e->getCode() === '23000') {
                 $friendlyMsg = 'El registro que intenta crear ya existe en el sistema.';
             }
@@ -535,7 +528,7 @@ class GamaScheduleImportService
         } catch (\Exception $e) {
             Log::error('Error inesperado en importación masiva: '.$e->getMessage());
 
-            $report = [['row' => 0, 'error' => 'Error al procesar la importación. Intente nuevamente.']];
+            $report = [['row' => 0, 'error' => 'Error al procesar la importacion. Intente nuevamente.']];
             $reportPath = "imports/{$batchId}.json";
             Storage::disk('local')->put($reportPath, json_encode($report, JSON_PRETTY_PRINT));
 
@@ -566,7 +559,7 @@ class GamaScheduleImportService
     {
         $reportPath = "imports/{$batchId}.json";
         if (! Storage::disk('local')->exists($reportPath)) {
-            throw new \RuntimeException('El reporte de importación no existe o ha expirado.');
+            throw new \RuntimeException('El identificador proporcionado no es valido.');
         }
 
         $report = json_decode(Storage::disk('local')->get($reportPath), true);

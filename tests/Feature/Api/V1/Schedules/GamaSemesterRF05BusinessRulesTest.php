@@ -11,13 +11,14 @@
  *
  * @mantenimiento Antigravity <support@google.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-25
  *
- * @modificado   2026-05-25
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-25 - Creación inicial de la clase de pruebas para RF-05.
+ *               2026-05-26 - Actualización de aserciones de mensajes de error en español para reflejar el comportamiento actual.
  */
 
 declare(strict_types=1);
@@ -80,7 +81,7 @@ it('RF-05.1 rejects overlapping semester dates with exact error message', functi
 
     $response->assertStatus(422)
         ->assertJsonPath('success', false)
-        ->assertJsonPath('message', 'El período se solapa con un semestre vigente');
+        ->assertJsonPath('message', 'El periodo del semestre se solapa con un semestre vigente existente.');
 });
 
 it('RF-05.3 blocks schedules registry when no current semester is active', function (): void {
@@ -106,5 +107,5 @@ it('RF-05.3 blocks schedules registry when no current semester is active', funct
 
     $response->assertStatus(422)
         ->assertJsonPath('success', false)
-        ->assertJsonPath('errors.semester_id.0', 'No existe semestre vigente');
+        ->assertJsonPath('errors.semester_id.0', 'No existe un semestre vigente. Cree un semestre antes de registrar horarios.');
 });

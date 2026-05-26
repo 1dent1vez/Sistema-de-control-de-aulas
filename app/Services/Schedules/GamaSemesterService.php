@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-13 - Creación inicial del servicio
+ *               2026-05-26 - Actualización de excepciones y mensajes de error según requerimientos.
  */
 
 declare(strict_types=1);
@@ -75,11 +76,11 @@ class GamaSemesterService
             $hasOverlap = $this->repository->hasOverlap($data['institution_id'], $data['start_date'], $data['end_date']);
         } catch (\Exception $e) {
             Log::error('Fallo de BD al verificar solapamiento: '.$e->getMessage());
-            throw new \RuntimeException('No se pudo determinar el semestre activo');
+            throw new \RuntimeException('Error al consultar la base de datos. Intente nuevamente.');
         }
 
         if ($hasOverlap) {
-            throw new \RuntimeException('El período se solapa con un semestre vigente');
+            throw new \RuntimeException('El periodo del semestre se solapa con un semestre vigente existente.');
         }
 
         return $this->repository->create($data);
@@ -108,11 +109,11 @@ class GamaSemesterService
                 $hasOverlap = $this->repository->hasOverlap($semester->institution_id, $startDate, $endDate, $id);
             } catch (\Exception $e) {
                 Log::error('Fallo de BD al verificar solapamiento: '.$e->getMessage());
-                throw new \RuntimeException('No se pudo determinar el semestre activo');
+                throw new \RuntimeException('Error al consultar la base de datos. Intente nuevamente.');
             }
 
             if ($hasOverlap) {
-                throw new \RuntimeException('El período se solapa con un semestre vigente');
+                throw new \RuntimeException('El periodo del semestre se solapa con un semestre vigente existente.');
             }
         }
 

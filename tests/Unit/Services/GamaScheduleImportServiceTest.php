@@ -11,7 +11,7 @@
  *
  * @mantenimiento Agente OpenCode
  *
- * @version      1.2.0
+ * @version      1.3.0
  *
  * @creado       2026-05-24
  *
@@ -20,6 +20,7 @@
  * @cambios      2026-05-24 - Creación de pruebas unitarias para el servicio de importación
  *               2026-05-25 - Actualización de columnas a español, validaciones de solapamiento y semestre vigente
  *               2026-05-26 - Adición de prueba para verificar el manejo de excepciones de BD y formateo de errores UNIQUE.
+ *               2026-05-26 - Actualización de aserciones de mensajes de error en español para reflejar el comportamiento actual de la importación.
  */
 
 declare(strict_types=1);
@@ -135,12 +136,12 @@ it('handles validation errors and logs them in the report', function (): void {
     // Fila 3 descartada por aula inexistente
     $discardedRow3 = collect($result['errors'])->firstWhere('row', 3);
     expect($discardedRow3['ok'])->toBeFalse()
-        ->and($discardedRow3['error'])->toContain("Aula 'AULA_INEXISTENTE' no encontrada");
+        ->and($discardedRow3['error'])->toContain('El aula seleccionada no existe o no esta disponible.');
 
     // Fila 4 descartada por día inválido
     $discardedRow4 = collect($result['errors'])->firstWhere('row', 4);
     expect($discardedRow4['ok'])->toBeFalse()
-        ->and($discardedRow4['error'])->toContain("Día inválido: 'invalid_day'");
+        ->and($discardedRow4['error'])->toContain('El dia de la semana no es valido. Use: Lunes, Martes, Miercoles, Jueves, Viernes, Sabado o Domingo.');
 
     Storage::disk('local')->assertExists("imports/{$batchId}.json");
 });
@@ -161,7 +162,7 @@ it('rejects csv with missing columns', function (): void {
 
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)
-        ->and($result['errors'][0]['error'])->toContain('Columnas incorrectas');
+        ->and($result['errors'][0]['error'])->toContain('El archivo no tiene las columnas requeridas. Descargue la plantilla de ejemplo.');
 });
 
 it('handles corrupt file gracefully', function (): void {
@@ -178,7 +179,7 @@ it('handles corrupt file gracefully', function (): void {
 
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)
-        ->and($result['errors'][0]['error'])->toContain('Archivo dañado');
+        ->and($result['errors'][0]['error'])->toContain('El archivo esta danado o no se puede leer. Vuelva a cargar el archivo.');
 });
 
 it('handles database query exceptions gracefully by returning a clean error report without exposing SQL details', function (): void {
