@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-13 - Creación inicial de las rutas API
+ *               2026-05-26 - Registro de la ruta de confirmación de importación masiva.
  */
 
 declare(strict_types=1);
@@ -87,12 +88,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // Class Schedules (reads público, writes admin)
     Route::prefix('class-schedules')->name('class-schedules.')->group(function () {
         Route::get('/', [GamaClassScheduleController::class, 'index'])->name('index');
-        Route::post('/', [GamaClassScheduleController::class, 'store'])->name('store')->middleware('auth:sanctum');
-        Route::post('/import', [GamaScheduleImportController::class, '__invoke'])->name('import')->middleware('auth:sanctum');
-        Route::get('/import/{batchId}/report', [GamaScheduleImportController::class, 'report'])->name('report');
+        Route::post('/', [GamaClassScheduleController::class, 'store'])->name('store')->middleware(['auth:sanctum', 'role:admin']);
+        Route::post('/import', [GamaScheduleImportController::class, '__invoke'])->name('import')->middleware(['auth:sanctum', 'role:admin']);
+        Route::post('/import/confirm', [GamaScheduleImportController::class, 'confirm'])->name('import.confirm')->middleware(['auth:sanctum', 'role:admin']);
+        Route::get('/import/{batchId}/report', [GamaScheduleImportController::class, 'report'])->name('report')->middleware(['auth:sanctum', 'role:admin']);
         Route::get('/{scheduleId}', [GamaClassScheduleController::class, 'show'])->name('show');
-        Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update')->middleware('auth:sanctum');
-        Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy')->middleware('auth:sanctum');
+        Route::put('/{scheduleId}', [GamaClassScheduleController::class, 'update'])->name('update')->middleware(['auth:sanctum', 'role:admin']);
+        Route::delete('/{scheduleId}', [GamaClassScheduleController::class, 'destroy'])->name('destroy')->middleware(['auth:sanctum', 'role:admin']);
     });
 
     // QR Codes

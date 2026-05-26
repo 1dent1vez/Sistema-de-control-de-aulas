@@ -28,8 +28,8 @@ use App\Services\Schedules\GamaScheduleImportService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Storage;
 
 class ProcessScheduleImportJob implements ShouldQueue
 {
@@ -44,13 +44,16 @@ class ProcessScheduleImportJob implements ShouldQueue
         private readonly string $originalName,
         private readonly int $semesterId,
         private readonly string $batchId,
+        private readonly bool $isConfirm = true,
     ) {}
 
     public function handle(GamaScheduleImportService $importService): void
     {
-        $file = new UploadedFile($this->filePath, $this->originalName);
+        $absolutePath = file_exists($this->filePath)
+            ? $this->filePath
+            : Storage::disk('local')->path($this->filePath);
 
-        $result = $importService->import($file, $this->semesterId, $this->batchId);
+        $result = $importService->import($absolutePath, $this->semesterId, $this->batchId, $this->isConfirm);
 
         logger('Schedule import completed', [
             'batchId' => $this->batchId,

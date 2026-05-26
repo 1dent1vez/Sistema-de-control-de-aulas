@@ -180,8 +180,11 @@ it('can update an absence and resync class schedules', function (): void {
     $mondaySchedule = ClassSchedule::where('teacher_external_id', 'TCH001')->where('weekday', 'monday')->first();
     $tuesdaySchedule = ClassSchedule::where('teacher_external_id', 'TCH001')->where('weekday', 'tuesday')->first();
 
-    $mondayDate = '2026-05-25'; // Lunes
-    $tuesdayDate = '2026-05-26'; // Martes
+    $nextMonday = now()->next('monday');
+    $nextTuesday = (clone $nextMonday)->addDay();
+
+    $mondayDate = $nextMonday->format('Y-m-d');
+    $tuesdayDate = $nextTuesday->format('Y-m-d');
 
     $absence = TeacherAbsence::factory()->create([
         'teacher_external_id' => 'TCH001',
@@ -248,11 +251,13 @@ it('associates class schedules to registered absences', function (): void {
         'status' => true,
     ]);
 
+    $nextMonday = now()->next('monday')->format('Y-m-d');
+
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH001',
         'absence_type_id' => $this->absenceType->id,
-        'start_date' => '2026-05-25',
-        'end_date' => '2026-05-25',
+        'start_date' => $nextMonday,
+        'end_date' => $nextMonday,
     ]);
 
     $response->assertStatus(201);

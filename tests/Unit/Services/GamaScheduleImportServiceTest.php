@@ -11,25 +11,32 @@
  *
  * @mantenimiento Agente OpenCode
  *
- * @version      1.0.0
+ * @version      1.2.0
  *
  * @creado       2026-05-24
  *
- * @modificado   2026-05-24
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-24 - Creación de pruebas unitarias para el servicio de importación
+ *               2026-05-25 - Actualización de columnas a español, validaciones de solapamiento y semestre vigente
+ *               2026-05-26 - Adición de prueba para verificar el manejo de excepciones de BD y formateo de errores UNIQUE.
  */
 
 declare(strict_types=1);
 
 namespace Tests\Unit\Services;
 
+use App\Enums\Auth\SamRole;
 use App\Models\Building;
 use App\Models\Classroom;
 use App\Models\Institution;
 use App\Models\Level;
+use App\Models\SamIdentity;
 use App\Models\Semester;
+use App\Repositories\Contracts\ClassroomRepositoryInterface;
+use App\Repositories\Contracts\ClassScheduleRepositoryInterface;
 use App\Services\Schedules\GamaScheduleImportService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -46,17 +53,41 @@ beforeEach(function (): void {
     $this->classroom = Classroom::factory()->create([
         'building_id' => $this->building->id,
         'level_id' => $this->level->id,
+        'classroom_name' => 'A-101',
     ]);
+
+    // Crear docentes válidos locales
+    $teacher1 = new SamIdentity;
+    $teacher1->external_id = 'TCH-001';
+    $teacher1->email = 'tch001@toluca.tecnm.mx';
+    $teacher1->full_name = 'Teacher One';
+    $teacher1->role = SamRole::TEACHER;
+    $teacher1->save();
+
+    $teacher2 = new SamIdentity;
+    $teacher2->external_id = 'TCH-002';
+    $teacher2->email = 'tch002@toluca.tecnm.mx';
+    $teacher2->full_name = 'Teacher Two';
+    $teacher2->role = SamRole::TEACHER;
+    $teacher2->save();
+
+    $teacher3 = new SamIdentity;
+    $teacher3->external_id = 'TCH-003';
+    $teacher3->email = 'tch003@toluca.tecnm.mx';
+    $teacher3->full_name = 'Teacher Three';
+    $teacher3->role = SamRole::TEACHER;
+    $teacher3->save();
+
     Storage::fake('local');
 });
 
 it('can import valid schedules from csv', function (): void {
     $batchId = Str::uuid()->toString();
 
-    // Create a temporary CSV
-    $csvContent = "classroom_id,teacher_external_id,subject_name,group_name,weekday,start_time,end_time\n".
-                  "{$this->classroom->id},TCH-001,Mathematics,Group A,monday,08:00,10:00\n".
-                  "{$this->classroom->id},TCH-002,Physics,Group B,tuesday,10:00,12:00\n";
+    // Crear CSV con columnas en español
+    $csvContent = "aula,docente,materia,grupo,dias,hora_inicio,hora_fin\n".
+                  "A-101,TCH-001,Mathematics,Group A,\"Lunes, Miércoles\",08:00,10:00\n".
+                  "A-101,TCH-002,Physics,Group B,Martes,10:00,12:00\n";
 
     $tempFile = tempnam(sys_get_temp_dir(), 'test_import_');
     file_put_contents($tempFile, $csvContent);
@@ -65,8 +96,9 @@ it('can import valid schedules from csv', function (): void {
 
     $result = $this->service->import($file, $this->semester->id, $batchId);
 
-    expect($result['imported'])->toBe(2)
-        ->and($result['errors'])->toHaveCount(2); // Since we log all rows, there will be 2 rows (ok: true) in the report
+    // Se importaron 3 registros (2 días para la fila 1 y 1 día para la fila 2)
+    expect($result['imported'])->toBe(3)
+        ->and($result['errors'])->toHaveCount(2);
 
     $this->assertDatabaseHas('gama_class_schedules', [
         'semester_id' => $this->semester->id,
@@ -84,11 +116,11 @@ it('can import valid schedules from csv', function (): void {
 it('handles validation errors and logs them in the report', function (): void {
     $batchId = Str::uuid()->toString();
 
-    // Row 2 is valid, Row 3 has invalid classroom, Row 4 has invalid weekday
-    $csvContent = "classroom_id,teacher_external_id,subject_name,group_name,weekday,start_time,end_time\n".
-                  "{$this->classroom->id},TCH-001,Mathematics,Group A,monday,08:00,10:00\n".
-                  "99999,TCH-002,Physics,Group B,tuesday,10:00,12:00\n".
-                  "{$this->classroom->id},TCH-003,Chemistry,Group C,invalid_day,09:00,11:00\n";
+    // Fila 2 válida, Fila 3 aula inválida, Fila 4 día inválido
+    $csvContent = "aula,docente,materia,grupo,dias,hora_inicio,hora_fin\n".
+                  "A-101,TCH-001,Mathematics,Group A,Lunes,08:00,10:00\n".
+                  "AULA_INEXISTENTE,TCH-002,Physics,Group B,Martes,10:00,12:00\n".
+                  "A-101,TCH-003,Chemistry,Group C,invalid_day,09:00,11:00\n";
 
     $tempFile = tempnam(sys_get_temp_dir(), 'test_import_');
     file_put_contents($tempFile, $csvContent);
@@ -98,17 +130,17 @@ it('handles validation errors and logs them in the report', function (): void {
     $result = $this->service->import($file, $this->semester->id, $batchId);
 
     expect($result['imported'])->toBe(1)
-        ->and($result['errors'])->toHaveCount(3); // 1 successful + 2 discarded
+        ->and($result['errors'])->toHaveCount(3); // 1 exitoso + 2 descartados
 
-    // Row 3 should be discarded
+    // Fila 3 descartada por aula inexistente
     $discardedRow3 = collect($result['errors'])->firstWhere('row', 3);
     expect($discardedRow3['ok'])->toBeFalse()
-        ->and($discardedRow3['error'])->toContain("classroom_id '99999' no existe");
+        ->and($discardedRow3['error'])->toContain("Aula 'AULA_INEXISTENTE' no encontrada");
 
-    // Row 4 should be discarded
+    // Fila 4 descartada por día inválido
     $discardedRow4 = collect($result['errors'])->firstWhere('row', 4);
     expect($discardedRow4['ok'])->toBeFalse()
-        ->and($discardedRow4['error'])->toContain("weekday 'invalid_day' no válido");
+        ->and($discardedRow4['error'])->toContain("Día inválido: 'invalid_day'");
 
     Storage::disk('local')->assertExists("imports/{$batchId}.json");
 });
@@ -116,9 +148,9 @@ it('handles validation errors and logs them in the report', function (): void {
 it('rejects csv with missing columns', function (): void {
     $batchId = Str::uuid()->toString();
 
-    // Missing 'weekday' column
-    $csvContent = "classroom_id,teacher_external_id,subject_name,group_name,start_time,end_time\n".
-                  "{$this->classroom->id},TCH-001,Mathematics,Group A,08:00,10:00\n";
+    // Falta columna 'dias'
+    $csvContent = "aula,docente,materia,grupo,hora_inicio,hora_fin\n".
+                  "A-101,TCH-001,Mathematics,Group A,08:00,10:00\n";
 
     $tempFile = tempnam(sys_get_temp_dir(), 'test_import_');
     file_put_contents($tempFile, $csvContent);
@@ -129,13 +161,12 @@ it('rejects csv with missing columns', function (): void {
 
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)
-        ->and($result['errors'][0]['error'])->toContain('Columnas faltantes');
+        ->and($result['errors'][0]['error'])->toContain('Columnas incorrectas');
 });
 
 it('handles corrupt file gracefully', function (): void {
     $batchId = Str::uuid()->toString();
 
-    // Binary / Corrupt file simulator
     $csvContent = "\xFF\xFE\x00\x00corrupt_binary_data";
 
     $tempFile = tempnam(sys_get_temp_dir(), 'test_import_');
@@ -148,4 +179,32 @@ it('handles corrupt file gracefully', function (): void {
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)
         ->and($result['errors'][0]['error'])->toContain('Archivo dañado');
+});
+
+it('handles database query exceptions gracefully by returning a clean error report without exposing SQL details', function (): void {
+    $batchId = Str::uuid()->toString();
+
+    $mockRepo = mock(ClassScheduleRepositoryInterface::class);
+    $mockRepo->shouldReceive('insertMultiple')->andThrow(new QueryException(
+        'sqlite',
+        'insert into gama_class_schedules ...',
+        [],
+        new \Exception('UNIQUE constraint failed: test')
+    ));
+
+    $service = new GamaScheduleImportService(app(ClassroomRepositoryInterface::class), $mockRepo);
+
+    $csvContent = "aula,docente,materia,grupo,dias,hora_inicio,hora_fin\n".
+                  "A-101,TCH-001,Mathematics,Group A,Lunes,08:00,10:00\n";
+
+    $tempFile = tempnam(sys_get_temp_dir(), 'test_import_');
+    file_put_contents($tempFile, $csvContent);
+
+    $file = new UploadedFile($tempFile, 'schedules.csv', 'text/csv', null, true);
+
+    $result = $service->import($file, $this->semester->id, $batchId);
+
+    expect($result['imported'])->toBe(0)
+        ->and($result['errors'])->toHaveCount(1)
+        ->and($result['errors'][0]['error'])->toBe('El registro que intenta crear ya existe en el sistema.');
 });

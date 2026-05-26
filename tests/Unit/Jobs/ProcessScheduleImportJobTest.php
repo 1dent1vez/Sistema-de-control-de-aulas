@@ -11,13 +11,14 @@
  *
  * @mantenimiento Agente OpenCode
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-24
  *
- * @modificado   2026-05-24
+ * @modificado   2026-05-25
  *
  * @cambios      2026-05-24 - Creación de pruebas unitarias para el Job de importación
+ *               2026-05-25 - Actualización de las expectativas de Mockery para soportar la ruta del archivo como string
  */
 
 declare(strict_types=1);
@@ -26,7 +27,6 @@ namespace Tests\Unit\Jobs;
 
 use App\Jobs\ProcessScheduleImportJob;
 use App\Services\Schedules\GamaScheduleImportService;
-use Illuminate\Http\UploadedFile;
 use Mockery;
 
 it('executes import service when job is handled', function (): void {
@@ -42,9 +42,10 @@ it('executes import service when job is handled', function (): void {
     $mockService->shouldReceive('import')
         ->once()
         ->with(
-            Mockery::type(UploadedFile::class),
+            Mockery::type('string'),
             $semesterId,
-            $batchId
+            $batchId,
+            Mockery::any()
         )
         ->andReturn([
             'imported' => 5,

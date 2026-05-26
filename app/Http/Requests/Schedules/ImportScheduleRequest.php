@@ -39,7 +39,7 @@ class ImportScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:csv,xlsx', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:csv,xlsx', 'max:5120'],
             'semester_id' => [
                 'required',
                 'integer',

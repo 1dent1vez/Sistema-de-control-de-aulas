@@ -6,6 +6,7 @@ use App\Http\Middleware\SamAuthMiddleware;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -146,6 +147,60 @@ return Application::configure(basePath: dirname(__DIR__))
                     'data' => null,
                     'errors' => [],
                 ], 429);
+            }
+        });
+
+        $exceptions->render(function (QueryException $e, Request $request) {
+            Log::error('Error de base de datos en solicitud API/Ajax', [
+                'ip' => $request->ip(),
+                'endpoint' => $request->fullUrl(),
+                'message' => $e->getMessage(),
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('horarios/*')) {
+                $msg = $e->getMessage();
+                if (str_contains($msg, 'UNIQUE constraint failed') || str_contains($msg, 'Duplicate entry') || $e->getCode() === '23000') {
+                    return response()->json([
+                        'success' => false,
+                        'statusCode' => 422,
+                        'message' => 'El registro que intenta crear ya existe en el sistema.',
+                        'error' => 'El registro que intenta crear ya existe en el sistema.',
+                        'data' => null,
+                        'errors' => ['database' => ['El registro que intenta crear ya existe en el sistema.']],
+                    ], 422);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 500,
+                    'message' => 'Error en base de datos. Intente nuevamente o contacte al administrador.',
+                    'error' => 'Error en base de datos. Intente nuevamente o contacte al administrador.',
+                    'data' => null,
+                    'errors' => ['database' => ['Error en base de datos. Intente nuevamente o contacte al administrador.']],
+                ], 500);
+            }
+        });
+
+        $exceptions->render(function (PDOException $e, Request $request) {
+            Log::error('Error de conexión PDO en solicitud API/Ajax', [
+                'ip' => $request->ip(),
+                'endpoint' => $request->fullUrl(),
+                'message' => $e->getMessage(),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('horarios/*')) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 500,
+                    'message' => 'Error de conexión con la base de datos. Contacte al administrador.',
+                    'error' => 'Error de conexión con la base de datos. Contacte al administrador.',
+                    'data' => null,
+                    'errors' => ['database' => ['Error de conexión con la base de datos. Contacte al administrador.']],
+                ], 500);
             }
         });
 

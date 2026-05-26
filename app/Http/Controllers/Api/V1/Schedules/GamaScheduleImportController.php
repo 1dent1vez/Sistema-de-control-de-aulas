@@ -11,25 +11,31 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.2.0
  *
  * @creado       2026-05-18
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Creación inicial del controlador
+ *               2026-05-25 - Adición de validación de rol de administrador y doble validación defensiva de extensión de archivo (.csv o .xlsx).
+ *               2026-05-26 - Separación del flujo en Preview y Confirmación.
  */
 
 declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Schedules;
 
+use App\Enums\Auth\SamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Schedules\ImportScheduleRequest;
 use App\Jobs\ProcessScheduleImportJob;
 use App\Models\ClassSchedule;
+use App\Services\Schedules\GamaScheduleImportService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -37,16 +43,29 @@ class GamaScheduleImportController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(
+        private readonly GamaScheduleImportService $importService
+    ) {}
+
     public function __invoke(ImportScheduleRequest $request): JsonResponse
     {
         $this->authorize('create', ClassSchedule::class);
 
+        if ($request->user()->role !== SamRole::ADMIN) {
+            return $this->error('No tiene permisos para acceder a esta función.', 403);
+        }
+
         $file = $request->file('file');
+        $extension = $file->getClientOriginalExtension();
+        if (! in_array(strtolower($extension), ['csv', 'xlsx'], true)) {
+            return $this->error('Solo se aceptan archivos con extensión .csv o .xlsx', 422);
+        }
+
         $semesterId = (int) $request->input('semester_id');
         $batchId = Str::uuid()->toString();
 
         $path = $file->storeAs('imports', $batchId.'.'.$file->getClientOriginalExtension());
-        ProcessScheduleImportJob::dispatch($path, $file->getClientOriginalName(), $semesterId, $batchId);
+        ProcessScheduleImportJob::dispatch($path, $file->getClientOriginalName(), $semesterId, $batchId, false);
 
         return $this->success([
             'batchId' => $batchId,
@@ -58,6 +77,10 @@ class GamaScheduleImportController extends Controller
     {
         $this->authorize('create', ClassSchedule::class);
 
+        if (request()->user()->role !== SamRole::ADMIN) {
+            return $this->error('No tiene permisos para acceder a esta función.', 403);
+        }
+
         $path = "imports/{$batchId}.json";
         if (! Storage::disk('local')->exists($path)) {
             return $this->success(null, 'El archivo se está procesando. Por favor, espere...', 202);
@@ -65,5 +88,31 @@ class GamaScheduleImportController extends Controller
         $content = json_decode(Storage::disk('local')->get($path), true);
 
         return $this->success($content, 'Import report retrieved successfully.');
+    }
+
+    public function confirm(Request $request): JsonResponse
+    {
+        $this->authorize('create', ClassSchedule::class);
+
+        if ($request->user()->role !== SamRole::ADMIN) {
+            return $this->error('No tiene permisos para acceder a esta función.', 403);
+        }
+
+        $batchId = $request->input('batch_id') ?? $request->input('batchId');
+        if (! $batchId) {
+            return $this->error('El ID de lote es obligatorio.', 422);
+        }
+
+        try {
+            $result = $this->importService->confirm((string) $batchId);
+
+            return $this->success($result, 'La importación ha sido confirmada y guardada exitosamente.');
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 404);
+        } catch (\Exception $e) {
+            Log::error('Error al confirmar importacion de horarios: '.$e->getMessage());
+
+            return $this->error('Error al guardar los horarios. Intente nuevamente.', 500);
+        }
     }
 }
