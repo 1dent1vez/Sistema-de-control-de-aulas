@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Institution;
 use App\Models\Level;
 use App\Models\QrCode;
+use App\Models\Semester;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -38,16 +39,20 @@ it('can generate a new QR code', function (): void {
     ]);
 });
 
-it('rejects regeneration without force flag', function (): void {
+it('allows regeneration without force flag', function (): void {
     $this->loginAsAdmin();
-    QrCode::factory()->create([
+    $existing = QrCode::factory()->create([
         'classroom_id' => $this->classroom->id,
         'is_active' => true,
     ]);
 
     $response = $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", []);
 
-    $response->assertStatus(409);
+    $response->assertStatus(201);
+    $this->assertDatabaseMissing('gama_qr_codes', [
+        'id' => $existing->id,
+        'is_active' => true,
+    ]);
 });
 
 it('allows regeneration with force flag', function (): void {
@@ -98,4 +103,22 @@ it('can download QR batch', function (): void {
 
     $response->assertStatus(200)
         ->assertJsonStructure(['data' => ['batchId']]);
+});
+
+it('allows guest to view public classroom schedule via QR link', function (): void {
+    $semester = Semester::factory()->create([
+        'institution_id' => $this->classroom->building->institution_id,
+        'start_date' => now()->subDay()->format('Y-m-d'),
+        'end_date' => now()->addDay()->format('Y-m-d'),
+    ]);
+
+    $response = $this->get(route('qr.aula.horario', ['aula_id' => $this->classroom->id]));
+
+    $response->assertStatus(200)
+        ->assertSee($this->classroom->classroom_name);
+});
+
+it('returns 404 when classroom not found on public schedule page', function (): void {
+    $response = $this->get('/qr/aula/99999');
+    $response->assertStatus(404);
 });

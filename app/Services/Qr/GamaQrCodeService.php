@@ -11,13 +11,15 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.1.0
+ * @version      1.3.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Unificación de prólogo; agregado findById
+ *               2026-05-26 - Actualización para guardar la URL pública de horario en el código QR generado
+ *               2026-05-26 - Corrección: permitir regeneración libre de QR sin forzar parámetro forceRegenerate
  */
 
 declare(strict_types=1);
@@ -63,12 +65,8 @@ class GamaQrCodeService
 
         $active = $this->repository->findActiveByClassroom($classroomId);
 
-        if ($active && ! $force) {
-            throw new \RuntimeException('Ya existe un código QR activo para esta aula. Utiliza forceRegenerate para reemplazarlo.', 409);
-        }
-
-        return DB::transaction(function () use ($classroomId, $classroom, $active, $force) {
-            if ($active && $force) {
+        return DB::transaction(function () use ($classroomId, $classroom, $active) {
+            if ($active) {
                 $this->repository->update($active, [
                     'is_active' => false,
                     'invalidated_at' => now(),
@@ -96,7 +94,8 @@ class GamaQrCodeService
                 new SvgImageBackEnd
             );
             $writer = new Writer($renderer);
-            $qrImage = $writer->writeString(json_encode($payload));
+            $url = route('qr.aula.horario', ['aula_id' => $classroom->id]);
+            $qrImage = $writer->writeString($url);
 
             Storage::disk('local')->put($filePath, $qrImage);
 

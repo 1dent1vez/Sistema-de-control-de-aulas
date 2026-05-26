@@ -48,11 +48,16 @@ it('can generate a qr code for a classroom', function () {
     Storage::disk('local')->assertExists($qr->file_path);
 });
 
-it('throws exception when generating qr if one already active', function () {
-    $this->service->generateForClassroom($this->classroom->id);
+it('allows normal regeneration of qr, deactivating the previous one', function () {
+    $firstQr = $this->service->generateForClassroom($this->classroom->id);
 
-    expect(fn () => $this->service->generateForClassroom($this->classroom->id))
-        ->toThrow(RuntimeException::class, 'Ya existe un código QR activo para esta aula. Utiliza forceRegenerate para reemplazarlo.');
+    $secondQr = $this->service->generateForClassroom($this->classroom->id);
+
+    $firstQr->refresh();
+
+    expect($firstQr->is_active)->toBeFalse()
+        ->and($firstQr->invalidated_at)->not->toBeNull()
+        ->and($secondQr->is_active)->toBeTrue();
 });
 
 it('can force regenerate qr code, invalidating previous', function () {

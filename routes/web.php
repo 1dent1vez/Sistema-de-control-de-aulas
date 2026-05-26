@@ -5,18 +5,21 @@
  *
  * @autor        Equipo GAMA
  *
- * @version      1.1.1
+ * @version      1.1.3
  *
- * @modificado   2026-05-25
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-19 - Rutas protegidas agrupadas bajo middleware sam.auth
  *               2026-05-25 - Importación de SamRole y uso de match en la ruta /dashboard para control estricto de roles.
  *               2026-05-25 - Adición de ruta web /admin/teacher-absences para la gestión administrativa de ausencias.
+ *               2026-05-26 - Adición de ruta pública /qr/aula/{aula_id} para consulta de horario vía QR.
+ *               2026-05-26 - Modificación de la ruta pública para mapearla al método showAula para la vista simple.
  */
 
 declare(strict_types=1);
 
 use App\Enums\Auth\SamRole;
+use App\Http\Controllers\Api\V1\Qr\GamaQrCodeController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas (sin autenticación)
@@ -27,6 +30,9 @@ Route::get('/', function () {
 Route::get('/aulas/horario-publico', function () {
     return view('aulas.horario-publico');
 })->name('aulas.horario_publico');
+
+Route::get('/qr/aula/{aula_id}', [GamaQrCodeController::class, 'showAula'])
+    ->name('qr.aula.horario');
 
 Route::get('/terms', function () {
     return view('legal.terms');

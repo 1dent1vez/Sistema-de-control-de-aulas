@@ -11,13 +11,15 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.1.0
+ * @version      1.3.0
  *
  * @creado       2026-05-14
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Refactorización: eliminar repo injection, agregar authorize en show/download/file, corregir prólogo
+ *               2026-05-26 - Adición del método showHorario para renderizar la vista pública del horario del aula
+ *               2026-05-26 - Adición del método showAula para renderizar la vista simple del horario del aula
  */
 
 declare(strict_types=1);
@@ -29,9 +31,13 @@ use App\Http\Requests\Qr\DownloadQrRequest;
 use App\Http\Requests\Qr\GenerateQrRequest;
 use App\Http\Resources\Qr\QrCodeResource;
 use App\Jobs\GenerateQrBatchJob;
+use App\Models\Classroom;
+use App\Models\ClassSchedule;
 use App\Models\QrCode;
+use App\Models\Semester;
 use App\Services\Qr\GamaQrCodeService;
 use App\Traits\ApiResponse;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -45,6 +51,69 @@ class GamaQrCodeController extends Controller
     public function __construct(
         private readonly GamaQrCodeService $service,
     ) {}
+
+    public function showHorario(int $aulaId): View
+    {
+        $aula = Classroom::with('building')->find($aulaId);
+        if (! $aula) {
+            abort(404, 'El aula solicitada no existe.');
+        }
+
+        $semestreVigente = Semester::current()->first();
+
+        if (! $semestreVigente) {
+            return view('qr.horario', [
+                'aula' => $aula,
+                'horarios' => collect(),
+                'semestreVigente' => null,
+                'sinSemestre' => true,
+            ]);
+        }
+
+        $horarios = ClassSchedule::where('classroom_id', $aula->id)
+            ->where('semester_id', $semestreVigente->id)
+            ->where('status', true)
+            ->with('teacher')
+            ->get()
+            ->sortBy(function ($h) {
+                $dias = ['monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6, 'sunday' => 7];
+
+                return [$dias[strtolower(trim($h->weekday))] ?? 8, $h->start_time];
+            });
+
+        return view('qr.horario', [
+            'aula' => $aula,
+            'horarios' => $horarios,
+            'semestreVigente' => $semestreVigente,
+            'sinSemestre' => false,
+        ]);
+    }
+
+    public function showAula(int $aulaId): View
+    {
+        $aula = Classroom::with('building')->find($aulaId);
+        if (! $aula) {
+            abort(404, 'Aula no encontrada.');
+        }
+
+        $semestreVigente = Semester::current()->first();
+
+        $horarios = collect();
+        if ($semestreVigente) {
+            $horarios = ClassSchedule::where('classroom_id', $aula->id)
+                ->where('semester_id', $semestreVigente->id)
+                ->where('status', true)
+                ->with('teacher')
+                ->get()
+                ->sortBy(function ($h) {
+                    $dias = ['monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6, 'sunday' => 7];
+
+                    return [$dias[strtolower(trim($h->weekday))] ?? 8, $h->start_time];
+                });
+        }
+
+        return view('qr.aula', compact('aula', 'horarios', 'semestreVigente'));
+    }
 
     public function generate(int $classroomId, GenerateQrRequest $request): JsonResponse
     {

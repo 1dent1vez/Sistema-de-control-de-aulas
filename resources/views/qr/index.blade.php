@@ -462,52 +462,22 @@
             }
 
             /* ---- Generar QR masivo ---- */
-            async function generarBulk(force = false) {
+            async function generarBulk() {
                 const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
                 if (!selectedCards.length) {
                     showToast('Sin selección', 'Por favor seleccione al menos un aula.', 'warning');
                     return;
                 }
 
-                const conQrActivo = selectedCards.filter(card => {
-                    const id = Number(card.dataset.classroomId);
-                    return allClassrooms.find(c => c.id === id)?.hasActiveQr;
-                });
-
-                let targets = selectedCards;
-                if (!force && conQrActivo.length > 0) {
-                    targets = selectedCards.filter(card => {
-                        const id = Number(card.dataset.classroomId);
-                        return !allClassrooms.find(c => c.id === id)?.hasActiveQr;
-                    });
-
-                    if (conQrActivo.length === selectedCards.length) {
-                        const forceBtn = document.createElement('button');
-                        forceBtn.className = 'btn btn-primary btn-sm';
-                        forceBtn.style.marginTop = '8px';
-                        forceBtn.textContent = 'Forzar regeneración para todas';
-                        forceBtn.onclick = () => { forceBtn.remove(); generarBulk(true); };
-                        
-                        showToast('Omitidas', `${conQrActivo.length} aulas ya tenían QR activo y fueron omitidas.`, 'warning');
-                        toastContainer.lastChild.querySelector('.toast-content').appendChild(forceBtn);
-                        return;
-                    } else if (targets.length > 0) {
-                        showToast('Omitidas', `${conQrActivo.length} aulas ya tenían QR activo y fueron omitidas.`, 'warning');
-                    }
-                }
-
-                if (!targets.length) return;
-
                 btnGenerarBulk.disabled = true;
                 btnGenerarBulk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
                 let ok = 0, fail = 0;
-                for (const card of targets) {
+                for (const card of selectedCards) {
                     const id = Number(card.dataset.classroomId);
                     try {
                         const res = await apiFetch(`/api/v1/classrooms/${id}/qr`, { 
-                            method: 'POST',
-                            body: JSON.stringify({ force_regenerate: force })
+                            method: 'POST'
                         });
                         const qr = res.data ?? {};
                         const c = allClassrooms.find(x => x.id === id);
@@ -528,7 +498,7 @@
                 if (fail > 0) showToast('Errores parciales', `${fail} aula(s) no pudieron generarse.`, 'warning');
             }
 
-            btnGenerarBulk.addEventListener('click', () => generarBulk(false));
+            btnGenerarBulk.addEventListener('click', () => generarBulk());
 
             /* ---- Descargar ZIP/PDF Lote ---- */
             btnDescargarZIP.addEventListener('click', async () => {

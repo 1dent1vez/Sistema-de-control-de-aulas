@@ -48,16 +48,8 @@ it('executes the QR lifecycle flow correctly', function () {
     $response->assertStatus(201);
     $firstQrId = $response->json('data.id');
 
-    // 3. Intentar generar de nuevo sin el flag force (debe fallar con 409 Conflict)
+    // 3. Intentar generar de nuevo sin el flag force (debe tener éxito directo y desactivar el anterior)
     $response = $this->postJson("/api/v1/classrooms/{$classroom->id}/qr");
-
-    $response->assertStatus(409);
-    $this->assertStringContainsString('forceRegenerate', $response->json('message'));
-
-    // 4. Generar nuevo QR con el flag force
-    $response = $this->postJson("/api/v1/classrooms/{$classroom->id}/qr", [
-        'force_regenerate' => true,
-    ]);
 
     $response->assertStatus(201);
     $secondQrId = $response->json('data.id');
