@@ -12,14 +12,15 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.2.0
+ * @version      1.3.0
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-22
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-19 - Soporte para cookie sam_token (protección rutas web)
  *               2026-05-22 - Diagnóstico completo, logging estructurado, eager loading de tokenable y corrección de encriptación de cookie
+ *               2026-05-26 - Actualización de mensajes de excepción de autenticación según RF-01 y RF-02
  */
 
 declare(strict_types=1);
@@ -95,7 +96,7 @@ class SamAuthMiddleware
                     if (! $request->expectsJson()) {
                         return redirect()->route('login')->with('error', 'Sesión expirada')->withoutCookie('sam_token');
                     }
-                    throw new AuthenticationException('Sesión expirada.', ['sanctum']);
+                    throw new AuthenticationException('Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.', ['sanctum']);
                 }
 
                 $identity = $accessToken->tokenable;
@@ -130,7 +131,7 @@ class SamAuthMiddleware
                     if (! $request->expectsJson()) {
                         return redirect()->route('login')->with('error', 'Identidad no válida')->withoutCookie('sam_token');
                     }
-                    throw new AuthenticationException('Identidad no válida.', ['sanctum']);
+                    throw new AuthenticationException('Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.', ['sanctum']);
                 }
             } else {
                 Log::channel('sam_auth')->debug('[SAM-AUTH] Consulta DB | Context: '.json_encode([
@@ -145,7 +146,7 @@ class SamAuthMiddleware
                 if (! $request->expectsJson()) {
                     return redirect()->route('login')->with('error', 'Token inválido')->withoutCookie('sam_token');
                 }
-                throw new AuthenticationException('No autenticado.', ['sanctum']);
+                throw new AuthenticationException('Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.', ['sanctum']);
             }
         } else {
             Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
@@ -156,7 +157,7 @@ class SamAuthMiddleware
             if (! $request->expectsJson()) {
                 return redirect()->route('login')->with('error', 'Sesión no iniciada')->withoutCookie('sam_token');
             }
-            throw new AuthenticationException('No autenticado.', ['sanctum']);
+            throw new AuthenticationException('Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.', ['sanctum']);
         }
     }
 }

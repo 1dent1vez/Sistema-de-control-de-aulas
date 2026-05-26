@@ -13,11 +13,11 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.4.2
+ * @version      1.5.0
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-25
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-17 - Creación inicial del servicio de autenticación SAM
  *               2026-05-22 - Captura robusta de excepciones al obtener el perfil de SAM y validación de campos mínimos.
@@ -27,6 +27,7 @@
  *               2026-05-24 - Remoción de mock fallback en orquestarLogin para que los fallos del servidor real se propaguen al controlador.
  *               2026-05-25 - Refactorización de redirecciones post-login usando la expresión match sobre el enum SamRole.
  *               2026-05-25 - Implementación de fallback local en login con SAM real ante fallos en obtenerPerfil, y corrección de bug de email duplicado.
+ *               2026-05-26 - Mapeo fino de mensajes de error de credenciales incorrectas e inexistentes según RF-01.
  */
 
 declare(strict_types=1);
@@ -132,16 +133,25 @@ class SamAuthService
     {
         $loginResult = $this->samService->login($username, $password, $captcha);
         if (! $loginResult['success']) {
-            $credError = ['Credenciales inválidas', 'Usuario no encontrado en SAM', 'Clave incorrecta', 'Contraseña incorrecta', 'Usuario no encontrado'];
-            if (in_array($loginResult['error'], $credError, true)) {
+            $err = $loginResult['error'] ?? '';
+            if (str_contains($err, 'Usuario no encontrado') || str_contains($err, 'no encontrado')) {
                 return [
                     'success' => false,
                     'statusCode' => 401,
-                    'message' => 'Usuario o contraseña incorrectos.',
+                    'message' => 'Usuario no encontrado en el sistema institucional.',
                 ];
             }
 
-            throw new \RuntimeException($loginResult['error'] ?? 'Error desconocido de SAM real.');
+            $credError = ['Credenciales inválidas', 'Clave incorrecta', 'Contraseña incorrecta'];
+            if (in_array($err, $credError, true) || str_contains($err, 'incorrecta') || str_contains($err, 'inválidas')) {
+                return [
+                    'success' => false,
+                    'statusCode' => 401,
+                    'message' => 'Credenciales incorrectas. Verifique su correo y contrasena.',
+                ];
+            }
+
+            throw new \RuntimeException($err ?: 'Error desconocido de SAM real.');
         }
 
         $rolSam = $loginResult['rol'];

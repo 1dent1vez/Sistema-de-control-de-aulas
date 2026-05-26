@@ -13,11 +13,11 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.6.1
+ * @version      1.6.2
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-25
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-21 - Refactor: cookies SAM en cache con UUID, sesión vía cookie propia
  *               2026-05-22 - Extracción de token robusta multicapa con logs de diagnóstico y captura de HTML crudo ante errores.
@@ -27,6 +27,7 @@
  *               2026-05-24 - Forzar IPv4 para Windows, resolver localhost a 127.0.0.1, requestWithRetry mejorado y logs de error.
  *               2026-05-24 - Corrección de deadlock en obtenerPerfil al redireccionar consultas locales al servidor SAM correcto y forzar IPv4.
  *               2026-05-25 - Renombrado canal de log sam.debug a sam_debug.
+ *               2026-05-26 - Propagar excepciones de red/timeout en logout para alineación con RF-02.
  */
 
 declare(strict_types=1);
@@ -573,18 +574,17 @@ class SamService
         return $current;
     }
 
-    /**
-     * Cierra sesión en SAM y limpia la caché de cookies.
-     */
     public function logout(): void
     {
         try {
             $this->requestWithRetry('GET', 'app/login.do?accion=salir');
+        } catch (ConnectException|RequestException $e) {
+            throw $e;
         } catch (\Throwable) {
-            // Ignorar errores en logout SAM
+            // Ignorar otros errores en logout SAM
+        } finally {
+            $this->clearCache();
         }
-
-        $this->clearCache();
     }
 
     private function restoreFromCache(): void

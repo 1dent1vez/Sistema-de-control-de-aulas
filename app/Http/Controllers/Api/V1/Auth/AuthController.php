@@ -11,16 +11,17 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.2.0
+ * @version      1.3.0
  *
  * @creado       2026-05-17
  *
- * @modificado   2026-05-24
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Refactorización: compactación
  *               2026-05-22 - Ajuste dinámico del atributo secure de la cookie sam_token según el entorno
  *               2026-05-24 - Simplificación para cumplir con el límite de 100 líneas por controlador API
  *               2026-05-24 - Traducción de mensajes y excepciones Guzzle en login
+ *               2026-05-26 - Actualización de mensajes de error de API Auth según RF-01 y RF-02
  */
 
 declare(strict_types=1);
@@ -37,6 +38,7 @@ use App\Services\Auth\SamService;
 use App\Traits\ApiResponse;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -54,7 +56,7 @@ class AuthController extends Controller
         }
         $result = $this->samService->obtenerCaptcha();
         if ($result['png'] === null) {
-            return $this->error('El sistema de autenticación no está disponible.', 503);
+            return $this->error('Servicio no disponible. El sistema no puede contactar a SAM. Intente mas tarde o contacte al administrador.', 503);
         }
 
         return response($result['png'], 200)->header('Content-Type', 'image/png')->withCookie(cookie($this->samService->getSessionCookieName(), $result['sessionId'], 10));
@@ -84,13 +86,8 @@ class AuthController extends Controller
             }
 
             return $response;
-        } catch (ConnectException $e) {
-            return $this->error('No se pudo conectar con el servidor de autenticación. Verifica tu conexión o inténtalo más tarde.', 503);
-        } catch (RequestException $e) {
-            $status = ($e->hasResponse() && $e->getResponse()->getStatusCode() >= 500) ? 503 : 502;
-            $msg = $status === 503 ? 'El servidor de autenticación está experimentando problemas. Inténtalo más tarde.' : 'Error al comunicarse con el servidor de autenticación.';
-
-            return $this->error($msg, $status);
+        } catch (ConnectException|RequestException $e) {
+            return $this->error('Servicio no disponible. El sistema no puede contactar a SAM. Intente mas tarde o contacte al administrador.', 503);
         } catch (\Throwable $e) {
             return $this->error('Ocurrió un error inesperado. Contacta al administrador.', 500);
         }
@@ -98,9 +95,17 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $this->samAuthService->logout($request);
+        try {
+            $this->samAuthService->logout($request);
 
-        return $this->success(null, 'Sesión cerrada exitosamente.');
+            return $this->success(null, 'Sesión cerrada exitosamente.');
+        } catch (ConnectException|RequestException $e) {
+            return $this->error('Error al cerrar sesion. Recargue la pagina. Se reintentara automaticamente.', 503);
+        } catch (\PDOException|QueryException $e) {
+            return $this->error('Error al cerrar sesion localmente. Se forzara la expiracion en el servidor.', 500);
+        } catch (\Throwable $e) {
+            return $this->error('No se pudo invalidar la sesion en el servidor. Contacte al administrador.', 500);
+        }
     }
 
     public function me(Request $request): JsonResponse

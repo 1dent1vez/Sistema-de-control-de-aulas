@@ -126,7 +126,7 @@ it('fails to assign role when SAM is offline', function () {
     $response->assertJson([
         'success' => false,
         'statusCode' => 503,
-        'message' => 'Servicio de directorio no disponible.',
+        'message' => 'Servicio no disponible. El sistema no puede contactar a SAM. Intente mas tarde o contacte al administrador.',
     ]);
 });
 
@@ -168,7 +168,7 @@ it('renders ValueError as 422 JSON response', function () {
 
     expect($response->getStatusCode())->toBe(422);
     $data = json_decode($response->getContent(), true);
-    expect($data['message'])->toBe('Rol no contemplado en el sistema.');
+    expect($data['message'])->toBe('Rol no autorizado en este sistema. Su perfil no tiene permisos para acceder. Contacte al administrador.');
 });
 
 it('maps employee with CRUD permissions from SAM to ADMIN role', function () {

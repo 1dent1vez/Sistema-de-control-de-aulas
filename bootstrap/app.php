@@ -1,5 +1,27 @@
 <?php
 
+/**
+ * @descripcion  Configuración de bootstrap y manejo global de excepciones de la aplicación.
+ *
+ * @autor        Antigravity <support@google.com>
+ *
+ * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
+ *
+ * @prueba       Antigravity <support@google.com>
+ *
+ * @mantenimiento Antigravity <support@google.com>
+ *
+ * @version      1.2.0
+ *
+ * @creado       2026-05-26
+ *
+ * @modificado   2026-05-26
+ *
+ * @cambios      2026-05-26 - Actualización de manejadores de excepciones de autenticación y roles según RF-01 y RF-02.
+ */
+
+declare(strict_types=1);
+
 use App\Exceptions\SamOfflineException;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\SamAuthMiddleware;
@@ -61,7 +83,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'statusCode' => 403,
-                    'message' => 'Acceso denegado.',
+                    'message' => 'Rol no autorizado en este sistema. Su perfil no tiene permisos para acceder. Contacte al administrador.',
                     'data' => null,
                     'errors' => [],
                 ], 403);
@@ -77,10 +99,20 @@ return Application::configure(basePath: dirname(__DIR__))
             ]);
 
             if ($request->expectsJson()) {
+                $message = 'Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.';
+                if ($request->is('*logout*') || $request->routeIs('*logout*')) {
+                    $hasToken = $request->bearerToken() || $request->cookie('sam_token');
+                    if ($hasToken) {
+                        $message = 'Su sesion ya habia expirado. Inicie sesion nuevamente.';
+                    } else {
+                        $message = 'No hay una sesion activa. Será redirigido al inicio de sesion.';
+                    }
+                }
+
                 return response()->json([
                     'success' => false,
                     'statusCode' => 401,
-                    'message' => 'No autenticado.',
+                    'message' => $message,
                     'data' => null,
                     'errors' => [],
                 ], 401);
@@ -124,11 +156,23 @@ return Application::configure(basePath: dirname(__DIR__))
                     return response()->json([
                         'success' => false,
                         'statusCode' => 422,
-                        'message' => 'Rol no contemplado en el sistema.',
+                        'message' => 'Rol no autorizado en este sistema. Su perfil no tiene permisos para acceder. Contacte al administrador.',
                         'data' => null,
-                        'errors' => ['role' => ['Rol no contemplado en el sistema.']],
+                        'errors' => ['role' => ['Rol no autorizado en este sistema. Su perfil no tiene permisos para acceder. Contacte al administrador.']],
                     ], 422);
                 }
+            }
+        });
+
+        $exceptions->render(function (UnhandledMatchError $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 500,
+                    'message' => 'Error tecnico: no existe una vista asociada a su rol. El administrador ha sido notificado.',
+                    'data' => null,
+                    'errors' => [],
+                ], 500);
             }
         });
 
