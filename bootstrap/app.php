@@ -11,13 +11,14 @@
  *
  * @mantenimiento Antigravity <support@google.com>
  *
- * @version      1.2.0
+ * @version      1.3.0
  *
  * @creado       2026-05-26
  *
  * @modificado   2026-05-26
  *
  * @cambios      2026-05-26 - Actualización de manejadores de excepciones de autenticación y roles según RF-01 y RF-02.
+ *               2026-05-26 - Actualización de manejadores de excepciones de base de datos y ModelNotFound según requerimientos de edificios y aulas.
  */
 
 declare(strict_types=1);
@@ -28,6 +29,7 @@ use App\Http\Middleware\SamAuthMiddleware;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -194,6 +196,26 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            if ($request->expectsJson()) {
+                $modelClass = $e->getModel();
+                $message = 'El recurso solicitado no existe o fue eliminado.';
+                if (str_contains($modelClass, 'Building')) {
+                    $message = 'El edificio solicitado no existe o no esta registrado en el sistema.';
+                } elseif (str_contains($modelClass, 'Classroom')) {
+                    $message = 'El aula solicitada no existe o no esta registrada en el sistema.';
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 404,
+                    'message' => $message,
+                    'data' => null,
+                    'errors' => [],
+                ], 404);
+            }
+        });
+
         $exceptions->render(function (QueryException $e, Request $request) {
             Log::error('Error de base de datos en solicitud API/Ajax', [
                 'ip' => $request->ip(),
@@ -217,13 +239,25 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], 422);
                 }
 
+                // Si es una consulta de lectura (SELECT)
+                if (stripos($e->getSql() ?? '', 'select') === 0) {
+                    return response()->json([
+                        'success' => false,
+                        'statusCode' => 500,
+                        'message' => 'Error al consultar la base de datos. Intente nuevamente.',
+                        'error' => 'Error al consultar la base de datos. Intente nuevamente.',
+                        'data' => null,
+                        'errors' => ['database' => ['Error al consultar la base de datos. Intente nuevamente.']],
+                    ], 500);
+                }
+
                 return response()->json([
                     'success' => false,
                     'statusCode' => 500,
-                    'message' => 'Error en base de datos. Intente nuevamente o contacte al administrador.',
-                    'error' => 'Error en base de datos. Intente nuevamente o contacte al administrador.',
+                    'message' => 'Error al guardar en la base de datos. Intente nuevamente o contacte al administrador.',
+                    'error' => 'Error al guardar en la base de datos. Intente nuevamente o contacte al administrador.',
                     'data' => null,
-                    'errors' => ['database' => ['Error en base de datos. Intente nuevamente o contacte al administrador.']],
+                    'errors' => ['database' => ['Error al guardar en la base de datos. Intente nuevamente o contacte al administrador.']],
                 ], 500);
             }
         });

@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Refactorización: compactación y uso de created()
+ *               2026-05-26 - Actualización de mensajes de error de la API de aulas según requerimientos.
  */
 
 declare(strict_types=1);
@@ -50,7 +51,7 @@ class GamaClassroomController extends Controller
     {
         $classroom = $this->service->getById($id);
         if (! $classroom) {
-            return $this->error('Aula no encontrada.', 404);
+            return $this->error('El aula solicitada no existe o no esta registrada en el sistema.', 404);
         }
 
         return $this->success(new ClassroomResource($classroom));
@@ -68,7 +69,7 @@ class GamaClassroomController extends Controller
         $this->authorize('update', Classroom::class);
         $classroom = $this->service->update($id, $request->validated());
         if (! $classroom) {
-            return $this->error('Aula no encontrada.', 404);
+            return $this->error('El aula solicitada no existe o no esta registrada en el sistema.', 404);
         }
 
         return $this->success(new ClassroomResource($classroom));
@@ -79,7 +80,7 @@ class GamaClassroomController extends Controller
         $this->authorize('delete', Classroom::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Aula no encontrada.', 404);
+            return $this->error('El aula solicitada no existe o no esta registrada en el sistema.', 404);
         }
 
         return $this->success(null, 'Aula eliminada exitosamente.');

@@ -11,13 +11,14 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-18
+ * @modificado   2026-05-26
  *
  * @cambios      2026-05-18 - Refactorización: compactación y uso de created()
+ *               2026-05-26 - Actualización de mensajes de error de la API de edificios según requerimientos.
  */
 
 declare(strict_types=1);
@@ -51,7 +52,7 @@ class GamaBuildingController extends Controller
     {
         $building = $this->service->getById($id);
         if (! $building) {
-            return $this->error('Edificio no encontrado.', 404);
+            return $this->error('El edificio solicitado no existe o no esta registrado en el sistema.', 404);
         }
 
         return $this->success(new BuildingResource($building));
@@ -69,7 +70,7 @@ class GamaBuildingController extends Controller
         $this->authorize('update', Building::class);
         $building = $this->service->update($id, $request->validated());
         if (! $building) {
-            return $this->error('Edificio no encontrado.', 404);
+            return $this->error('El edificio solicitado no existe o no esta registrado en el sistema.', 404);
         }
 
         return $this->success(new BuildingResource($building));
@@ -80,7 +81,7 @@ class GamaBuildingController extends Controller
         $this->authorize('delete', Building::class);
         $deleted = $this->service->delete($id);
         if (! $deleted) {
-            return $this->error('Edificio no encontrado.', 404);
+            return $this->error('El edificio solicitado no existe o no esta registrado en el sistema.', 404);
         }
 
         return $this->success(null, 'Edificio eliminado exitosamente.');
