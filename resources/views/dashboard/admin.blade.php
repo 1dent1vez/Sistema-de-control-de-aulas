@@ -3,14 +3,14 @@
  * G.A.M.A. SOLUTIONS S.A. de C.V.
  * "El factor de cambio en tu tecnología"
  *
- * @descripcion    Dashboard Administrativo con KPIs reales del API
+ * @descripcion    Dashboard Administrativo completamente responsive con paleta de colores y estilos oficiales de GAMA.
  * @autor          Equipo GAMA
  * @autorizador    Rubén Alejandro Nolasco Ruiz
  * @prueba         Diego Miguel Hernandez Fabela
  * @mantenimiento  Ghael Garcia Manjarrez
- * @version        1.0.0
+ * @version        1.2.0
  * @creado         19/05/2026
- * @modificado     19/05/2026
+ * @modificado     26/05/2026
  */
 --}}
 
@@ -19,84 +19,177 @@
 @section('title', 'Dashboard Administrativo - GAMA Solutions')
 
 @section('content')
-<style>
-  .dm-main { margin-left: var(--sidebar-width, 240px); min-height: 100vh; background: var(--ice-blue); padding: 28px 32px; }
-  .dm-head { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
-  .dm-title { font-size:26px; font-weight:700; color:var(--midnight); margin-bottom:4px; }
-  .dm-sub { color:var(--soft-steel); font-size:14px; }
-  .dm-actions { display:flex; gap:8px; flex-wrap:wrap; }
-  .dm-kpi-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:14px; margin-bottom:20px; }
-  .kpi-card { background:#fff; border:1px solid var(--mist-blue); border-radius:var(--radius-lg); padding:18px 20px; display:flex; gap:14px; align-items:center; }
-  .kpi-icon { width:44px; height:44px; border-radius:var(--radius-md); background:rgba(19,68,116,.08); color:var(--deep-blue); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
-  .kpi-val { font-size:24px; font-weight:800; color:var(--midnight); line-height:1.2; }
-  .kpi-val.shimmer { display:inline-block; width:40px; height:24px; background:linear-gradient(90deg,#e0e7ef 25%,#f0f4f8 50%,#e0e7ef 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; border-radius:6px; }
-  .kpi-label { font-size:12px; color:var(--soft-steel); }
-  .shimmer { background:linear-gradient(90deg,#e0e7ef 25%,#f0f4f8 50%,#e0e7ef 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; border-radius:6px; }
-  .shimmer-inline { display:inline-block; width:50px; height:14px; }
-  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  .dm-card { background:#fff; border:1px solid var(--mist-blue); border-radius:var(--radius-lg); overflow:hidden; }
-  .dm-card-h { padding:14px 18px; border-bottom:1px solid var(--mist-blue); display:flex; justify-content:space-between; align-items:center; }
-  .dm-card-h h2 { font-size:15px; font-weight:700; color:var(--deep-blue); }
-  .dm-card-h small { color:var(--soft-steel); font-size:12px; }
-  .dm-table-wrap { overflow-x:auto; }
-  .dm-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .dm-table thead th { background:var(--deep-blue); color:#fff; text-align:left; padding:11px 14px; font-weight:600; }
-  .dm-table tbody tr:nth-child(odd){ background:var(--light-blue);}
-  .dm-table tbody tr:nth-child(even){ background:#fff;}
-  .dm-table tbody tr:hover{ background:var(--light-orange);}
-  .dm-table td{ padding:11px 14px; border-bottom:1px solid var(--mist-blue); }
-  @media (max-width:1024px){ .dm-main{ margin-left:0; } }
-</style>
-
-<div class="dm-main">
-  <div class="dm-head">
-    <div>
-      <h1 class="dm-title">Dashboard Administrativo</h1>
-      <p class="dm-sub">Resumen operativo del Sistema de Control de Aulas.</p>
+<div class="main-content">
+  <!-- HEADER DE BIENVENIDA -->
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Panel de Control</h1>
+      <p>Bienvenido, <strong id="welcomeAdminName">Administrador</strong></p>
     </div>
-    <div class="dm-actions">
-      <a href="{{ route('edificios') }}" class="btn btn-secondary btn-sm"><i class="fas fa-building"></i> Edificios</a>
-      <a href="{{ route('aulas') }}" class="btn btn-secondary btn-sm"><i class="fas fa-school"></i> Aulas</a>
-      <a href="{{ route('horarios.manual') }}" class="btn btn-secondary btn-sm"><i class="fas fa-calendar-alt"></i> Horarios</a>
-      <a href="{{ route('codigosqr') }}" class="btn btn-secondary btn-sm"><i class="fas fa-qrcode"></i> QR</a>
+    <div class="quick-actions">
+      <span class="status status-active" id="todayLabel">...</span>
     </div>
   </div>
 
-  <div class="dm-kpi-grid" id="kpiGrid">
-    <article class="kpi-card">
+  <!-- STATS CARDS -->
+  <div class="kpi-grid">
+    <!-- Edificios -->
+    <article class="kpi-card admin-kpi-card">
       <div class="kpi-icon"><i class="fas fa-building"></i></div>
-      <div><div class="kpi-val shimmer" id="kpiBuildings"></div><div class="kpi-label">Total edificios</div></div>
+      <div class="kpi-content">
+        <span class="kpi-value shimmer" id="kpiBuildings"></span>
+        <span class="kpi-label">Edificios</span>
+      </div>
     </article>
-    <article class="kpi-card">
+
+    <!-- Aulas -->
+    <article class="kpi-card admin-kpi-card">
       <div class="kpi-icon"><i class="fas fa-school"></i></div>
-      <div><div class="kpi-val shimmer" id="kpiClassrooms"></div><div class="kpi-label">Total aulas</div></div>
+      <div class="kpi-content">
+        <span class="kpi-value shimmer" id="kpiClassrooms"></span>
+        <span class="kpi-label">Total Aulas</span>
+      </div>
     </article>
-    <article class="kpi-card">
-      <div class="kpi-icon"><i class="fa-solid fa-book-open-reader"></i></div>
-      <div><div class="kpi-val shimmer" id="kpiSchedules"></div><div class="kpi-label">Clases activas</div></div>
+
+    <!-- Clases Activas -->
+    <article class="kpi-card admin-kpi-card">
+      <div class="kpi-icon"><i class="fas fa-book-open"></i></div>
+      <div class="kpi-content">
+        <span class="kpi-value shimmer" id="kpiSchedules"></span>
+        <span class="kpi-label">Clases Activas</span>
+      </div>
     </article>
-    <article class="kpi-card">
+
+    <!-- Horarios de Hoy -->
+    <article class="kpi-card admin-kpi-card">
+      <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+      <div class="kpi-content">
+        <span class="kpi-value shimmer" id="kpiTodaySchedules"></span>
+        <span class="kpi-label">Clases Hoy</span>
+      </div>
+    </article>
+
+    <!-- Semestre Activo -->
+    <article class="kpi-card admin-kpi-card">
       <div class="kpi-icon"><i class="fas fa-graduation-cap"></i></div>
-      <div><div class="kpi-val shimmer" id="kpiSemester"></div><div class="kpi-label">Semestre activo</div></div>
+      <div class="kpi-content">
+        <span class="kpi-value shimmer" id="kpiSemester"></span>
+        <span class="kpi-label">Semestre Activo</span>
+      </div>
     </article>
-    <article class="kpi-card">
+
+    <!-- Ausencias -->
+    <article class="kpi-card admin-kpi-card">
       <div class="kpi-icon"><i class="fas fa-user-clock"></i></div>
-      <div><div class="kpi-val shimmer" id="kpiAbsences"></div><div class="kpi-label">Ausencias (mes actual)</div></div>
+      <div class="kpi-content">
+        <span class="kpi-value shimmer" id="kpiAbsences"></span>
+        <span class="kpi-label">Ausencias (Mes)</span>
+      </div>
     </article>
   </div>
 
-  <section class="dm-card">
-    <div class="dm-card-h">
-      <h2>Horarios de hoy</h2>
-      <small id="todayLabel"></small>
+  <!-- MIDDLE GRID: PROGRESO SEMESTRE + ACCESOS DIRECTOS -->
+  <div class="charts-grid">
+    <!-- Estado del Semestre -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-tasks"></i> Estado del Semestre</h2>
+        <span class="status status-active" id="semesterStatusBadge">Vigente</span>
+      </div>
+      <div class="card-body">
+        <!-- Si hay semestre vigente -->
+        <div id="semesterProgressSection" style="display: none; background-color: var(--ice-blue); padding: 20px; border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 12px; color: var(--midnight);">
+            <span id="semesterName">Semestre 2026-I</span>
+            <span id="semesterPercentText">0%</span>
+          </div>
+          <div style="width: 100%; height: 12px; background: var(--mist-blue); border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+            <div id="semesterProgressBar" style="height: 100%; background: var(--corp-orange); border-radius: 10px; width: 0%; transition: width 1s ease;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--soft-steel); font-weight: 500;">
+            <span id="semesterDateRange">-- al --</span>
+            <span id="semesterElapsed">0 de 0 días</span>
+          </div>
+        </div>
+
+        <!-- Si no hay semestre vigente -->
+        <div id="noSemesterAlert" style="display: none; background-color: rgba(201, 168, 120, 0.15); border: 1px solid rgba(201, 168, 120, 0.3); border-radius: var(--radius-md); padding: 16px 20px; color: var(--status-pending); font-weight: 500;">
+          <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+          Sin semestre vigente. Registre o active uno para habilitar los horarios. 
+          <a href="{{ route('horarios.semestres.index') }}" style="color: var(--corp-orange); font-weight: 600; text-decoration: underline;">Registrar Semestre</a>
+        </div>
+      </div>
     </div>
-    <div class="dm-table-wrap">
-      <table class="dm-table">
-        <thead><tr><th>Hora</th><th>Aula</th><th>Materia</th><th>Docente</th><th>Grupo</th><th>Edificio</th></tr></thead>
-        <tbody id="scheduleBody"><tr><td colspan="6" style="text-align:center;color:var(--soft-steel);padding:26px;"><span class="shimmer shimmer-inline"></span> Cargando...</td></tr></tbody>
+
+    <!-- Accesos Directos -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-compass"></i> Accesos Directos</h2>
+      </div>
+      <div class="card-body">
+        <div class="quick-actions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; width: 100%;">
+          <a href="{{ route('aulas') }}" class="btn btn-secondary" style="height: auto; padding: 16px 12px; flex-direction: column; gap: 8px; border-radius: var(--radius-md);">
+            <i class="fas fa-school" style="font-size: 20px;"></i>
+            <span style="font-size: 13px;">Ver Aulas</span>
+          </a>
+          <a href="{{ route('codigosqr') }}" class="btn btn-secondary" style="height: auto; padding: 16px 12px; flex-direction: column; gap: 8px; border-radius: var(--radius-md);">
+            <i class="fas fa-qrcode" style="font-size: 20px;"></i>
+            <span style="font-size: 13px;">Generar QR</span>
+          </a>
+          <a href="{{ route('edificios') }}" class="btn btn-secondary" style="height: auto; padding: 16px 12px; flex-direction: column; gap: 8px; border-radius: var(--radius-md);">
+            <i class="fas fa-building" style="font-size: 20px;"></i>
+            <span style="font-size: 13px;">Edificios</span>
+          </a>
+          <a href="{{ route('horarios.manual') }}" class="btn btn-secondary" style="height: auto; padding: 16px 12px; flex-direction: column; gap: 8px; border-radius: var(--radius-md);">
+            <i class="fas fa-calendar-alt" style="font-size: 20px;"></i>
+            <span style="font-size: 13px;">Horarios</span>
+          </a>
+          <a href="{{ route('horarios.importar') }}" class="btn btn-secondary" style="height: auto; padding: 16px 12px; flex-direction: column; gap: 8px; border-radius: var(--radius-md);">
+            <i class="fas fa-file-import" style="font-size: 20px;"></i>
+            <span style="font-size: 13px;">Importar</span>
+          </a>
+          <a href="{{ route('horarios.semestres.index') }}" class="btn btn-secondary" style="height: auto; padding: 16px 12px; flex-direction: column; gap: 8px; border-radius: var(--radius-md);">
+            <i class="fas fa-calendar-check" style="font-size: 20px;"></i>
+            <span style="font-size: 13px;">Semestres</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN TABLA DE HORARIOS -->
+  <section class="card table-card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fas fa-calendar-day"></i> Horarios de Hoy</h2>
+    </div>
+    
+    <div class="table-container">
+      <table class="dynamic-table admin-schedule-table">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Aula</th>
+            <th>Materia</th>
+            <th>Docente</th>
+            <th>Grupo</th>
+            <th>Edificio</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody">
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--soft-steel); padding: 26px;">
+              <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Cargando horarios...
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </section>
+
+  <!-- FOOTER -->
+  <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid var(--mist-blue); font-size: 12px; color: var(--soft-steel); font-weight: 500;">
+    <p>G.A.M.A. Solutions S.A. de C.V. — Sistema de Control de Aulas v1.2.0</p>
+  </div>
 </div>
 
 <script>
@@ -111,6 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var year = now.getFullYear();
   var monthStart = year + '-' + month + '-01';
   var monthEnd = year + '-' + month + '-' + new Date(year, now.getMonth() + 1, 0).getDate();
+  
   $('todayLabel').textContent = now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   var weekdayMap = { 0: 'DOM', 1: 'LUN', 2: 'MAR', 3: 'MIE', 4: 'JUE', 5: 'VIE', 6: 'SAB' };
@@ -123,14 +217,29 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function buildUrl(base, params) {
-    var q = Object.keys(params).filter(function (k) { return params[k] !== undefined && params[k] !== null && params[k] !== ''; }).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    var q = Object.keys(params).filter(function (k) { 
+      return params[k] !== undefined && params[k] !== null && params[k] !== ''; 
+    }).map(function (k) { 
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); 
+    }).join('&');
     return base + (q ? '?' + q : '');
   }
 
-  function handleUnauthorized(r) { if (r.status === 401) { localStorage.clear(); window.location.href = '/'; throw new Error('No autenticado'); } return r; }
+  function handleUnauthorized(r) { 
+    if (r.status === 401) { 
+      localStorage.clear(); 
+      window.location.href = '/'; 
+      throw new Error('No autenticado'); 
+    } 
+    return r; 
+  }
 
   function fetchJson(url) {
-    return fetch(url, { headers: HEADERS }).then(handleUnauthorized).then(function (r) { return r.ok ? r.json() : { data: [] }; });
+    return fetch(url, { headers: HEADERS })
+      .then(handleUnauthorized)
+      .then(function (r) { 
+        return r.ok ? r.json() : { data: [] }; 
+      });
   }
 
   function getClassroomName(map, id) {
@@ -146,51 +255,101 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchJson('/api/v1/classrooms'),
     fetchJson('/api/v1/class-schedules'),
     fetchJson('/api/v1/semesters/current'),
-    fetchJson(buildUrl('/api/v1/teacher-absences', { start_date: monthStart, end_date: monthEnd }))
+    fetchJson(buildUrl('/api/v1/teacher-absences', { start_date: monthStart, end_date: monthEnd })),
+    fetchJson('/api/v1/auth/me')
   ]).then(function (results) {
     var buildingsData = results[0].data || [];
     var classroomsData = results[1].data || [];
     var schedulesData = results[2].data || [];
     var semesterData = results[3].data || null;
     var absencesData = results[4].data || [];
+    var meData = results[5].data || null;
 
     var buildingMap = {};
     buildingsData.forEach(function (b) { buildingMap[b.id] = b.name; });
     var classroomMap = {};
     classroomsData.forEach(function (c) { classroomMap[c.id] = c.classroomName; });
 
+    // Cargar Nombre de Admin en Header de Bienvenida
+    if (meData) {
+      $('welcomeAdminName').textContent = meData.fullName || meData.externalId || 'Administrador';
+    }
+
+    // Set KPIs
+    var todaySchedules = schedulesData.filter(function (s) { return s.weekday === todayWeekday; });
     setKpi('kpiBuildings', buildingsData.length);
     setKpi('kpiClassrooms', classroomsData.length);
     setKpi('kpiSchedules', schedulesData.length);
+    setKpi('kpiTodaySchedules', todaySchedules.length);
     setKpi('kpiSemester', semesterData ? semesterData.name : 'N/A');
     setKpi('kpiAbsences', absencesData.length);
 
-    var tbody = $('scheduleBody');
-    var todaySchedules = schedulesData.filter(function (s) { return s.weekday === todayWeekday; });
+    // Calcular y renderizar progreso de semestre
+    if (semesterData && semesterData.startDate && semesterData.endDate) {
+      var start = new Date(semesterData.startDate + 'T00:00:00');
+      var end = new Date(semesterData.endDate + 'T00:00:00');
+      var today = new Date();
+      today.setHours(0,0,0,0);
+      
+      var totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      var elapsedDays = Math.round((today - start) / (1000 * 60 * 60 * 24)) + 1;
+      
+      if (elapsedDays < 0) elapsedDays = 0;
+      if (elapsedDays > totalDays) elapsedDays = totalDays;
+      
+      var percent = totalDays > 0 ? Math.round((elapsedDays / totalDays) * 100) : 0;
+      
+      $('semesterName').textContent = semesterData.name;
+      $('semesterDateRange').textContent = semesterData.startDate + ' al ' + semesterData.endDate;
+      $('semesterElapsed').textContent = elapsedDays + ' de ' + totalDays + ' días transcurridos';
+      $('semesterPercentText').textContent = percent + '%';
+      
+      // Activar transiciones después del render
+      setTimeout(function() {
+        $('semesterProgressBar').style.width = percent + '%';
+      }, 100);
+      
+      $('semesterProgressSection').style.display = 'block';
+      $('semesterStatusBadge').style.display = 'inline-block';
+      $('noSemesterAlert').style.display = 'none';
+    } else {
+      $('semesterProgressSection').style.display = 'none';
+      $('semesterStatusBadge').style.display = 'none';
+      $('noSemesterAlert').style.display = 'block';
+    }
 
+    // Renderizar Horarios de Hoy
+    var tbody = $('scheduleBody');
     if (todaySchedules.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--soft-steel);padding:26px;">No hay clases programadas para hoy.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px;">No hay clases programadas para hoy.</td></tr>';
       return;
     }
 
     tbody.innerHTML = todaySchedules.map(function (s) {
       var hora = (s.startTime || '').substring(0, 5) + ' - ' + (s.endTime || '').substring(0, 5);
-      return '<tr>' +
+      var roomInfo = classroomsData.find(function (c) { return c.id === s.classroomId; });
+      var roomName = roomInfo ? roomInfo.classroomName : 'Desconocido';
+      var bldId = roomInfo ? roomInfo.buildingId : null;
+      var bldName = getBuildingName(buildingMap, bldId);
+      
+      return '<tr class="schedule-row" style="cursor:pointer;" onclick="window.location.href=\'/aulas?aula=' + encodeURIComponent(roomName) + '\'">' +
         '<td>' + hora + '</td>' +
-        '<td>' + getClassroomName(classroomMap, s.classroomId) + '</td>' +
+        '<td>' + roomName + '</td>' +
         '<td>' + (s.subjectName || '--') + '</td>' +
         '<td>' + (s.teacherExternalId || '--') + '</td>' +
         '<td>' + (s.groupName || '--') + '</td>' +
-        '<td>' + getBuildingName(buildingMap, classroomsData.find(function (c) { return c.id === s.classroomId; })?.buildingId) + '</td>' +
+        '<td>' + bldName + '</td>' +
         '</tr>';
     }).join('');
-  })['catch'](function () {
+  })['catch'](function (err) {
+    console.error("Error al cargar los datos:", err);
     setKpi('kpiBuildings', 'Error');
     setKpi('kpiClassrooms', 'Error');
     setKpi('kpiSchedules', 'Error');
+    setKpi('kpiTodaySchedules', 'Error');
     setKpi('kpiSemester', 'Error');
     setKpi('kpiAbsences', 'Error');
-    $('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#b00000;padding:26px;">Error al cargar datos del servidor</td></tr>';
+    $('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:26px;"><i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i> Error al cargar datos del servidor</td></tr>';
   });
 });
 </script>
