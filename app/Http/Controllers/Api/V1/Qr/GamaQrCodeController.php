@@ -254,4 +254,18 @@ class GamaQrCodeController extends Controller
             ], 500);
         }
     }
+
+    public function validateToken(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $request->validate(['token' => 'required|string']);
+
+        $qr = \App\Models\QrCode::where('token', $request->token)
+            ->where('is_active', true)
+            ->first();
+
+        return response()->json([
+            'valid' => $qr !== null,
+            'classroom_id' => $qr?->classroom_id,
+        ]);
+    }
 }

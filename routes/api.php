@@ -113,6 +113,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/{id}/file', [GamaQrCodeController::class, 'file'])->name('file');
     });
 
+    Route::post('qr/validate', [GamaQrCodeController::class, 'validateToken'])
+        ->name('api.qr.validate');
+
     // Auth — público (rate limit: auth)
     Route::match(['get', 'post'], 'auth/captcha', [AuthController::class, 'captcha'])->name('auth.captcha')->middleware('throttle:auth');
     Route::post('auth/validate-captcha', [AuthController::class, 'validateCaptcha'])->name('auth.validate-captcha')->middleware('throttle:auth');

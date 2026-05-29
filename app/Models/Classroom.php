@@ -69,4 +69,10 @@ class Classroom extends Model
     {
         return $this->hasOne(QrCode::class, 'classroom_id', 'classroom_id')->where('is_active', true);
     }
+
+    public function classSchedules(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ClassSchedule::class, 'classroom_id', 'classroom_id');
+    }
 }
+
