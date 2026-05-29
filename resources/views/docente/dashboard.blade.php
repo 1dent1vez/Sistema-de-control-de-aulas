@@ -72,9 +72,10 @@
        <h1 class="dm-title">Mi Dashboard</h1>
        <p class="dm-sub">Resumen de mis actividades y clases programadas.</p>
      </div>
-     <div class="dm-actions">
-       <a href="{{ route('docente.estatus') }}" class="btn btn-primary btn-sm"><i class="fas fa-calendar-alt"></i> Estatus y Ausencias</a>
-     </div>
+      <div class="dm-actions">
+        <a href="{{ route('docente.estatus') }}#registrar" class="btn btn-primary btn-sm" style="background: var(--corp-orange); border-color: var(--corp-orange); color: white;"><i class="fas fa-plus-circle"></i> Registrar Nueva Ausencia</a>
+        <a href="{{ route('docente.estatus') }}" class="btn btn-secondary btn-sm"><i class="fas fa-calendar-alt"></i> Estatus y Ausencias</a>
+      </div>
    </div>
 
    <!-- Alerta de permisos (mensaje flash) -->
@@ -100,18 +101,85 @@
      </article>
    </div>
 
-   <section class="dm-card">
-     <div class="dm-card-h">
-       <h2>Mis clases de hoy</h2>
-       <small id="todayLabel"></small>
-     </div>
-     <div class="dm-table-wrap">
-       <table class="dm-table">
-         <thead><tr><th>Hora</th><th>Aula</th><th>Materia</th><th>Grupo</th><th>Edificio</th></tr></thead>
-         <tbody id="scheduleBody"><tr><td colspan="5" style="text-align:center;color:var(--soft-steel);padding:26px;"><span class="shimmer shimmer-inline"></span> Cargando mis clases...</td></tr></tbody>
-       </table>
-     </div>
-   </section>
+    <section class="dm-card">
+      <div class="dm-card-h">
+        <h2>Mis clases de hoy</h2>
+        <small id="todayLabel"></small>
+      </div>
+      <div class="dm-table-wrap">
+        <table class="dm-table">
+          <thead><tr><th>Hora</th><th>Aula</th><th>Materia</th><th>Grupo</th><th>Edificio</th></tr></thead>
+          <tbody id="scheduleBody"><tr><td colspan="5" style="text-align:center;color:var(--soft-steel);padding:26px;"><span class="shimmer shimmer-inline"></span> Cargando mis clases...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-top: 20px;">
+      <!-- Columna izquierda: Mis horarios asignados (Semestre) -->
+      <section class="dm-card">
+        <div class="dm-card-h">
+          <h2>Mis Horarios Asignados (Semestre Actual)</h2>
+          <small id="semesterLabel">Cargando...</small>
+        </div>
+        <div class="dm-table-wrap">
+          <table class="dm-table">
+            <thead>
+              <tr>
+                <th>Materia</th>
+                <th>Grupo</th>
+                <th>Aula</th>
+                <th>Día</th>
+                <th>Horario</th>
+              </tr>
+            </thead>
+            <tbody id="mySchedulesBody">
+              <tr>
+                <td colspan="5" style="text-align:center;color:var(--soft-steel);padding:26px;">
+                  <span class="shimmer shimmer-inline"></span> Cargando horarios asignados...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Columna derecha: Resumen de Ausencias -->
+      <section class="dm-card">
+        <div class="dm-card-h">
+          <h2>Resumen de Mis Ausencias</h2>
+        </div>
+        <div class="doc-card-b" style="padding: 20px;">
+          <!-- Sub-grid de KPIs de Ausencias -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+            <div style="background: var(--ice-blue); border: 1px solid var(--mist-blue); padding: 12px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 20px; font-weight: 800; color: var(--midnight);" id="absTotal">0</div>
+              <div style="font-size: 11px; color: var(--soft-steel); font-weight: 600;">Total</div>
+            </div>
+            <div style="background: rgba(90,154,90,0.1); border: 1px solid rgba(90,154,90,0.2); padding: 12px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 20px; font-weight: 800; color: var(--status-active);" id="absConfirmed">0</div>
+              <div style="font-size: 11px; color: var(--status-active); font-weight: 600;">Confirmadas</div>
+            </div>
+            <div style="background: rgba(242,139,44,0.1); border: 1px solid rgba(242,139,44,0.2); padding: 12px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 20px; font-weight: 800; color: var(--deep-orange);" id="absPending">0</div>
+              <div style="font-size: 11px; color: var(--deep-orange); font-weight: 600;">Pendientes</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <a href="{{ route('docente.estatus') }}#registrar" class="btn btn-primary" style="width: 100%; text-align: center; display: block; background: var(--corp-orange); border-color: var(--corp-orange); color: white;">
+              <i class="fas fa-plus"></i> Registrar Nueva Ausencia
+            </a>
+          </div>
+
+          <div>
+            <h3 style="font-size: 13px; font-weight: 700; color: var(--midnight); margin-bottom: 10px;">Últimas ausencias registradas</h3>
+            <div id="myRecentAbsencesList" style="display: grid; gap: 8px; max-height: 200px; overflow-y: auto;">
+              <div style="text-align: center; color: var(--soft-steel); padding: 10px; font-size: 12px;">Cargando...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
  </div>
 
  <script>
@@ -141,88 +209,156 @@
      return fetch(url, { headers: HEADERS }).then(handleUnauthorized).then(function (r) { return r.ok ? r.json() : { data: [] }; });
    }
 
-   // Cargar perfil en Banner
-   fetchJson('/api/v1/auth/me').then(function (resp) {
-     if (resp && resp.data) {
-       var me = resp.data;
-       $('welcomeUser').textContent = '¡Hola, ' + (me.fullName || 'Docente') + '!';
-       
-       // Buscar información con su teacher_external_id real
-       var extId = me.externalId || '';
-       loadTeacherData(extId);
-     }
-   })['catch'](function(err) {
-     console.error("Error cargando perfil:", err);
-   });
+    // Cargar perfil en Banner
+    fetchJson('/api/v1/auth/me').then(function (resp) {
+      if (resp && resp.data) {
+        var me = resp.data;
+        $('welcomeUser').textContent = '¡Hola, ' + (me.fullName || 'Docente') + '!';
+        
+        // Buscar información
+        loadTeacherData();
+      }
+    })['catch'](function(err) {
+      console.error("Error cargando perfil:", err);
+    });
 
-   function loadTeacherData(teacherExtId) {
-     Promise.all([
-       fetchJson('/api/v1/buildings'),
-       fetchJson('/api/v1/classrooms'),
-       fetchJson('/api/v1/class-schedules?teacher_external_id=' + encodeURIComponent(teacherExtId)),
-       fetchJson('/api/v1/teacher-absences')
-     ]).then(function (results) {
-       var buildingsData = results[0].data || [];
-       var classroomsData = results[1].data || [];
-       var schedulesData = results[2].data || [];
-       var absencesData = results[3].data || [];
+    function loadTeacherData() {
+      Promise.all([
+        fetchJson('/api/v1/buildings'),
+        fetchJson('/api/v1/classrooms'),
+        fetchJson('/api/v1/my-schedules'),
+        fetchJson('/api/v1/my-absences')
+      ]).then(function (results) {
+        var buildingsData = results[0].data || [];
+        var classroomsData = results[1].data || [];
+        var schedulesData = results[2].data || [];
+        var absencesData = results[3].data || [];
 
-       var buildingMap = {};
-       buildingsData.forEach(function (b) { buildingMap[b.id] = b.name; });
-       var classroomMap = {};
-       classroomsData.forEach(function (c) { classroomMap[c.id] = c.classroomName; });
+        var buildingMap = {};
+        buildingsData.forEach(function (b) { buildingMap[b.id] = b.name; });
+        var classroomMap = {};
+        classroomsData.forEach(function (c) { classroomMap[c.id] = c.classroomName; });
 
-       // Filtrar materias únicas del docente
-       var uniqueSubjects = {};
-       schedulesData.forEach(function (s) {
-         if (s.subjectName) uniqueSubjects[s.subjectName] = true;
-       });
+        // Filtrar materias únicas del docente
+        var uniqueSubjects = {};
+        schedulesData.forEach(function (s) {
+          if (s.subjectName) uniqueSubjects[s.subjectName] = true;
+        });
 
-       // Filtrar clases de hoy
-       var todaySchedules = schedulesData.filter(function (s) { return s.weekday === todayWeekday; });
+        // Filtrar clases de hoy
+        var todaySchedules = schedulesData.filter(function (s) { return s.weekday === todayWeekday; });
 
-       // Contar aulas ocupadas hoy
-       var uniqueRooms = {};
-       todaySchedules.forEach(function (s) {
-         uniqueRooms[s.classroomId] = true;
-       });
+        // Contar aulas ocupadas hoy
+        var uniqueRooms = {};
+        todaySchedules.forEach(function (s) {
+          uniqueRooms[s.classroomId] = true;
+        });
 
-       setKpi('kpiClasses', Object.keys(uniqueSubjects).length);
-       setKpi('kpiAbsences', absencesData.length);
-       setKpi('kpiRooms', Object.keys(uniqueRooms).length);
+        setKpi('kpiClasses', Object.keys(uniqueSubjects).length);
+        setKpi('kpiAbsences', absencesData.length);
+        setKpi('kpiRooms', Object.keys(uniqueRooms).length);
 
-       var tbody = $('scheduleBody');
-       if (todaySchedules.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--soft-steel);padding:26px;">No tienes clases programadas para hoy.</td></tr>';
-         return;
-       }
+        var tbody = $('scheduleBody');
+        if (todaySchedules.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--soft-steel);padding:26px;">No tienes clases programadas para hoy.</td></tr>';
+        } else {
+          tbody.innerHTML = todaySchedules.map(function (s) {
+            var hora = (s.startTime || '').substring(0, 5) + ' - ' + (s.endTime || '').substring(0, 5);
+            var room = classroomsData.find(function (c) { return c.id === s.classroomId; });
+            var bldName = room ? getBuildingName(buildingMap, room.buildingId) : 'Desconocido';
+            var roomName = room ? room.classroomName : 'Aula #' + s.classroomId;
 
-       tbody.innerHTML = todaySchedules.map(function (s) {
-         var hora = (s.startTime || '').substring(0, 5) + ' - ' + (s.endTime || '').substring(0, 5);
-         var room = classroomsData.find(function (c) { return c.id === s.classroomId; });
-         var bldName = room ? getBuildingName(buildingMap, room.buildingId) : 'Desconocido';
-         var roomName = room ? room.classroomName : 'Aula #' + s.classroomId;
+            return '<tr>' +
+              '<td>' + hora + '</td>' +
+              '<td>' + roomName + '</td>' +
+              '<td>' + (s.subjectName || '--') + '</td>' +
+              '<td>' + (s.groupName || '--') + '</td>' +
+              '<td>' + bldName + '</td>' +
+              '</tr>';
+          }).join('');
+        }
 
-         return '<tr>' +
-           '<td>' + hora + '</td>' +
-           '<td>' + roomName + '</td>' +
-           '<td>' + (s.subjectName || '--') + '</td>' +
-           '<td>' + (s.groupName || '--') + '</td>' +
-           '<td>' + bldName + '</td>' +
-           '</tr>';
-       }).join('');
-     })['catch'](function (err) {
-       console.error("Error al cargar datos del docente:", err);
-       setKpi('kpiClasses', 'Error');
-       setKpi('kpiAbsences', 'Error');
-       setKpi('kpiRooms', 'Error');
-       $('scheduleBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#b00000;padding:26px;">Error al cargar datos del servidor</td></tr>';
-     });
-   }
+        // ==========================================
+        // NUEVAS SECCIONES REPLICADAS
+        // ==========================================
 
-   function getBuildingName(map, id) {
-     return map[id] || 'Desconocido';
-   }
+        // 1. Mis Horarios Asignados (Semestre Actual)
+        var mySchedulesTbody = $('mySchedulesBody');
+        var semesterLabel = $('semesterLabel');
+        if (schedulesData.length === 0) {
+          mySchedulesTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--soft-steel);padding:26px;">No tienes horarios asignados para este semestre.</td></tr>';
+          semesterLabel.textContent = 'Sin semestre activo';
+        } else {
+          if (schedulesData[0] && schedulesData[0].semesterId) {
+            semesterLabel.textContent = 'Semestre Activo';
+          } else {
+            semesterLabel.textContent = 'Semestre Activo';
+          }
+
+          var diasEsp = { 'sunday': 'DOM', 'monday': 'LUN', 'tuesday': 'MAR', 'wednesday': 'MIE', 'thursday': 'JUE', 'friday': 'VIE', 'saturday': 'SAB' };
+          
+          mySchedulesTbody.innerHTML = schedulesData.map(function (s) {
+            var hora = (s.startTime || '').substring(0, 5) + ' - ' + (s.endTime || '').substring(0, 5);
+            var room = classroomsData.find(function (c) { return c.id === s.classroomId; });
+            var roomName = room ? room.classroomName : 'Aula #' + s.classroomId;
+            var dia = diasEsp[s.weekday.toLowerCase()] || s.weekday.toUpperCase();
+
+            return '<tr>' +
+              '<td style="font-weight:600;color:var(--midnight);">' + (s.subjectName || '--') + '</td>' +
+              '<td>' + (s.groupName || '--') + '</td>' +
+              '<td>' + roomName + '</td>' +
+              '<td style="font-weight:600;color:var(--corp-orange);">' + dia + '</td>' +
+              '<td>' + hora + '</td>' +
+              '</tr>';
+          }).join('');
+        }
+
+        // 2. Resumen de Mis Ausencias y Lista de Ausencias Recientes
+        var totalAbs = absencesData.length;
+        var confirmedAbs = absencesData.filter(function (a) { return a.isConfirmed; }).length;
+        var pendingAbs = totalAbs - confirmedAbs;
+
+        $('absTotal').textContent = totalAbs;
+        $('absConfirmed').textContent = confirmedAbs;
+        $('absPending').textContent = pendingAbs;
+
+        var recList = $('myRecentAbsencesList');
+        if (absencesData.length === 0) {
+          recList.innerHTML = '<div style="text-align: center; color: var(--soft-steel); padding: 20px; font-size: 12px;">No tienes ausencias registradas.</div>';
+        } else {
+          var sortedAbs = absencesData.slice().sort(function (a, b) {
+            return b.id - a.id;
+          });
+
+          recList.innerHTML = sortedAbs.slice(0, 5).map(function (a) {
+            var typeName = a.absenceType ? a.absenceType.name : 'Ausencia';
+            var statusBadge = a.isConfirmed 
+              ? '<span style="color:var(--status-active);font-weight:700;font-size:11px;">Confirmado</span>' 
+              : '<span style="color:var(--deep-orange);font-weight:700;font-size:11px;">Pendiente</span>';
+
+            return '<div style="border:1px solid var(--mist-blue);border-radius:8px;padding:10px;background:var(--ice-blue);font-size:12px;margin-bottom:8px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+                '<strong style="color:var(--deep-blue);">' + typeName + '</strong>' +
+                statusBadge +
+              '</div>' +
+              '<div style="color:var(--dark-graphite);">Del <b>' + a.startDate + '</b> al <b>' + a.endDate + '</b></div>' +
+              (a.observations ? '<div style="margin-top:4px;color:var(--soft-steel);font-style:italic;">"' + a.observations + '"</div>' : '') +
+              '</div>';
+          }).join('');
+        }
+
+      })['catch'](function (err) {
+        console.error("Error al cargar datos del docente:", err);
+        setKpi('kpiClasses', 'Error');
+        setKpi('kpiAbsences', 'Error');
+        setKpi('kpiRooms', 'Error');
+        $('scheduleBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#b00000;padding:26px;">Error al cargar datos del servidor</td></tr>';
+      });
+    }
+
+    function getBuildingName(map, id) {
+      return map[id] || 'Desconocido';
+    }
  });
  </script>
  @endsection

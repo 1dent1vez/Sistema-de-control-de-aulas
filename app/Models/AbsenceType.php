@@ -32,7 +32,9 @@ class AbsenceType extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_absence_types';
+    protected $table = 'absence_types';
+
+    protected $primaryKey = 'absence_type_id';
 
     protected $fillable = [
         'name',

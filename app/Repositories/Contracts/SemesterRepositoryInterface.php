@@ -35,7 +35,7 @@ interface SemesterRepositoryInterface
 
     public function getCurrent(): ?Semester;
 
-    public function hasOverlap(int $institutionId, string $startDate, string $endDate, ?int $excludeId = null): bool;
+    public function hasOverlap(?int $institutionId, string $startDate, string $endDate, ?int $excludeId = null): bool;
 
     public function create(array $data): Semester;
 

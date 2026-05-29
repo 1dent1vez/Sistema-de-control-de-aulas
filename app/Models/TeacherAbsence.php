@@ -35,7 +35,9 @@ class TeacherAbsence extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_teacher_absences';
+    protected $table = 'teacher_absences';
+
+    protected $primaryKey = 'teacher_absence_id';
 
     protected $fillable = [
         'teacher_external_id',
@@ -57,14 +59,19 @@ class TeacherAbsence extends Model
 
     public function absenceType(): BelongsTo
     {
-        return $this->belongsTo(AbsenceType::class);
+        return $this->belongsTo(AbsenceType::class, 'absence_type_id', 'absence_type_id');
+    }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(SamIdentity::class, 'teacher_external_id', 'external_id');
     }
 
     public function classSchedules(): BelongsToMany
     {
         return $this->belongsToMany(
             ClassSchedule::class,
-            'gama_class_schedule_teacher_absence',
+            'class_schedule_teacher_absence',
             'teacher_absence_id',
             'class_schedule_id'
         );

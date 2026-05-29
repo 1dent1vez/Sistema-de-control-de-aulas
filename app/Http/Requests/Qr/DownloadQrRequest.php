@@ -37,7 +37,7 @@ class DownloadQrRequest extends FormRequest
     {
         return [
             'classroom_ids' => ['required', 'array', 'min:1'],
-            'classroom_ids.*' => ['required', 'integer', 'exists:gama_classrooms,id'],
+            'classroom_ids.*' => ['required', 'integer', 'exists:classrooms,classroom_id'],
             'format' => ['required', 'string', 'in:pdf,png'],
         ];
     }

@@ -119,7 +119,7 @@ class SamIdentityController extends Controller
     {
         $this->authorize('delete', SamIdentity::class);
         $identity = SamIdentity::where('external_id', $extId)->firstOrFail();
-        if ($identity->id === $request->user()->id) {
+        if ($identity->sam_id === $request->user()->sam_id) {
             return $this->error('No puedes auto-eliminarte.', 400);
         }
         $identity->forceDelete();

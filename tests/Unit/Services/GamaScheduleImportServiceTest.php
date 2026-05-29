@@ -48,12 +48,12 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->service = app(GamaScheduleImportService::class);
     $this->institution = Institution::factory()->create();
-    $this->semester = Semester::factory()->create(['institution_id' => $this->institution->id]);
-    $this->building = Building::factory()->create(['institution_id' => $this->institution->id]);
-    $this->level = Level::factory()->create(['building_id' => $this->building->id]);
+    $this->semester = Semester::factory()->create(['institution_id' => $this->institution->institution_id]);
+    $this->building = Building::factory()->create();
+    $this->level = Level::factory()->create();
     $this->classroom = Classroom::factory()->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
         'classroom_name' => 'A-101',
     ]);
 
@@ -95,15 +95,15 @@ it('can import valid schedules from csv', function (): void {
 
     $file = new UploadedFile($tempFile, 'schedules.csv', 'text/csv', null, true);
 
-    $result = $this->service->import($file, $this->semester->id, $batchId);
+    $result = $this->service->import($file, $this->semester->semester_id, $batchId);
 
     // Se importaron 3 registros (2 días para la fila 1 y 1 día para la fila 2)
     expect($result['imported'])->toBe(3)
         ->and($result['errors'])->toHaveCount(2);
 
-    $this->assertDatabaseHas('gama_class_schedules', [
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+    $this->assertDatabaseHas('class_schedules', [
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'teacher_external_id' => 'TCH-001',
         'subject_name' => 'Mathematics',
         'weekday' => 'monday',
@@ -128,7 +128,7 @@ it('handles validation errors and logs them in the report', function (): void {
 
     $file = new UploadedFile($tempFile, 'schedules.csv', 'text/csv', null, true);
 
-    $result = $this->service->import($file, $this->semester->id, $batchId);
+    $result = $this->service->import($file, $this->semester->semester_id, $batchId);
 
     expect($result['imported'])->toBe(1)
         ->and($result['errors'])->toHaveCount(3); // 1 exitoso + 2 descartados
@@ -158,7 +158,7 @@ it('rejects csv with missing columns', function (): void {
 
     $file = new UploadedFile($tempFile, 'schedules_missing.csv', 'text/csv', null, true);
 
-    $result = $this->service->import($file, $this->semester->id, $batchId);
+    $result = $this->service->import($file, $this->semester->semester_id, $batchId);
 
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)
@@ -175,7 +175,7 @@ it('handles corrupt file gracefully', function (): void {
 
     $file = new UploadedFile($tempFile, 'corrupt.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
 
-    $result = $this->service->import($file, $this->semester->id, $batchId);
+    $result = $this->service->import($file, $this->semester->semester_id, $batchId);
 
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)
@@ -188,7 +188,7 @@ it('handles database query exceptions gracefully by returning a clean error repo
     $mockRepo = mock(ClassScheduleRepositoryInterface::class);
     $mockRepo->shouldReceive('insertMultiple')->andThrow(new QueryException(
         'sqlite',
-        'insert into gama_class_schedules ...',
+        'insert into class_schedules ...',
         [],
         new \Exception('UNIQUE constraint failed: test')
     ));
@@ -203,7 +203,7 @@ it('handles database query exceptions gracefully by returning a clean error repo
 
     $file = new UploadedFile($tempFile, 'schedules.csv', 'text/csv', null, true);
 
-    $result = $service->import($file, $this->semester->id, $batchId);
+    $result = $service->import($file, $this->semester->semester_id, $batchId);
 
     expect($result['imported'])->toBe(0)
         ->and($result['errors'])->toHaveCount(1)

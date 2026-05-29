@@ -80,7 +80,7 @@ class GamaClassScheduleController extends Controller
 
         try {
             $data = $request->validated();
-            $data['semester_id'] = $semestreVigente->id;
+            $data['semester_id'] = $semestreVigente->semester_id;
 
             return $this->success(new ClassScheduleResource($this->service->create($data)), 'Horario creado exitosamente.', 201);
         } catch (\RuntimeException $e) {
@@ -117,7 +117,7 @@ class GamaClassScheduleController extends Controller
             }
 
             $data = $request->validated();
-            $data['semester_id'] = $semestreVigente->id;
+            $data['semester_id'] = $semestreVigente->semester_id;
 
             $updatedSchedule = $this->service->update($id, $data);
             if (! $updatedSchedule) {
@@ -128,6 +128,16 @@ class GamaClassScheduleController extends Controller
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
+    }
+
+    public function mySchedules(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $schedules = ClassSchedule::where('teacher_external_id', $user->external_id)
+            ->with(['classroom', 'semester'])
+            ->get();
+
+        return $this->success(ClassScheduleResource::collection($schedules));
     }
 
     public function destroy(int $id): JsonResponse

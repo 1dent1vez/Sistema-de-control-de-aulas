@@ -75,7 +75,7 @@ class GamaQrCodeService
 
             $token = (string) Str::uuid();
             $payload = [
-                'classroomId' => $classroom->id,
+                'classroomId' => $classroom->classroom_id,
                 'classroomName' => $classroom->classroom_name,
                 'buildingName' => $classroom->building?->name ?? '',
                 'token' => $token,
@@ -94,7 +94,7 @@ class GamaQrCodeService
                 new SvgImageBackEnd
             );
             $writer = new Writer($renderer);
-            $url = route('qr.aula.horario', ['aula_id' => $classroom->id]);
+            $url = route('qr.aula.horario', ['aula_id' => $classroom->classroom_id]);
             $qrImage = $writer->writeString($url);
 
             Storage::disk('local')->put($filePath, $qrImage);

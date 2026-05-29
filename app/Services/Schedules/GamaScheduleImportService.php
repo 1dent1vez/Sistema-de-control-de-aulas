@@ -163,7 +163,7 @@ class GamaScheduleImportService
         try {
             // 1. Aulas en memoria
             $classroomsByName = Classroom::all()->keyBy('classroom_name');
-            $classroomsById = Classroom::all()->keyBy('id');
+            $classroomsById = Classroom::all()->keyBy('classroom_id');
 
             // 2. Docentes locales en memoria
             $samIdentities = SamIdentity::all();
@@ -386,8 +386,8 @@ class GamaScheduleImportService
 
                                 // Solapamiento en aula en memoria
                                 $classroomOverlap = false;
-                                if (isset($schedulesByClassroom[$classroom->id][$day])) {
-                                    foreach ($schedulesByClassroom[$classroom->id][$day] as $existing) {
+                                if (isset($schedulesByClassroom[$classroom->classroom_id][$day])) {
+                                    foreach ($schedulesByClassroom[$classroom->classroom_id][$day] as $existing) {
                                         if ($startTimeShort < $existing['end'] && $endTimeShort > $existing['start']) {
                                             $classroomOverlap = true;
                                             break;
@@ -437,7 +437,7 @@ class GamaScheduleImportService
                         foreach ($parsedDays as $day) {
                             $toInsert[] = [
                                 'semester_id' => $semesterId,
-                                'classroom_id' => $classroom->id,
+                                'classroom_id' => $classroom->classroom_id,
                                 'teacher_external_id' => $teacher->external_id,
                                 'subject_name' => $materiaInput,
                                 'group_name' => $grupoInput,
@@ -450,7 +450,7 @@ class GamaScheduleImportService
                             ];
 
                             // Añadir dinámicamente a la estructura de solapamiento en memoria
-                            $schedulesByClassroom[$classroom->id][$day][] = [
+                            $schedulesByClassroom[$classroom->classroom_id][$day][] = [
                                 'start' => $startTimeShort,
                                 'end' => $endTimeShort,
                             ];
@@ -473,7 +473,7 @@ class GamaScheduleImportService
                             'error' => null,
                             'resolved' => [
                                 'semester_id' => $semesterId,
-                                'classroom_id' => $classroom->id,
+                                'classroom_id' => $classroom->classroom_id,
                                 'teacher_external_id' => $teacher->external_id,
                                 'subject_name' => $materiaInput,
                                 'group_name' => $grupoInput,

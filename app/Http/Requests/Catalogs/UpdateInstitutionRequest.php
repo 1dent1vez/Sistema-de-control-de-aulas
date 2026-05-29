@@ -40,8 +40,8 @@ class UpdateInstitutionRequest extends FormRequest
         $institutionId = $this->route('institutionId');
 
         return [
-            'name' => ['string', 'max:100', Rule::unique('gama_institutions', 'name')->ignore($institutionId)],
-            'code' => ['string', 'max:20', Rule::unique('gama_institutions', 'code')->ignore($institutionId)],
+            'name' => ['string', 'max:100', Rule::unique('institutions', 'name')->ignore($institutionId, 'institution_id')],
+            'code' => ['string', 'max:20', Rule::unique('institutions', 'code')->ignore($institutionId, 'institution_id')],
             'is_active' => ['boolean'],
         ];
     }

@@ -40,13 +40,13 @@ it('purges expired semesters and their schedules', function (): void {
 
     // Semester expired
     $expiredSemester = Semester::factory()->expired()->create([
-        'institution_id' => $institution->id,
+        'institution_id' => $institution->institution_id,
         'name' => 'Expired Semester',
     ]);
 
     // Active semester (not expired)
     $activeSemester = Semester::factory()->create([
-        'institution_id' => $institution->id,
+        'institution_id' => $institution->institution_id,
         'name' => 'Active Semester',
         'start_date' => now()->subDays(5)->format('Y-m-d'),
         'end_date' => now()->addDays(5)->format('Y-m-d'),
@@ -54,32 +54,32 @@ it('purges expired semesters and their schedules', function (): void {
 
     // Create schedules for both
     $schedule1 = ClassSchedule::factory()->create([
-        'semester_id' => $expiredSemester->id,
+        'semester_id' => $expiredSemester->semester_id,
     ]);
 
     $schedule2 = ClassSchedule::factory()->create([
-        'semester_id' => $activeSemester->id,
+        'semester_id' => $activeSemester->semester_id,
     ]);
 
     // Run the command
     $this->artisan('purge:expired-semesters')
-        ->expectsOutput("Semestre 'Expired Semester' (ID: {$expiredSemester->id}) purgado.")
+        ->expectsOutput("Semestre 'Expired Semester' (ID: {$expiredSemester->semester_id}) purgado.")
         ->expectsOutput('1 semestre(s) purgado(s).')
         ->assertExitCode(0);
 
     // Verify database status
-    $this->assertSoftDeleted('gama_semesters', ['id' => $expiredSemester->id]);
-    $this->assertSoftDeleted('gama_class_schedules', ['id' => $schedule1->id]);
+    $this->assertSoftDeleted('semesters', ['semester_id' => $expiredSemester->semester_id]);
+    $this->assertSoftDeleted('class_schedules', ['class_schedule_id' => $schedule1->class_schedule_id]);
 
-    $this->assertDatabaseHas('gama_semesters', ['id' => $activeSemester->id, 'deleted_at' => null]);
-    $this->assertDatabaseHas('gama_class_schedules', ['id' => $schedule2->id, 'deleted_at' => null]);
+    $this->assertDatabaseHas('semesters', ['semester_id' => $activeSemester->semester_id, 'deleted_at' => null]);
+    $this->assertDatabaseHas('class_schedules', ['class_schedule_id' => $schedule2->class_schedule_id, 'deleted_at' => null]);
 });
 
 it('does nothing when there are no expired semesters', function (): void {
     $institution = Institution::factory()->create();
 
     Semester::factory()->create([
-        'institution_id' => $institution->id,
+        'institution_id' => $institution->institution_id,
         'start_date' => now()->subDays(5)->format('Y-m-d'),
         'end_date' => now()->addDays(5)->format('Y-m-d'),
     ]);
@@ -100,34 +100,34 @@ it('notifies administrators on failure and continues with other semesters', func
     ]);
 
     $expired1 = Semester::factory()->expired()->create([
-        'institution_id' => $institution->id,
+        'institution_id' => $institution->institution_id,
         'name' => 'Expired 1',
     ]);
 
     $expired2 = Semester::factory()->expired()->create([
-        'institution_id' => $institution->id,
+        'institution_id' => $institution->institution_id,
         'name' => 'Expired 2',
     ]);
 
     Semester::deleting(function ($semester) use ($expired1) {
-        if ($semester->id === $expired1->id) {
+        if ($semester->semester_id === $expired1->semester_id) {
             throw new \Exception('Simulated database error');
         }
     });
 
     $this->artisan('purge:expired-semesters')
-        ->expectsOutput("Error al purgar semestre caducado ID: {$expired1->id}")
-        ->expectsOutput("Semestre 'Expired 2' (ID: {$expired2->id}) purgado.")
+        ->expectsOutput("Error al purgar semestre caducado ID: {$expired1->semester_id}")
+        ->expectsOutput("Semestre 'Expired 2' (ID: {$expired2->semester_id}) purgado.")
         ->assertExitCode(0);
 
     Notification::assertSentTo(
         $admin,
         PurgeFailedNotification::class,
         function ($notification) use ($expired1) {
-            return $notification->semester->id === $expired1->id && str_contains($notification->error, 'Simulated database error');
+            return $notification->semester->semester_id === $expired1->semester_id && str_contains($notification->error, 'Simulated database error');
         }
     );
 
-    $this->assertDatabaseHas('gama_semesters', ['id' => $expired1->id, 'deleted_at' => null]);
-    $this->assertSoftDeleted('gama_semesters', ['id' => $expired2->id]);
+    $this->assertDatabaseHas('semesters', ['semester_id' => $expired1->semester_id, 'deleted_at' => null]);
+    $this->assertSoftDeleted('semesters', ['semester_id' => $expired2->semester_id]);
 });

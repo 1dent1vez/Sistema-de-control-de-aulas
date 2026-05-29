@@ -32,7 +32,7 @@ class AbsenceTypeResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->absence_type_id,
             'name' => $this->name,
             'code' => $this->code,
             'createdAt' => $this->created_at?->toISOString(),

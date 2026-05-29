@@ -40,9 +40,9 @@ it('can get all institutions', function () {
 it('can get institution by id', function () {
     $institution = Institution::factory()->create();
 
-    $found = $this->service->getById($institution->id);
+    $found = $this->service->getById($institution->institution_id);
 
-    expect($found->id)->toBe($institution->id);
+    expect($found->institution_id)->toBe($institution->institution_id);
 });
 
 it('can create institution', function () {
@@ -58,23 +58,23 @@ it('can create institution', function () {
         ->and($institution->code)->toBe('TEST-01')
         ->and($institution->is_active)->toBeTrue();
 
-    $this->assertDatabaseHas('gama_institutions', ['name' => 'Test Institution']);
+    $this->assertDatabaseHas('institutions', ['name' => 'Test Institution']);
 });
 
 it('can update institution', function () {
     $institution = Institution::factory()->create(['name' => 'Old Name']);
 
-    $updated = $this->service->update($institution->id, ['name' => 'New Name']);
+    $updated = $this->service->update($institution->institution_id, ['name' => 'New Name']);
 
     expect($updated->name)->toBe('New Name');
-    $this->assertDatabaseHas('gama_institutions', ['id' => $institution->id, 'name' => 'New Name']);
+    $this->assertDatabaseHas('institutions', ['institution_id' => $institution->institution_id, 'name' => 'New Name']);
 });
 
 it('can delete institution', function () {
     $institution = Institution::factory()->create();
 
-    $result = $this->service->delete($institution->id);
+    $result = $this->service->delete($institution->institution_id);
 
     expect($result)->toBeTrue();
-    $this->assertSoftDeleted('gama_institutions', ['id' => $institution->id]);
+    $this->assertSoftDeleted('institutions', ['institution_id' => $institution->institution_id]);
 });

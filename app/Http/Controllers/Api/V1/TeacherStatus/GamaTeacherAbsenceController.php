@@ -31,6 +31,7 @@ use App\Http\Requests\TeacherStatus\StoreTeacherAbsenceRequest;
 use App\Http\Requests\TeacherStatus\UpdateTeacherAbsenceRequest;
 use App\Http\Resources\TeacherStatus\TeacherAbsenceResource;
 use App\Models\TeacherAbsence;
+use App\Enums\Auth\SamRole;
 use App\Services\TeacherStatus\GamaTeacherAbsenceService;
 use App\Services\TeacherStatus\OverlapRequiredException;
 use App\Traits\ApiResponse;
@@ -47,7 +48,7 @@ class GamaTeacherAbsenceController extends Controller
     {
         $this->authorize('viewAny', TeacherAbsence::class);
         $filters = $request->only(['teacher_external_id', 'start_date', 'end_date']);
-        $absences = $this->service->getAll($filters, $request->user())->load('absenceType', 'classSchedules');
+        $absences = $this->service->getAll($filters, $request->user())->load('absenceType', 'classSchedules.classroom');
 
         return $this->success(TeacherAbsenceResource::collection($absences));
     }
@@ -60,7 +61,7 @@ class GamaTeacherAbsenceController extends Controller
         }
         $this->authorize('view', $absence);
 
-        return $this->success(new TeacherAbsenceResource($absence->load('absenceType', 'classSchedules')));
+        return $this->success(new TeacherAbsenceResource($absence->load('absenceType', 'classSchedules.classroom')));
     }
 
     public function store(StoreTeacherAbsenceRequest $request): JsonResponse
@@ -68,7 +69,17 @@ class GamaTeacherAbsenceController extends Controller
         $this->authorize('create', TeacherAbsence::class);
 
         return $this->executeAction(function () use ($request) {
-            $data = array_merge($request->validated(), ['teacher_external_id' => $request->user()->external_id]);
+            $user = $request->user();
+            
+            if ($user->role === SamRole::ADMIN || $user->isAdmin()) {
+                // Si el usuario es ADMIN, preservamos el teacher_external_id enviado en la petición
+                $teacherId = $request->input('teacher_external_id') ?? $user->external_id;
+            } else {
+                // Si no es admin, solo puede registrar su propia ausencia
+                $teacherId = $user->external_id;
+            }
+
+            $data = array_merge($request->validated(), ['teacher_external_id' => $teacherId]);
 
             return $this->created(new TeacherAbsenceResource($this->service->store($data)));
         });
@@ -99,6 +110,16 @@ class GamaTeacherAbsenceController extends Controller
         $this->service->delete($id);
 
         return $this->success(null, 'Ausencia eliminada exitosamente.');
+    }
+
+    public function myAbsences(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $absences = TeacherAbsence::where('teacher_external_id', $user->external_id)
+            ->with(['absenceType', 'classSchedules.classroom'])
+            ->get();
+
+        return $this->success(TeacherAbsenceResource::collection($absences));
     }
 
     private function executeAction(callable $action): JsonResponse

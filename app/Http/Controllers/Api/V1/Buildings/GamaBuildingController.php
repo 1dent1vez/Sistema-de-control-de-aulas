@@ -89,6 +89,11 @@ class GamaBuildingController extends Controller
 
     public function levels(int $buildingId): JsonResponse
     {
-        return $this->success(LevelResource::collection($this->service->getLevels($buildingId)));
+        return $this->allLevels();
+    }
+
+    public function allLevels(): JsonResponse
+    {
+        return $this->success(LevelResource::collection(\App\Models\Level::orderBy('display_order')->get()));
     }
 }

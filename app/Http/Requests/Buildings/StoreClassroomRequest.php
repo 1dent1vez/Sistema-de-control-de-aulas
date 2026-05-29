@@ -41,18 +41,17 @@ class StoreClassroomRequest extends FormRequest
         $buildingId = $this->input('building_id');
 
         return [
-            'building_id' => ['required', 'integer', 'exists:gama_buildings,id'],
+            'building_id' => ['required', 'integer', 'exists:buildings,building_id'],
             'level_id' => [
                 'required',
                 'integer',
-                'exists:gama_levels,id',
-                Rule::exists('gama_levels', 'id')->where('building_id', $buildingId),
+                'exists:levels,level_id',
             ],
             'classroom_name' => [
                 'required',
                 'string',
                 'max:30',
-                Rule::unique('gama_classrooms', 'classroom_name')
+                Rule::unique('classrooms', 'classroom_name')
                     ->where('building_id', $buildingId),
             ],
             'classroom_type' => ['required', 'string', Rule::in(ClassroomType::values())],

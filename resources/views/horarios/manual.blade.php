@@ -375,6 +375,7 @@ function pant05HorarioManual() {
     docenteSearch: '',
     showDocentes: false,
     docentesFiltrados: [],
+    todosLosDocentes: [],
     errors: {},
     conflictos: [],
     mensajeError: '',
@@ -390,6 +391,17 @@ function pant05HorarioManual() {
         return;
       }
       await this.loadCatalogos();
+
+      this.$watch('form.docenteExterno', (val) => {
+        if (!val) {
+          this.docenteSearch = '';
+        } else {
+          const match = this.todosLosDocentes.find(t => t.externalId === val);
+          if (match) {
+            this.docenteSearch = `${match.fullName} (${match.externalId})`;
+          }
+        }
+      });
     },
 
     getCsrf() {
@@ -455,6 +467,19 @@ function pant05HorarioManual() {
           .filter(c => c.isActive)
           .map(c => ({ id: c.id, edificio_id: c.buildingId, nombre: c.classroomName }));
 
+        // Cargar docentes dinámicamente vía AJAX/fetch al abrir el formulario (RF-04)
+        const teachersRes = await this.apiFetch('/api/v1/sam-identities/teachers');
+        this.todosLosDocentes = teachersRes.data ?? [];
+        this.docentesFiltrados = this.todosLosDocentes;
+
+        // Precargar el docente seleccionado en modo edición (si aplica)
+        if (this.form.docenteExterno) {
+          const match = this.todosLosDocentes.find(t => t.externalId === this.form.docenteExterno);
+          if (match) {
+            this.docenteSearch = `${match.fullName} (${match.externalId})`;
+          }
+        }
+
       } catch(e) {
         this.mensajeError = 'Error al cargar catálogos desde la API.';
       }
@@ -518,7 +543,7 @@ function pant05HorarioManual() {
     async buscarDocentesLocales() {
       const q = this.docenteSearch.trim();
       if (q.length < 2) {
-        this.docentesFiltrados = [];
+        this.docentesFiltrados = this.todosLosDocentes;
         return;
       }
       try {
@@ -616,6 +641,7 @@ function pant05HorarioManual() {
           dias: [], horaInicio: '', horaFin: '',
         };
         this.docenteSearch = '';
+        this.docentesFiltrados = this.todosLosDocentes;
         this.errors = {};
         this.conflictos = [];
       } catch(err) {

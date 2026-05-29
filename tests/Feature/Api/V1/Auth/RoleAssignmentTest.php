@@ -81,8 +81,8 @@ it('allows admin to assign role with password confirmation', function () {
     ]);
 
     $response->assertStatus(200);
-    $this->assertDatabaseHas('gama_sam_identities', [
-        'id' => $target->id,
+    $this->assertDatabaseHas('sam_identities', [
+        'sam_id' => $target->sam_id,
         'role' => 'admin',
     ]);
 });
@@ -142,7 +142,7 @@ it('revokes sanctum tokens immediately upon role change', function () {
     // Crear token para el target
     $target->createToken('test-token');
     $this->assertDatabaseHas('personal_access_tokens', [
-        'tokenable_id' => $target->id,
+        'tokenable_id' => $target->sam_id,
     ]);
 
     $response = $this->postJson("/api/v1/sam-identities/{$target->external_id}/assign-role", [
@@ -153,7 +153,7 @@ it('revokes sanctum tokens immediately upon role change', function () {
     $response->assertStatus(200);
     // Verificar que el token fue revocado (eliminado de DB)
     $this->assertDatabaseMissing('personal_access_tokens', [
-        'tokenable_id' => $target->id,
+        'tokenable_id' => $target->sam_id,
     ]);
 });
 
@@ -263,8 +263,8 @@ it('allows admin to physically delete a user confirming password', function () {
     ]);
 
     $response->assertStatus(200);
-    $this->assertDatabaseMissing('gama_sam_identities', [
-        'id' => $target->id,
+    $this->assertDatabaseMissing('sam_identities', [
+        'sam_id' => $target->sam_id,
     ]);
 });
 
@@ -282,8 +282,8 @@ it('fails to physically delete a user with incorrect password', function () {
     ]);
 
     $response->assertStatus(422);
-    $this->assertDatabaseHas('gama_sam_identities', [
-        'id' => $target->id,
+    $this->assertDatabaseHas('sam_identities', [
+        'sam_id' => $target->sam_id,
     ]);
 });
 

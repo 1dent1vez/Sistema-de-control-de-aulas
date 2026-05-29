@@ -44,7 +44,7 @@ class ImportScheduleRequest extends FormRequest
             'semester_id' => [
                 'required',
                 'integer',
-                Rule::exists('gama_semesters', 'id')->whereNull('deleted_at'),
+                Rule::exists('semesters', 'semester_id')->whereNull('deleted_at'),
                 function ($attribute, $value, $fail) {
                     try {
                         $today = now()->format('Y-m-d');
@@ -61,7 +61,7 @@ class ImportScheduleRequest extends FormRequest
                         }
 
                         $semestreVigente = $semesters->first();
-                        if ((int) $value !== $semestreVigente->id) {
+                        if ((int) $value !== $semestreVigente->semester_id) {
                             $fail('El semestre ha caducado. No se pueden registrar ni modificar horarios.');
                         }
                     } catch (\Exception $e) {

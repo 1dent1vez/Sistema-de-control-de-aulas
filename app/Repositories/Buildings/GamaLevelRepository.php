@@ -32,7 +32,7 @@ class GamaLevelRepository implements LevelRepositoryInterface
 {
     public function findByBuildingId(int $buildingId): Collection
     {
-        return Level::where('building_id', $buildingId)->orderBy('display_order')->get();
+        return Level::orderBy('display_order')->get();
     }
 
     public function create(array $data): Level

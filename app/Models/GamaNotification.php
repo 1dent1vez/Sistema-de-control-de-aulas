@@ -29,5 +29,11 @@ use Illuminate\Notifications\DatabaseNotification as BaseNotification;
 
 class GamaNotification extends BaseNotification
 {
-    protected $table = 'gama_notifications';
+    protected $table = 'notifications';
+
+    protected $primaryKey = 'id';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 }

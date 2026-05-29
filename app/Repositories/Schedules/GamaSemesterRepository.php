@@ -47,20 +47,27 @@ class GamaSemesterRepository implements SemesterRepositoryInterface
         return Semester::current()->first();
     }
 
-    public function hasOverlap(int $institutionId, string $startDate, string $endDate, ?int $excludeId = null): bool
+    public function hasOverlap(?int $institutionId, string $startDate, string $endDate, ?int $excludeId = null): bool
     {
-        $query = Semester::where('institution_id', $institutionId)
-            ->where(function ($q) use ($startDate, $endDate): void {
-                $q->whereBetween('start_date', [$startDate, $endDate])
-                    ->orWhereBetween('end_date', [$startDate, $endDate])
-                    ->orWhere(function ($q2) use ($startDate, $endDate): void {
-                        $q2->where('start_date', '<=', $startDate)
-                            ->where('end_date', '>=', $endDate);
-                    });
-            });
+        $query = Semester::query();
+
+        if ($institutionId !== null) {
+            $query->where('institution_id', $institutionId);
+        } else {
+            $query->whereNull('institution_id');
+        }
+
+        $query->where(function ($q) use ($startDate, $endDate): void {
+            $q->whereBetween('start_date', [$startDate, $endDate])
+                ->orWhereBetween('end_date', [$startDate, $endDate])
+                ->orWhere(function ($q2) use ($startDate, $endDate): void {
+                    $q2->where('start_date', '<=', $startDate)
+                        ->where('end_date', '>=', $endDate);
+                });
+        });
 
         if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
+            $query->where('semester_id', '!=', $excludeId);
         }
 
         return $query->exists();

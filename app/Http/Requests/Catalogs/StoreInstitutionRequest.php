@@ -37,8 +37,8 @@ class StoreInstitutionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:100', 'unique:gama_institutions,name'],
-            'code' => ['required', 'string', 'max:20', 'unique:gama_institutions,code'],
+            'name' => ['required', 'string', 'max:100', 'unique:institutions,name'],
+            'code' => ['required', 'string', 'max:20', 'unique:institutions,code'],
             'is_active' => ['boolean'],
         ];
     }

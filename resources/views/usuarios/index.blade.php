@@ -220,6 +220,8 @@
           <template x-if="!isLocalAdmin(selectedEmployee?.externalId)">
             <select class="usr-select" x-model="selectedRole">
               <option value="teacher">Docente</option>
+              <option value="coordinator">Coordinador</option>
+              <option value="viewer">Espectador</option>
               <option value="admin">Administrador</option>
             </select>
           </template>
@@ -272,10 +274,10 @@
                   <td x-text="identity.email"></td>
                   <td>
                     <span 
-                      :class="identity.role === 'admin' ? 'role-badge role-admin' : 'role-badge role-docente'"
+                      :class="identity.role === 'admin' ? 'role-badge role-admin' : (identity.role === 'coordinator' ? 'role-badge role-admin' : 'role-badge role-docente')"
                     >
-                      <i :class="identity.role === 'admin' ? 'fas fa-user-shield mr-1' : 'fas fa-chalkboard-teacher mr-1'"></i>
-                      <span x-text="identity.role === 'admin' ? 'Administrador' : 'Docente'"></span>
+                      <i :class="identity.role === 'admin' ? 'fas fa-user-shield mr-1' : (identity.role === 'coordinator' ? 'fas fa-user-tie mr-1' : (identity.role === 'viewer' ? 'fas fa-eye mr-1' : 'fas fa-chalkboard-teacher mr-1'))"></i>
+                      <span x-text="identity.role === 'admin' ? 'Administrador' : (identity.role === 'coordinator' ? 'Coordinador' : (identity.role === 'viewer' ? 'Espectador' : 'Docente'))"></span>
                     </span>
                   </td>
                   <td style="text-align: center;">

@@ -30,20 +30,14 @@ use Illuminate\Database\Eloquent\Collection;
 
 class GamaBuildingRepository implements BuildingRepositoryInterface
 {
-    public function all(?int $institutionId = null): Collection
+    public function all(): Collection
     {
-        $query = Building::with('levels');
-
-        if ($institutionId !== null) {
-            $query->where('institution_id', $institutionId);
-        }
-
-        return $query->get();
+        return Building::all();
     }
 
     public function findById(int $id): ?Building
     {
-        return Building::with('levels')->find($id);
+        return Building::find($id);
     }
 
     public function create(array $data): Building
@@ -55,7 +49,7 @@ class GamaBuildingRepository implements BuildingRepositoryInterface
     {
         $building->update($data);
 
-        return $building->fresh()->load('levels');
+        return $building->fresh();
     }
 
     public function delete(Building $building): bool

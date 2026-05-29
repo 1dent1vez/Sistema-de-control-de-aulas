@@ -35,7 +35,7 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->endpoint = '/api/v1/class-schedules/import';
     $this->institution = Institution::factory()->create();
-    $this->semester = Semester::factory()->create(['institution_id' => $this->institution->id]);
+    $this->semester = Semester::factory()->create(['institution_id' => $this->institution->institution_id]);
     Storage::fake('local');
 });
 
@@ -46,7 +46,7 @@ it('denies access to non-admin users', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'file' => $file,
-        'semester_id' => $this->semester->id,
+        'semester_id' => $this->semester->semester_id,
     ]);
 
     $response->assertStatus(403);
@@ -57,7 +57,7 @@ it('denies access to guest users', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'file' => $file,
-        'semester_id' => $this->semester->id,
+        'semester_id' => $this->semester->semester_id,
     ]);
 
     $response->assertStatus(401);
@@ -73,7 +73,7 @@ it('allows admin to import valid extension file', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'file' => $file,
-        'semester_id' => $this->semester->id,
+        'semester_id' => $this->semester->semester_id,
     ]);
 
     $response->assertStatus(202)
@@ -87,7 +87,7 @@ it('rejects files with invalid extension', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'file' => $file,
-        'semester_id' => $this->semester->id,
+        'semester_id' => $this->semester->semester_id,
     ]);
 
     $response->assertStatus(422)

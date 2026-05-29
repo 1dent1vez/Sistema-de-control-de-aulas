@@ -34,7 +34,7 @@ class TeacherAbsenceResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->teacher_absence_id,
             'teacherExternalId' => $this->teacher_external_id,
             'absenceTypeId' => $this->absence_type_id,
             'startDate' => $this->start_date,
@@ -42,7 +42,7 @@ class TeacherAbsenceResource extends JsonResource
             'observations' => $this->observations,
             'isConfirmed' => $this->is_confirmed,
             'absenceType' => $this->whenLoaded('absenceType', fn () => [
-                'id' => $this->absenceType->id,
+                'id' => $this->absenceType->absence_type_id,
                 'name' => $this->absenceType->name,
                 'code' => $this->absenceType->code,
             ]),

@@ -35,9 +35,8 @@ class LevelFactory extends Factory
     public function definition(): array
     {
         return [
-            'building_id' => Building::factory(),
-            'name' => fake()->randomElement(['PB', 'P1', 'P2']),
-            'display_order' => fake()->numberBetween(0, 2),
+            'name' => fake()->unique()->lexify('L-???'),
+            'display_order' => fake()->numberBetween(0, 4),
         ];
     }
 }

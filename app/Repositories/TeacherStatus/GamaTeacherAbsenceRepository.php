@@ -78,7 +78,7 @@ class GamaTeacherAbsenceRepository implements TeacherAbsenceRepositoryInterface
             ->where('end_date', '>=', $startDate);
 
         if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
+            $query->where('teacher_absence_id', '!=', $excludeId);
         }
 
         return $query->get();

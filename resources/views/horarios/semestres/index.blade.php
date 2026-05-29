@@ -649,10 +649,10 @@
         {{-- Institución --}}
         <div class="form-field">
             <label class="form-label" for="fieldInstitution">
-                Institución <span class="req">*</span>
+                Institución
             </label>
             <select class="form-select" id="fieldInstitution">
-                <option value="">Seleccione una institución...</option>
+                <option value="">-- Sin institución --</option>
             </select>
             <div class="form-error hidden" id="errorInstitution">
                 <i class="fas fa-exclamation-circle"></i>
@@ -921,7 +921,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 instituciones = instResp.data || [];
                 
                 const selectInst = $('fieldInstitution');
-                selectInst.innerHTML = '<option value="">Seleccione una institución...</option>';
+                selectInst.innerHTML = '<option value="">-- Sin institución --</option>';
                 instituciones.forEach(inst => {
                     if (inst.isActive) {
                         selectInst.innerHTML += `<option value="${inst.id}">${inst.name}</option>`;
@@ -1053,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (editId) {
                 const s = semestres.find(x => x.id === editId);
                 if (s) {
-                    $('fieldInstitution').value = s.institutionId;
+                    $('fieldInstitution').value = s.institutionId ?? '';
                     $('fieldNombre').value = s.name;
                     $('fieldInicio').value = s.startDate;
                     $('fieldFin').value = s.endDate;
@@ -1116,7 +1116,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const inicio = $('fieldInicio').value;
             const fin = $('fieldFin').value;
 
-            if (!instId) { showValidationError('Institution', 'La institución es obligatoria.'); valid = false; }
             if (!nombre) { showValidationError('Nombre', 'El nombre del semestre es obligatorio.'); valid = false; }
             if (!inicio) { showValidationError('Inicio', 'La fecha de inicio es obligatoria.'); valid = false; }
             if (!fin) { showValidationError('Fin', 'La fecha de fin es obligatoria.'); valid = false; }
@@ -1132,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', function () {
             $('btnSavePanel').innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Guardando...';
 
             const payload = {
-                institution_id: parseInt(instId, 10),
+                institution_id: instId ? parseInt(instId, 10) : null,
                 name: nombre,
                 start_date: inicio,
                 end_date: fin

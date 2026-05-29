@@ -28,11 +28,11 @@ use App\Services\Buildings\GamaBuildingService;
 
 beforeEach(function () {
     $this->service = app(GamaBuildingService::class);
-    $this->institution = Institution::factory()->create();
 });
 
 it('can get all buildings', function () {
-    Building::factory()->count(2)->create(['institution_id' => $this->institution->id]);
+    Building::factory()->create();
+    Building::factory()->create();
 
     $buildings = $this->service->getAll();
 
@@ -40,17 +40,16 @@ it('can get all buildings', function () {
 });
 
 it('can get building by id', function () {
-    $building = Building::factory()->create(['institution_id' => $this->institution->id]);
+    $building = Building::factory()->create();
 
-    $found = $this->service->getById($building->id);
+    $found = $this->service->getById($building->building_id);
 
-    expect($found->id)->toBe($building->id);
+    expect($found->building_id)->toBe($building->building_id);
 });
 
-it('can create building and auto-generates levels', function () {
+it('can create building', function () {
     $data = [
-        'institution_id' => $this->institution->id,
-        'name' => 'Service Building',
+        'name' => 'Service-Building',
         'level_count' => 3,
         'description' => 'Test Desc',
         'status' => true,
@@ -58,46 +57,26 @@ it('can create building and auto-generates levels', function () {
 
     $building = $this->service->store($data);
 
-    expect($building->name)->toBe('Service Building')
+    expect($building->name)->toBe('Service-Building')
         ->and($building->level_count)->toBe(3);
 
-    $this->assertDatabaseHas('gama_buildings', ['name' => 'Service Building']);
-    $this->assertDatabaseCount('gama_levels', 3);
-
-    $this->assertDatabaseHas('gama_levels', ['building_id' => $building->id, 'name' => 'PB', 'display_order' => 0]);
-    $this->assertDatabaseHas('gama_levels', ['building_id' => $building->id, 'name' => 'P1', 'display_order' => 1]);
-    $this->assertDatabaseHas('gama_levels', ['building_id' => $building->id, 'name' => 'P2', 'display_order' => 2]);
+    $this->assertDatabaseHas('buildings', ['name' => 'Service-Building']);
 });
 
 it('can update building', function () {
-    $building = Building::factory()->create(['name' => 'Old BName', 'institution_id' => $this->institution->id]);
+    $building = Building::factory()->create(['name' => 'Old-BName']);
 
-    $updated = $this->service->update($building->id, ['name' => 'New BName']);
+    $updated = $this->service->update($building->building_id, ['name' => 'New-BName']);
 
-    expect($updated->name)->toBe('New BName');
-    $this->assertDatabaseHas('gama_buildings', ['id' => $building->id, 'name' => 'New BName']);
+    expect($updated->name)->toBe('New-BName');
+    $this->assertDatabaseHas('buildings', ['building_id' => $building->building_id, 'name' => 'New-BName']);
 });
 
 it('can delete building', function () {
-    $building = Building::factory()->create(['institution_id' => $this->institution->id]);
+    $building = Building::factory()->create();
 
-    $result = $this->service->delete($building->id);
+    $result = $this->service->delete($building->building_id);
 
     expect($result)->toBeTrue();
-    $this->assertSoftDeleted('gama_buildings', ['id' => $building->id]);
-});
-
-it('can get levels of a building', function () {
-    $data = [
-        'institution_id' => $this->institution->id,
-        'name' => 'Level Building',
-        'level_count' => 2,
-    ];
-
-    $building = $this->service->store($data);
-
-    $levels = $this->service->getLevels($building->id);
-
-    expect($levels)->toHaveCount(2)
-        ->and($levels->first()->name)->toBe('PB');
+    $this->assertSoftDeleted('buildings', ['building_id' => $building->building_id]);
 });

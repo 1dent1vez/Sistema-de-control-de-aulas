@@ -58,12 +58,12 @@ class PurgeExpiredSemestersCommand extends Command
                     $semester->delete();
                 });
 
-                $this->line("Semestre '{$semester->name}' (ID: {$semester->id}) purgado.");
+                $this->line("Semestre '{$semester->name}' (ID: {$semester->semester_id}) purgado.");
                 $successCount++;
             } catch (\Exception $e) {
-                $errorMessage = "Error al purgar semestre caducado ID: {$semester->id}";
+                $errorMessage = "Error al purgar semestre caducado ID: {$semester->semester_id}";
                 Log::error($errorMessage.' - Detalle: '.$e->getMessage(), [
-                    'semester_id' => $semester->id,
+                    'semester_id' => $semester->semester_id,
                     'exception' => $e,
                 ]);
                 $this->error($errorMessage);

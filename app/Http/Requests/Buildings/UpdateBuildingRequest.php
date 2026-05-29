@@ -45,9 +45,8 @@ class UpdateBuildingRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9\-]+$/',
                 'max:255',
-                Rule::unique('gama_buildings', 'name')
-                    ->where('institution_id', $this->input('institution_id'))
-                    ->ignore($buildingId),
+                Rule::unique('buildings', 'name')
+                    ->ignore($buildingId, 'building_id'),
             ],
             'description' => ['nullable', 'string', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', 'max:500'],
         ];
@@ -57,7 +56,7 @@ class UpdateBuildingRequest extends FormRequest
     {
         return [
             'name.regex' => 'El nombre del edificio solo puede contener letras, números y el guion medio (-).',
-            'name.unique' => 'Ya existe un edificio con ese nombre en la misma institución.',
+            'name.unique' => 'Ya existe un edificio con ese nombre.',
             'description.regex' => 'La descripción solo puede contener letras.',
         ];
     }

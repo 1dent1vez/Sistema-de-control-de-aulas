@@ -44,9 +44,9 @@ it('can list absence types via API', function () {
 it('can get single absence type via API', function () {
     $absenceType = AbsenceType::factory()->create();
 
-    $response = $this->getJson("/api/v1/absence-types/{$absenceType->id}");
+    $response = $this->getJson("/api/v1/absence-types/{$absenceType->absence_type_id}");
 
     $response->assertStatus(200)
-        ->assertJsonPath('data.id', $absenceType->id)
+        ->assertJsonPath('data.id', $absenceType->absence_type_id)
         ->assertJsonPath('data.name', $absenceType->name);
 });

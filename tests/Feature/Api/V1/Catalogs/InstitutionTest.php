@@ -44,10 +44,10 @@ it('can list institutions via API', function () {
 it('can get single institution via API', function () {
     $institution = Institution::factory()->create();
 
-    $response = $this->getJson("/api/v1/institutions/{$institution->id}");
+    $response = $this->getJson("/api/v1/institutions/{$institution->institution_id}");
 
     $response->assertStatus(200)
-        ->assertJsonPath('data.id', $institution->id)
+        ->assertJsonPath('data.id', $institution->institution_id)
         ->assertJsonPath('data.name', $institution->name);
 });
 
@@ -64,7 +64,7 @@ it('can create institution via API', function () {
     $response->assertStatus(201)
         ->assertJsonPath('data.name', 'API Institution');
 
-    $this->assertDatabaseHas('gama_institutions', ['name' => 'API Institution']);
+    $this->assertDatabaseHas('institutions', ['name' => 'API Institution']);
 });
 
 it('validates creation of institution', function () {
@@ -79,7 +79,7 @@ it('can update institution via API', function () {
     $this->loginAsAdmin();
     $institution = Institution::factory()->create(['name' => 'Old Name']);
 
-    $response = $this->putJson("/api/v1/institutions/{$institution->id}", [
+    $response = $this->putJson("/api/v1/institutions/{$institution->institution_id}", [
         'name' => 'Updated Name',
         'code' => $institution->code,
         'is_active' => $institution->is_active,
@@ -88,16 +88,16 @@ it('can update institution via API', function () {
     $response->assertStatus(200)
         ->assertJsonPath('data.name', 'Updated Name');
 
-    $this->assertDatabaseHas('gama_institutions', ['id' => $institution->id, 'name' => 'Updated Name']);
+    $this->assertDatabaseHas('institutions', ['institution_id' => $institution->institution_id, 'name' => 'Updated Name']);
 });
 
 it('can delete institution via API', function () {
     $this->loginAsAdmin();
     $institution = Institution::factory()->create();
 
-    $response = $this->deleteJson("/api/v1/institutions/{$institution->id}");
+    $response = $this->deleteJson("/api/v1/institutions/{$institution->institution_id}");
 
     $response->assertStatus(200);
 
-    $this->assertSoftDeleted('gama_institutions', ['id' => $institution->id]);
+    $this->assertSoftDeleted('institutions', ['institution_id' => $institution->institution_id]);
 });

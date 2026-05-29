@@ -35,7 +35,9 @@ class Classroom extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_classrooms';
+    protected $table = 'classrooms';
+
+    protected $primaryKey = 'classroom_id';
 
     protected $fillable = [
         'building_id',
@@ -55,16 +57,16 @@ class Classroom extends Model
 
     public function building(): BelongsTo
     {
-        return $this->belongsTo(Building::class);
+        return $this->belongsTo(Building::class, 'building_id', 'building_id');
     }
 
     public function level(): BelongsTo
     {
-        return $this->belongsTo(Level::class);
+        return $this->belongsTo(Level::class, 'level_id', 'level_id');
     }
 
     public function activeQr(): HasOne
     {
-        return $this->hasOne(QrCode::class)->where('is_active', true);
+        return $this->hasOne(QrCode::class, 'classroom_id', 'classroom_id')->where('is_active', true);
     }
 }

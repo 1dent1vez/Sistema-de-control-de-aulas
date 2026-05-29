@@ -42,17 +42,17 @@ class UpdateClassroomRequest extends FormRequest
         $buildingId = $this->input('building_id');
 
         return [
+            'building_id' => ['integer', 'exists:buildings,building_id'],
             'level_id' => [
                 'integer',
-                'exists:gama_levels,id',
-                Rule::exists('gama_levels', 'id')->where('building_id', $buildingId),
+                'exists:levels,level_id',
             ],
             'classroom_name' => [
                 'string',
                 'max:30',
-                Rule::unique('gama_classrooms', 'classroom_name')
+                Rule::unique('classrooms', 'classroom_name')
                     ->where('building_id', $buildingId)
-                    ->ignore($classroomId),
+                    ->ignore($classroomId, 'classroom_id'),
             ],
             'classroom_type' => ['string', Rule::in(ClassroomType::values())],
             'status' => ['boolean'],

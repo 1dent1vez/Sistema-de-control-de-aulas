@@ -1,25 +1,5 @@
 <?php
 
-/**
- * @descripcion  Migración para crear la tabla de notificaciones con el prefijo gama_.
- *
- * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
- *
- * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @version      1.0.0
- *
- * @creado       2026-05-25
- *
- * @modificado   2026-05-25
- *
- * @cambios      2026-05-25 - Creación inicial de la tabla de notificaciones.
- */
-
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
@@ -30,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('gama_notifications', function (Blueprint $table): void {
+        Schema::create('notifications', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('type');
             $table->morphs('notifiable');
@@ -42,6 +22,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('gama_notifications');
+        Schema::dropIfExists('notifications');
     }
 };

@@ -47,7 +47,7 @@ beforeEach(function (): void {
     $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     foreach ($days as $day) {
         ClassSchedule::factory()->create([
-            'semester_id' => $semester->id,
+            'semester_id' => $semester->semester_id,
             'teacher_external_id' => 'TCH001',
             'weekday' => $day,
             'status' => true,
@@ -73,10 +73,10 @@ it('can show a single absence', function (): void {
     $this->loginAsAdmin('TCH001');
     $absence = TeacherAbsence::factory()->create();
 
-    $response = $this->getJson("$this->endpoint/{$absence->id}");
+    $response = $this->getJson("$this->endpoint/{$absence->teacher_absence_id}");
 
     $response->assertStatus(200)
-        ->assertJsonPath('data.id', $absence->id);
+        ->assertJsonPath('data.id', $absence->teacher_absence_id);
 });
 
 it('returns 404 when absence not found', function (): void {
@@ -89,7 +89,7 @@ it('can create an absence', function (): void {
     $this->loginAsAdmin('TCH001');
     $data = [
         'teacher_external_id' => 'TCH001',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => now()->addDay()->format('Y-m-d'),
         'end_date' => now()->addDays(3)->format('Y-m-d'),
         'observations' => 'Medical appointment',
@@ -100,14 +100,14 @@ it('can create an absence', function (): void {
     $response->assertStatus(201)
         ->assertJsonPath('data.teacherExternalId', 'TCH001');
 
-    $this->assertDatabaseHas('gama_teacher_absences', ['teacher_external_id' => 'TCH001']);
+    $this->assertDatabaseHas('teacher_absences', ['teacher_external_id' => 'TCH001']);
 });
 
 it('rejects absence completely in the past', function (): void {
     $this->loginAsAdmin('TCH001');
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH001',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => now()->subDays(10)->format('Y-m-d'),
         'end_date' => now()->subDays(5)->format('Y-m-d'),
     ]);
@@ -125,7 +125,7 @@ it('detects overlap and requires confirmation', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH001',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => now()->addDays(2)->format('Y-m-d'),
         'end_date' => now()->addDays(4)->format('Y-m-d'),
     ]);
@@ -144,7 +144,7 @@ it('creates absence with is_confirmed bypasses overlap', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH001',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => now()->addDays(2)->format('Y-m-d'),
         'end_date' => now()->addDays(4)->format('Y-m-d'),
         'is_confirmed' => true,
@@ -168,7 +168,7 @@ it('can soft delete an absence', function (): void {
     $this->loginAsAdmin('TCH001');
     $absence = TeacherAbsence::factory()->create();
 
-    $this->deleteJson("$this->endpoint/{$absence->id}")
+    $this->deleteJson("$this->endpoint/{$absence->teacher_absence_id}")
         ->assertStatus(200);
 
     $this->assertSoftDeleted($absence);
@@ -190,32 +190,32 @@ it('can update an absence and resync class schedules', function (): void {
         'teacher_external_id' => 'TCH001',
         'start_date' => $mondayDate,
         'end_date' => $mondayDate,
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
     ]);
 
-    $absence->classSchedules()->sync([$mondaySchedule->id]);
+    $absence->classSchedules()->sync([$mondaySchedule->class_schedule_id]);
 
-    $this->assertDatabaseHas('gama_class_schedule_teacher_absence', [
-        'teacher_absence_id' => $absence->id,
-        'class_schedule_id' => $mondaySchedule->id,
+    $this->assertDatabaseHas('class_schedule_teacher_absence', [
+        'teacher_absence_id' => $absence->teacher_absence_id,
+        'class_schedule_id' => $mondaySchedule->class_schedule_id,
     ]);
 
-    $response = $this->putJson("$this->endpoint/{$absence->id}", [
+    $response = $this->putJson("$this->endpoint/{$absence->teacher_absence_id}", [
         'start_date' => $tuesdayDate,
         'end_date' => $tuesdayDate,
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
     ]);
 
     $response->assertStatus(200);
 
-    $this->assertDatabaseMissing('gama_class_schedule_teacher_absence', [
-        'teacher_absence_id' => $absence->id,
-        'class_schedule_id' => $mondaySchedule->id,
+    $this->assertDatabaseMissing('class_schedule_teacher_absence', [
+        'teacher_absence_id' => $absence->teacher_absence_id,
+        'class_schedule_id' => $mondaySchedule->class_schedule_id,
     ]);
 
-    $this->assertDatabaseHas('gama_class_schedule_teacher_absence', [
-        'teacher_absence_id' => $absence->id,
-        'class_schedule_id' => $tuesdaySchedule->id,
+    $this->assertDatabaseHas('class_schedule_teacher_absence', [
+        'teacher_absence_id' => $absence->teacher_absence_id,
+        'class_schedule_id' => $tuesdaySchedule->class_schedule_id,
     ]);
 });
 
@@ -233,10 +233,10 @@ it('prevents a teacher from viewing or deleting another teacher absence', functi
     ]);
     Sanctum::actingAs($identity, ['teacher']);
 
-    $this->getJson("$this->endpoint/{$absence->id}")
+    $this->getJson("$this->endpoint/{$absence->teacher_absence_id}")
         ->assertStatus(403);
 
-    $this->deleteJson("$this->endpoint/{$absence->id}")
+    $this->deleteJson("$this->endpoint/{$absence->teacher_absence_id}")
         ->assertStatus(403);
 });
 
@@ -245,7 +245,7 @@ it('associates class schedules to registered absences', function (): void {
 
     $semester = Semester::first();
     $schedule = ClassSchedule::factory()->create([
-        'semester_id' => $semester->id,
+        'semester_id' => $semester->semester_id,
         'teacher_external_id' => 'TCH001',
         'weekday' => 'monday',
         'status' => true,
@@ -255,7 +255,7 @@ it('associates class schedules to registered absences', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH001',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => $nextMonday,
         'end_date' => $nextMonday,
     ]);
@@ -264,9 +264,9 @@ it('associates class schedules to registered absences', function (): void {
 
     $absenceId = $response->json('data.id');
 
-    $this->assertDatabaseHas('gama_class_schedule_teacher_absence', [
+    $this->assertDatabaseHas('class_schedule_teacher_absence', [
         'teacher_absence_id' => $absenceId,
-        'class_schedule_id' => $schedule->id,
+        'class_schedule_id' => $schedule->class_schedule_id,
     ]);
 });
 
@@ -275,7 +275,7 @@ it('fails to register absence if teacher has no classes in period', function ():
 
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH002',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => now()->addDay()->format('Y-m-d'),
         'end_date' => now()->addDays(2)->format('Y-m-d'),
     ]);
@@ -320,7 +320,7 @@ it('notifies admins when a teacher registers an absence', function (): void {
 
     $semester = Semester::first();
     ClassSchedule::factory()->create([
-        'semester_id' => $semester->id,
+        'semester_id' => $semester->semester_id,
         'teacher_external_id' => 'TCH_NOTIF_01',
         'weekday' => strtolower(now()->addDay()->englishDayOfWeek),
         'status' => true,
@@ -328,15 +328,90 @@ it('notifies admins when a teacher registers an absence', function (): void {
 
     $response = $this->postJson($this->endpoint, [
         'teacher_external_id' => 'TCH_NOTIF_01',
-        'absence_type_id' => $this->absenceType->id,
+        'absence_type_id' => $this->absenceType->absence_type_id,
         'start_date' => now()->addDay()->format('Y-m-d'),
         'end_date' => now()->addDay()->format('Y-m-d'),
     ]);
 
     $response->assertStatus(201);
 
-    $this->assertDatabaseHas('gama_notifications', [
+    $this->assertDatabaseHas('notifications', [
         'notifiable_type' => SamIdentity::class,
-        'notifiable_id' => $admin->id,
+        'notifiable_id' => $admin->sam_id,
     ]);
 });
+
+it('can list my own schedules', function (): void {
+    $teacherIdentity = SamIdentity::factory()->create([
+        'external_id' => 'TCH_MY_01',
+        'email' => 'tch_my_01@toluca.tecnm.mx',
+        'role' => SamRole::TEACHER,
+    ]);
+    Sanctum::actingAs($teacherIdentity, ['teacher']);
+
+    $semester = Semester::first();
+    ClassSchedule::factory()->create([
+        'semester_id' => $semester->semester_id,
+        'teacher_external_id' => 'TCH_MY_01',
+        'weekday' => 'monday',
+        'status' => true,
+    ]);
+
+    $response = $this->getJson('/api/v1/my-schedules');
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.teacherExternalId', 'TCH_MY_01');
+});
+
+it('can list my own absences', function (): void {
+    $teacherIdentity = SamIdentity::factory()->create([
+        'external_id' => 'TCH_MY_02',
+        'email' => 'tch_my_02@toluca.tecnm.mx',
+        'role' => SamRole::TEACHER,
+    ]);
+    Sanctum::actingAs($teacherIdentity, ['teacher']);
+
+    TeacherAbsence::factory()->create(['teacher_external_id' => 'TCH_MY_02']);
+
+    $response = $this->getJson('/api/v1/my-absences');
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.teacherExternalId', 'TCH_MY_02');
+});
+
+it('can create a my-absence without specifying teacher', function (): void {
+    $teacherIdentity = SamIdentity::factory()->create([
+        'external_id' => 'TCH_MY_03',
+        'email' => 'tch_my_03@toluca.tecnm.mx',
+        'role' => SamRole::TEACHER,
+    ]);
+    Sanctum::actingAs($teacherIdentity, ['teacher']);
+
+    $semester = Semester::first();
+    ClassSchedule::factory()->create([
+        'semester_id' => $semester->semester_id,
+        'teacher_external_id' => 'TCH_MY_03',
+        'weekday' => 'monday',
+        'status' => true,
+    ]);
+
+    $nextMonday = now()->next('monday')->format('Y-m-d');
+
+    $response = $this->postJson('/api/v1/my-absences', [
+        'absence_type_id' => $this->absenceType->absence_type_id,
+        'start_date' => $nextMonday,
+        'end_date' => $nextMonday,
+        'observations' => 'Own absence test',
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('data.teacherExternalId', 'TCH_MY_03');
+
+    $this->assertDatabaseHas('teacher_absences', [
+        'teacher_external_id' => 'TCH_MY_03',
+        'observations' => 'Own absence test',
+    ]);
+});
+

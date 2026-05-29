@@ -1,25 +1,5 @@
 <?php
 
-/**
- * @descripcion  Migración que crea la tabla gama_class_schedules.
- *
- * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
- *
- * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @version      1.0.0
- *
- * @creado       2026-05-13
- *
- * @modificado   2026-05-13
- *
- * @cambios      2026-05-13 - Creación inicial de la migración
- */
-
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
@@ -30,10 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('gama_class_schedules', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('semester_id')->constrained('gama_semesters');
-            $table->foreignId('classroom_id')->constrained('gama_classrooms');
+        Schema::create('class_schedules', function (Blueprint $table): void {
+            $table->id('class_schedule_id');
+            $table->foreignId('semester_id')->constrained('semesters', 'semester_id')->onDelete('cascade');
+            $table->foreignId('classroom_id')->constrained('classrooms', 'classroom_id')->onDelete('restrict');
             $table->string('teacher_external_id', 50);
             $table->string('subject_name', 100);
             $table->string('group_name', 10);
@@ -54,6 +34,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('gama_class_schedules');
+        Schema::dropIfExists('class_schedules');
     }
 };

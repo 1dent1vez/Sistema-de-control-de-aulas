@@ -114,9 +114,15 @@
         </div>
       </section>
 
-      <section class="doc-card">
+      <section class="doc-card" id="formRegistrar">
         <div class="doc-card-h">Formulario + Clases afectadas</div>
         <div class="doc-card-b">
+          <div class="field" style="display: none;">
+            <label>Docente *</label>
+            <select id="fDocente" style="display: none;"></select>
+            <div class="err" id="eDocente"></div>
+          </div>
+
           <div class="field">
             <label>Tipo de ausencia *</label>
             <select id="fTipo">
@@ -199,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var absenceTypes = [];
   var schedules = [];
   var absences = [];
+  var selectedTeacherExternalId = null;
 
   var today = new Date(); today.setHours(0,0,0,0);
   var viewYear = today.getFullYear();
@@ -243,33 +250,57 @@ document.addEventListener('DOMContentLoaded', function () {
       var me = meResp.data;
       absenceTypes = typesResp.data || [];
 
-      if (me.role !== 'teacher' && me.role !== 'admin') {
-        $('btnRegistrar').disabled = true;
-        showToast('Acceso restringido', 'Esta pantalla es exclusiva del rol Docente.');
-      }
-
       $('docSub').textContent = 'Docente: ' + (me.fullName || me.email) + ' (' + (me.externalId || '') + ')';
 
       populateTypeDropdown();
 
-      var extId = me.externalId || '';
-      return apiGet('/api/v1/class-schedules?teacher_external_id=' + encodeURIComponent(extId));
-    }).then(function (schedResp) {
-      schedules = schedResp.data || [];
-      return apiGet('/api/v1/teacher-absences');
-    }).then(function (absResp) {
-      absences = absResp.data || [];
-      $('mainLoader').classList.add('hidden');
-      $('mainContent').classList.remove('hidden');
-      renderCalendar();
-      renderHistory();
-      refreshAffectedClasses();
+      var fDoc = $('fDocente');
+      fDoc.innerHTML = '<option value="' + me.externalId + '">' + (me.fullName || me.email) + ' (' + me.externalId + ')</option>';
+      fDoc.value = me.externalId;
+      selectedTeacherExternalId = me.externalId;
+
+      return loadTeacherData().then(function () {
+        $('mainLoader').classList.add('hidden');
+        $('mainContent').classList.remove('hidden');
+
+        // Smooth scroll to form if hash is #registrar
+        if (window.location.hash === '#registrar') {
+          setTimeout(function() {
+            var el = $('formRegistrar');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }, 300);
+        }
+      });
     })['catch'](function (err) {
       if (err && err.message) {
         showToast('Error', err.message);
       } else {
         showToast('Error', 'No se pudieron cargar los datos.');
       }
+      $('mainLoader').classList.add('hidden');
+      $('mainContent').classList.remove('hidden');
+    });
+  }
+
+  function loadTeacherData() {
+    $('mainLoader').classList.remove('hidden');
+    $('mainContent').classList.add('hidden');
+
+    return Promise.all([
+      apiGet('/api/v1/my-schedules'),
+      apiGet('/api/v1/my-absences')
+    ]).then(function (res) {
+      schedules = res[0].data || [];
+      absences = res[1].data || [];
+
+      $('mainLoader').classList.add('hidden');
+      $('mainContent').classList.remove('hidden');
+
+      renderCalendar();
+      renderHistory();
+      refreshAffectedClasses();
+    })['catch'](function (err) {
+      showToast('Error', 'No se pudieron cargar los datos del docente.');
       $('mainLoader').classList.add('hidden');
       $('mainContent').classList.remove('hidden');
     });
@@ -398,11 +429,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }).join('');
   }
 
-  function clearErrs() { ['eTipo','eInicio','eFin'].forEach(function (id) { $(id).classList.remove('show'); $(id).textContent = ''; }); }
+  function clearErrs() { ['eDocente','eTipo','eInicio','eFin'].forEach(function (id) { $(id).classList.remove('show'); $(id).textContent = ''; }); }
 
   function validate() {
     clearErrs();
     var ok = true;
+    if (!selectedTeacherExternalId) { setErr('eDocente', 'Selecciona un docente.'); ok = false; }
     if (!$('fTipo').value) { setErr('eTipo', 'Selecciona un tipo de ausencia.'); ok = false; }
     if (!fInicio.value) { setErr('eInicio', 'Define fecha inicio.'); ok = false; }
     if (!fFin.value) { setErr('eFin', 'Define fecha fin.'); ok = false; }
@@ -420,6 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto;"></div>';
 
     var body = {
+      teacher_external_id: selectedTeacherExternalId,
       absence_type_id: parseInt($('fTipo').value, 10),
       start_date: fInicio.value,
       end_date: fFin.value,
@@ -427,17 +460,13 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     if (isConfirmed) { body.is_confirmed = true; }
 
-    apiPost('/api/v1/teacher-absences', body).then(function () {
+    apiPost('/api/v1/my-absences', body).then(function () {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-save"></i><span>Registrar Ausencia</span>';
       var countText = $('affectedCount').textContent.split(' ')[0] || '0';
       showToast('Ausencia registrada', 'Ausencia registrada exitosamente. ' + countText + ' clases marcadas.');
       $('fNotas').value = '';
-      return apiGet('/api/v1/teacher-absences');
-    }).then(function (absResp) {
-      absences = absResp.data || [];
-      renderCalendar();
-      renderHistory();
+      return loadTeacherData();
     })['catch'](function (err) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-save"></i><span>Registrar Ausencia</span>';
@@ -459,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function showFieldErrors(errors) {
+    if (errors.teacher_external_id) { setErr('eDocente', errors.teacher_external_id.join('; ')); }
     if (errors.absence_type_id) { setErr('eTipo', errors.absence_type_id.join('; ')); }
     if (errors.start_date) { setErr('eInicio', errors.start_date.join('; ')); }
     if (errors.end_date) { setErr('eFin', errors.end_date.join('; ')); }

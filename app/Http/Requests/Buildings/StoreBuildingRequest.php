@@ -40,39 +40,24 @@ class StoreBuildingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'institution_id' => ['nullable', 'integer', 'exists:gama_institutions,id'],
             'name' => [
                 'required',
                 'string',
                 'regex:/^[a-zA-Z0-9\-]+$/',
                 'max:255',
-                Rule::unique('gama_buildings', 'name')
-                    ->where('institution_id', $this->input('institution_id')),
+                Rule::unique('buildings', 'name'),
             ],
             'level_count' => ['required', 'integer', 'min:1', 'max:5'],
             'description' => ['nullable', 'string', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', 'max:500'],
         ];
     }
 
-    protected function prepareForValidation(): void
-    {
-        if (! $this->has('institution_id') || ! $this->input('institution_id')) {
-            $active = Institution::where('is_active', true)->first();
-            abort_if(! $active, 422, 'No hay una institución activa registrada.');
-            $this->merge(['institution_id' => $active->id]);
-        } else {
-            $institution = Institution::find($this->input('institution_id'));
-            abort_if(! $institution?->is_active, 422, 'La institución seleccionada no está activa.');
-        }
-    }
-
     public function messages(): array
     {
         return [
-            'institution_id.exists' => 'La institución seleccionada no existe.',
             'name.required' => 'El nombre del edificio es obligatorio.',
             'name.regex' => 'El nombre del edificio solo puede contener letras, números y el guion medio (-).',
-            'name.unique' => 'Ya existe un edificio con ese nombre en la misma institución.',
+            'name.unique' => 'Ya existe un edificio con ese nombre.',
             'level_count.required' => 'El número de niveles es obligatorio.',
             'level_count.min' => 'El edificio debe tener al menos 1 nivel.',
             'level_count.max' => 'El edificio no puede tener más de 5 niveles.',

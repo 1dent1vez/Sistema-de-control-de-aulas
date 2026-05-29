@@ -32,8 +32,7 @@ class BuildingResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'institutionId' => $this->institution_id,
+            'id' => $this->building_id,
             'name' => $this->name,
             'levelCount' => $this->level_count,
             'description' => $this->description ?? null,

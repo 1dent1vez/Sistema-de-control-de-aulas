@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @descripcion  Tests de feature para los endpoints de edificios.
+ * @descripcion  Tests de feature para los endpoints de edificios adaptados para niveles globales.
  *
  * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
@@ -11,50 +11,52 @@
  *
  * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
  *
- * @version      1.0.0
+ * @version      1.1.0
  *
  * @creado       2026-05-13
  *
- * @modificado   2026-05-13
+ * @modificado   2026-05-28
  *
- * @cambios      2026-05-13 - Creación inicial de los tests
+ * @cambios      2026-05-28 - Adaptado para la desvinculación de niveles de edificios (niveles globales).
  */
 
 declare(strict_types=1);
 
 use App\Models\Building;
 use App\Models\Institution;
+use App\Models\Level;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->endpoint = '/api/v1/buildings';
-    $this->institution = Institution::factory()->create();
+    Level::create(['name' => 'PB', 'display_order' => 0]);
+    Level::create(['name' => 'P1', 'display_order' => 1]);
 });
 
 it('can list all buildings', function (): void {
-    Building::factory()->count(3)->create([
-        'institution_id' => $this->institution->id,
-    ]);
+    Building::factory()->create();
+    Building::factory()->create();
+    Building::factory()->create();
 
     $response = $this->getJson($this->endpoint);
 
     $response->assertStatus(200)
         ->assertJsonStructure([
             'success', 'statusCode', 'message',
-            'data' => [['id', 'name', 'levelCount', 'status', 'levels']],
+            'data' => [['id', 'name', 'levelCount', 'status']],
             'errors',
         ]);
 });
 
-it('can show a single building with levels', function (): void {
+it('can show a single building', function (): void {
     $building = Building::factory()->create();
 
-    $response = $this->getJson("$this->endpoint/{$building->id}");
+    $response = $this->getJson("$this->endpoint/{$building->building_id}");
 
     $response->assertStatus(200)
-        ->assertJsonPath('data.id', $building->id);
+        ->assertJsonPath('data.id', $building->building_id);
 });
 
 it('returns 404 when building not found', function (): void {
@@ -63,10 +65,9 @@ it('returns 404 when building not found', function (): void {
         ->assertJsonFragment(['success' => false]);
 });
 
-it('can create a building with auto-generated levels', function (): void {
+it('can create a building', function (): void {
     $this->loginAsAdmin();
     $data = [
-        'institution_id' => $this->institution->id,
         'name' => 'Edificio-Principal',
         'level_count' => 3,
     ];
@@ -76,35 +77,27 @@ it('can create a building with auto-generated levels', function (): void {
     $response->assertStatus(201)
         ->assertJsonPath('data.levelCount', 3);
 
-    $this->assertDatabaseHas('gama_buildings', ['name' => 'Edificio-Principal']);
-
-    $buildingId = $response->json('data.id');
-    $this->assertDatabaseHas('gama_levels', ['building_id' => $buildingId, 'name' => 'PB', 'display_order' => 0]);
-    $this->assertDatabaseHas('gama_levels', ['building_id' => $buildingId, 'name' => 'P1', 'display_order' => 1]);
-    $this->assertDatabaseHas('gama_levels', ['building_id' => $buildingId, 'name' => 'P2', 'display_order' => 2]);
+    $this->assertDatabaseHas('buildings', ['name' => 'Edificio-Principal']);
 });
 
 it('validates level_count between 1 and 5', function (): void {
     $this->loginAsAdmin();
     $this->postJson($this->endpoint, [
-        'institution_id' => $this->institution->id,
         'name' => 'Test',
         'level_count' => 0,
     ])->assertStatus(422);
 
     $this->postJson($this->endpoint, [
-        'institution_id' => $this->institution->id,
         'name' => 'Test-2',
         'level_count' => 6,
     ])->assertStatus(422);
 });
 
-it('validates unique building name per institution', function (): void {
+it('validates unique building name', function (): void {
     $this->loginAsAdmin();
-    $building = Building::factory()->create(['institution_id' => $this->institution->id]);
+    $building = Building::factory()->create();
 
     $this->postJson($this->endpoint, [
-        'institution_id' => $this->institution->id,
         'name' => $building->name,
         'level_count' => 2,
     ])->assertStatus(422);
@@ -114,30 +107,23 @@ it('can soft delete a building', function (): void {
     $this->loginAsAdmin();
     $building = Building::factory()->create();
 
-    $this->deleteJson("$this->endpoint/{$building->id}")
+    $this->deleteJson("$this->endpoint/{$building->building_id}")
         ->assertStatus(200);
 
     $this->assertSoftDeleted($building);
 });
 
-it('can get levels of a building', function (): void {
+it('can get levels dynamically', function (): void {
     $this->loginAsAdmin();
-    $data = [
-        'institution_id' => $this->institution->id,
-        'name' => 'Building-With-Levels',
-        'level_count' => 3,
-    ];
+    Building::factory()->create();
 
-    $createResponse = $this->postJson($this->endpoint, $data);
-    $buildingId = $createResponse->json('data.id');
-
-    $response = $this->getJson("$this->endpoint/{$buildingId}/levels");
+    $response = $this->getJson("/api/v1/levels");
 
     $response->assertStatus(200)
         ->assertJsonStructure([
             'success', 'statusCode', 'message',
-            'data' => [['id', 'buildingId', 'name', 'displayOrder']],
+            'data' => [['id', 'name', 'displayOrder']],
             'errors',
         ])
-        ->assertJsonCount(3, 'data');
+        ->assertJsonCount(2, 'data');
 });

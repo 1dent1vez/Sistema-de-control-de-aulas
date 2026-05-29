@@ -35,7 +35,6 @@ class BuildingFactory extends Factory
     public function definition(): array
     {
         return [
-            'institution_id' => Institution::factory(),
             'name' => fake()->unique()->word(),
             'level_count' => fake()->numberBetween(1, 5),
             'status' => true,

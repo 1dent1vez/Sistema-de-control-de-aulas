@@ -27,6 +27,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -34,7 +35,9 @@ class Semester extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_semesters';
+    protected $table = 'semesters';
+
+    protected $primaryKey = 'semester_id';
 
     protected $fillable = [
         'institution_id',
@@ -53,7 +56,12 @@ class Semester extends Model
 
     public function classSchedules(): HasMany
     {
-        return $this->hasMany(ClassSchedule::class);
+        return $this->hasMany(ClassSchedule::class, 'semester_id', 'semester_id');
+    }
+
+    public function institution(): BelongsTo
+    {
+        return $this->belongsTo(Institution::class, 'institution_id', 'institution_id');
     }
 
     public function scopeCurrent(Builder $query): Builder

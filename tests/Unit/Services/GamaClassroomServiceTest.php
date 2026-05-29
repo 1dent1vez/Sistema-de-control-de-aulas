@@ -31,13 +31,13 @@ use App\Services\Buildings\GamaClassroomService;
 beforeEach(function () {
     $this->service = app(GamaClassroomService::class);
     $this->building = Building::factory()->create();
-    $this->level = Level::factory()->create(['building_id' => $this->building->id]);
+    $this->level = Level::factory()->create();
 });
 
 it('can get all classrooms', function () {
     Classroom::factory()->count(2)->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
     ]);
 
     $classrooms = $this->service->getAll();
@@ -47,37 +47,37 @@ it('can get all classrooms', function () {
 
 it('can get classroom by id', function () {
     $classroom = Classroom::factory()->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
     ]);
 
-    $found = $this->service->getById($classroom->id);
+    $found = $this->service->getById($classroom->classroom_id);
 
-    expect($found->id)->toBe($classroom->id);
+    expect($found->classroom_id)->toBe($classroom->classroom_id);
 });
 
 it('can get classrooms by building id', function () {
     Classroom::factory()->count(3)->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
     ]);
 
     $otherBuilding = Building::factory()->create();
-    $otherLevel = Level::factory()->create(['building_id' => $otherBuilding->id]);
+    $otherLevel = Level::factory()->create();
     Classroom::factory()->create([
-        'building_id' => $otherBuilding->id,
-        'level_id' => $otherLevel->id,
+        'building_id' => $otherBuilding->building_id,
+        'level_id' => $otherLevel->level_id,
     ]);
 
-    $classrooms = $this->service->getByBuildingId($this->building->id);
+    $classrooms = $this->service->getByBuildingId($this->building->building_id);
 
     expect($classrooms)->toHaveCount(3);
 });
 
 it('can create classroom', function () {
     $data = [
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
         'classroom_name' => 'Aula 101',
         'classroom_type' => 'classroom',
         'status' => true,
@@ -88,30 +88,30 @@ it('can create classroom', function () {
     expect($classroom->classroom_name)->toBe('Aula 101')
         ->and($classroom->classroom_type)->toBe(ClassroomType::CLASSROOM);
 
-    $this->assertDatabaseHas('gama_classrooms', ['classroom_name' => 'Aula 101']);
+    $this->assertDatabaseHas('classrooms', ['classroom_name' => 'Aula 101']);
 });
 
 it('can update classroom', function () {
     $classroom = Classroom::factory()->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
         'classroom_name' => 'Aula Old',
     ]);
 
-    $updated = $this->service->update($classroom->id, ['classroom_name' => 'Aula New']);
+    $updated = $this->service->update($classroom->classroom_id, ['classroom_name' => 'Aula New']);
 
     expect($updated->classroom_name)->toBe('Aula New');
-    $this->assertDatabaseHas('gama_classrooms', ['id' => $classroom->id, 'classroom_name' => 'Aula New']);
+    $this->assertDatabaseHas('classrooms', ['classroom_id' => $classroom->classroom_id, 'classroom_name' => 'Aula New']);
 });
 
 it('can delete classroom', function () {
     $classroom = Classroom::factory()->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
     ]);
 
-    $result = $this->service->delete($classroom->id);
+    $result = $this->service->delete($classroom->classroom_id);
 
     expect($result)->toBeTrue();
-    $this->assertSoftDeleted('gama_classrooms', ['id' => $classroom->id]);
+    $this->assertSoftDeleted('classrooms', ['classroom_id' => $classroom->classroom_id]);
 });

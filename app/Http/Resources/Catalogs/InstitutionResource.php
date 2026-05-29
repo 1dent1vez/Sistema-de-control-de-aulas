@@ -32,7 +32,7 @@ class InstitutionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->institution_id,
             'name' => $this->name,
             'code' => $this->code,
             'isActive' => $this->is_active,

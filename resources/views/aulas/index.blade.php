@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const state = {
     buildings: [],    // edificios activos
     aulas: [],        // classrooms completos
-    levelsCache: {},  // { buildingId: [{id, name}] }
+    levels: [],       // niveles globales
     edificio: '',
     tipo: '',
     q: '',
@@ -430,6 +430,14 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  /* ── Cargar niveles globales dropdown ── */
+  function populateLevelsDropdown() {
+    const level = $('fNivel');
+    level.innerHTML = '<option value="">Selecciona...</option>' +
+      state.levels.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+    level.disabled = false;
+  }
+
   /* ── Carga inicial ── */
   async function loadAll() {
     $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--soft-steel);"><i class="fas fa-spinner fa-spin" style="font-size:22px;"></i></td></tr>';
@@ -445,6 +453,17 @@ document.addEventListener('DOMContentLoaded', function () {
       showToast('Error', 'No se pudieron cargar los edificios.', 'error');
       $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--status-inactive);">No se pudieron cargar los edificios.</td></tr>';
       bootPrecondition();
+      return;
+    }
+
+    let levelsLoaded = false;
+    try {
+      const levelRes = await apiFetch('/api/v1/levels');
+      state.levels = (levelRes.data ?? []).map(l => ({ id: l.id, name: l.name }));
+      levelsLoaded = true;
+    } catch(e) {
+      showToast('Error', 'No se pudieron cargar los niveles globales.', 'error');
+      $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--status-inactive);">No se pudieron cargar los niveles globales.</td></tr>';
       return;
     }
 
@@ -465,22 +484,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
       bootPrecondition();
       populateFilters();
+      populateLevelsDropdown();
       renderTable();
     } catch(e) {
       $('aulasBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--status-inactive);">Error al cargar las aulas de la API.</td></tr>';
       showToast('Error', 'No se pudieron cargar las aulas.', 'error');
-    }
-  }
-
-  /* ── Cargar niveles de un edificio ── */
-  async function loadLevels(buildingId) {
-    if (state.levelsCache[buildingId]) return state.levelsCache[buildingId];
-    try {
-      const res = await apiFetch(`/api/v1/buildings/${buildingId}/levels`);
-      state.levelsCache[buildingId] = (res.data ?? []).map(l => ({ id: l.id, name: l.name }));
-      return state.levelsCache[buildingId];
-    } catch(e) {
-      return null;
     }
   }
 
@@ -566,13 +574,13 @@ document.addEventListener('DOMContentLoaded', function () {
       const record = state.aulas.find(x => x.id === editId);
       if (!record) return;
       $('fEdificio').value = String(record.buildingId);
-      await syncNiveles(record.levelId);
+      $('fNivel').value = String(record.levelId);
       $('fNombre').value = record.nombre;
       $('countNombre').textContent = record.nombre.length;
       $('fTipo').value = record.tipo;
     } else {
       $('fEdificio').value = '';
-      $('fNivel').innerHTML = '<option value="">Selecciona edificio...</option>';
+      $('fNivel').value = '';
       $('fNombre').value = '';
       $('countNombre').textContent = '0';
       $('fTipo').value = '';
@@ -586,31 +594,6 @@ document.addEventListener('DOMContentLoaded', function () {
     $('overlayAulas').classList.remove('active');
     $('panelAulas').classList.remove('open');
     document.body.style.overflow = '';
-  }
-
-  async function syncNiveles(selectedId = null) {
-    const buildingId = Number($('fEdificio').value);
-    const level = $('fNivel');
-    
-    $('eNivel').textContent = '';
-    $('eNivel').classList.remove('active');
-    
-    if (!buildingId) {
-      level.innerHTML = '<option value="">Selecciona edificio...</option>';
-      return;
-    }
-    level.innerHTML = '<option value="">Cargando...</option>';
-    const levels = await loadLevels(buildingId);
-    if (levels === null) {
-      showToast('Error', 'No se pudieron cargar los niveles.', 'error');
-      setError('eNivel', 'No se pudieron cargar los niveles.');
-      level.innerHTML = '<option value="">Error al cargar niveles</option>';
-      level.disabled = true;
-      return;
-    }
-    level.disabled = false;
-    level.innerHTML = '<option value="">Selecciona...</option>' +
-      levels.map(l => `<option value="${l.id}" ${selectedId == l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
   }
 
   /* ── Errores ── */
@@ -662,7 +645,6 @@ document.addEventListener('DOMContentLoaded', function () {
         showToast('Aula registrada', 'El aula fue registrada exitosamente.', 'success');
       }
       closePanel();
-      state.levelsCache = {};
       await loadAll();
     } catch(err) {
       const errs = err.json?.errors ?? {};
@@ -711,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function () {
   $('overlayAulas').addEventListener('click',        closePanel);
   $('btnSaveAula').addEventListener('click',         saveForm);
   
-  $('fEdificio').addEventListener('change',          () => { syncNiveles().then(() => checkFormValidity()); });
+  $('fEdificio').addEventListener('change',          checkFormValidity);
   $('fNombre').addEventListener('input',             () => { $('countNombre').textContent = $('fNombre').value.length; checkFormValidity(); });
   $('fNivel').addEventListener('change',             checkFormValidity);
   $('fTipo').addEventListener('change',              checkFormValidity);

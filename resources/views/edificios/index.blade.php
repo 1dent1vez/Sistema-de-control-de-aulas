@@ -740,13 +740,7 @@
             </div>
         </div>
 
-        {{-- Previsualización de Niveles --}}
-        <div class="form-field" id="levelsPreviewContainer" style="display: none;">
-            <label class="form-label">Niveles que se generarán</label>
-            <div class="form-static" style="background: var(--light-blue); border-style: dashed; border-color: var(--royal-blue);">
-                <span id="levelsPreviewText" style="font-weight: 600; color: var(--royal-blue);">PB</span>
-            </div>
-        </div>
+
 
         {{-- Descripción --}}
         <div class="form-field">
@@ -997,25 +991,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* ─── Panel lateral ─── */
-    function updateLevelsPreview() {
-        const val = parseInt(fieldNiveles.value);
-        const container = $('levelsPreviewContainer');
-        const textSpan = $('levelsPreviewText');
 
-        if (isNaN(val) || val <= 0 || val > 5) {
-            container.style.display = 'none';
-            textSpan.textContent = '';
-            return;
-        }
-
-        const levels = [];
-        for (let i = 0; i < val; i++) {
-            levels.push(i === 0 ? 'PB' : `P${i}`);
-        }
-
-        container.style.display = 'block';
-        textSpan.textContent = levels.join(', ');
-    }
 
     function openPanel(record) {
         panelRecord = record || {};
@@ -1036,7 +1012,6 @@ document.addEventListener('DOMContentLoaded', function () {
         $('nombreCount').textContent = fieldNombre.value.length;
         $('descCount').textContent   = fieldDesc.value.length;
 
-        updateLevelsPreview();
         clearErrors();
         sidePanel.classList.add('open');
         panelBackdrop.classList.add('active');
@@ -1077,14 +1052,12 @@ document.addEventListener('DOMContentLoaded', function () {
             let val = parseInt(this.value);
             if (val > 5) this.value = '5';
         }
-        updateLevelsPreview();
     });
 
     btnNivelesDec.addEventListener('click', () => {
         let val = parseInt(fieldNiveles.value) || 1;
         if (val > 1) {
             fieldNiveles.value = val - 1;
-            updateLevelsPreview();
         }
     });
 
@@ -1092,7 +1065,6 @@ document.addEventListener('DOMContentLoaded', function () {
         let val = parseInt(fieldNiveles.value) || 0;
         if (val < 5) {
             fieldNiveles.value = val + 1;
-            updateLevelsPreview();
         }
     });
 

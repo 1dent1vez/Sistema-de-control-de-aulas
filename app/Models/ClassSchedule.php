@@ -27,13 +27,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ClassSchedule extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_class_schedules';
+    protected $table = 'class_schedules';
+
+    protected $primaryKey = 'class_schedule_id';
 
     protected $fillable = [
         'semester_id',
@@ -56,16 +59,26 @@ class ClassSchedule extends Model
 
     public function semester(): BelongsTo
     {
-        return $this->belongsTo(Semester::class);
+        return $this->belongsTo(Semester::class, 'semester_id', 'semester_id');
     }
 
     public function classroom(): BelongsTo
     {
-        return $this->belongsTo(Classroom::class);
+        return $this->belongsTo(Classroom::class, 'classroom_id', 'classroom_id');
     }
 
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(SamIdentity::class, 'teacher_external_id', 'external_id');
+    }
+
+    public function teacherAbsences(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            TeacherAbsence::class,
+            'class_schedule_teacher_absence',
+            'class_schedule_id',
+            'teacher_absence_id'
+        );
     }
 }

@@ -27,7 +27,9 @@ namespace App\Enums\Auth;
 enum SamRole: string
 {
     case ADMIN = 'admin';
+    case COORDINATOR = 'coordinator';
     case TEACHER = 'teacher';
+    case VIEWER = 'viewer';
 
     public static function values(): array
     {

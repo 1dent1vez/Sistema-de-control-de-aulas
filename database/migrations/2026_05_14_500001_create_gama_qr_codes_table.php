@@ -10,13 +10,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('gama_qr_codes', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('classroom_id')->constrained('gama_classrooms');
+        Schema::create('qr_codes', function (Blueprint $table): void {
+            $table->id('qr_id'); // customized PK name from ER
+            $table->foreignId('classroom_id')->constrained('classrooms', 'classroom_id')->onDelete('cascade');
             $table->string('token', 255)->unique();
             $table->json('payload');
             $table->string('file_path')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->tinyInteger('is_active')->default(1); // corrected type TINYINT(1)
             $table->timestamp('generated_at')->nullable();
             $table->timestamp('invalidated_at')->nullable();
             $table->timestamps();
@@ -29,6 +29,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('gama_qr_codes');
+        Schema::dropIfExists('qr_codes');
     }
 };

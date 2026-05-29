@@ -38,13 +38,19 @@ class StoreSemesterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'institution_id' => ['required', 'integer', 'exists:gama_institutions,id'],
+            'institution_id' => ['nullable', 'integer', 'exists:institutions,institution_id'],
             'name' => [
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('gama_semesters', 'name')
-                    ->where('institution_id', $this->input('institution_id')),
+                Rule::unique('semesters', 'name')
+                    ->ignore($this->route('semesterId'), 'semester_id')
+                    ->where(function ($query) {
+                        $institutionId = $this->input('institution_id');
+                        return $institutionId !== null
+                            ? $query->where('institution_id', $institutionId)
+                            : $query->whereNull('institution_id');
+                    }),
             ],
             'start_date' => ['required', 'date', 'before:end_date'],
             'end_date' => ['required', 'date', 'after:start_date'],

@@ -85,7 +85,7 @@ class GamaClassScheduleRepository implements ClassScheduleRepositoryInterface
             ->where('end_time', '>', $startTime);
 
         if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
+            $query->where('class_schedule_id', '!=', $excludeId);
         }
 
         return $query->exists();

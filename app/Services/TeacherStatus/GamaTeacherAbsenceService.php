@@ -116,11 +116,11 @@ class GamaTeacherAbsenceService
 
         return DB::transaction(function () use ($data, $affectedSchedules) {
             $absence = $this->repository->create($data);
-            $absence->classSchedules()->sync($affectedSchedules->pluck('id')->toArray());
+            $absence->classSchedules()->sync($affectedSchedules->pluck('class_schedule_id')->toArray());
 
             event(new TeacherAbsenceRegistered($absence));
 
-            return $absence->fresh()->load('classSchedules', 'absenceType');
+            return $absence->fresh()->load('classSchedules.classroom', 'absenceType');
         });
     }
 
@@ -167,11 +167,11 @@ class GamaTeacherAbsenceService
 
         return DB::transaction(function () use ($absence, $data, $affectedSchedules) {
             $updatedAbsence = $this->repository->update($absence, $data);
-            $updatedAbsence->classSchedules()->sync($affectedSchedules->pluck('id')->toArray());
+            $updatedAbsence->classSchedules()->sync($affectedSchedules->pluck('class_schedule_id')->toArray());
 
             event(new TeacherAbsenceRegistered($updatedAbsence));
 
-            return $updatedAbsence->fresh()->load('classSchedules', 'absenceType');
+            return $updatedAbsence->fresh()->load('classSchedules.classroom', 'absenceType');
         });
     }
 
@@ -231,11 +231,11 @@ class GamaTeacherAbsenceService
                 $weekdays = array_unique($weekdays);
             }
 
-            $schedules = ClassSchedule::where('semester_id', $semester->id)
+            $schedules = ClassSchedule::where('semester_id', $semester->semester_id)
                 ->where('teacher_external_id', $teacherExternalId)
                 ->whereIn('weekday', $weekdays)
                 ->where('status', true)
-                ->pluck('id')
+                ->pluck('class_schedule_id')
                 ->toArray();
 
             $scheduleIds = array_merge($scheduleIds, $schedules);
@@ -245,7 +245,7 @@ class GamaTeacherAbsenceService
             return collect();
         }
 
-        return ClassSchedule::whereIn('id', array_unique($scheduleIds))->get();
+        return ClassSchedule::whereIn('class_schedule_id', array_unique($scheduleIds))->get();
     }
 
     /**

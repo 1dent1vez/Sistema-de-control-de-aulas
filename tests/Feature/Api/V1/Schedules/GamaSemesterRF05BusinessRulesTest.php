@@ -41,7 +41,7 @@ beforeEach(function (): void {
     ]);
 
     $this->building = Building::create([
-        'institution_id' => $this->institution->id,
+        'institution_id' => $this->institution->institution_id,
         'name' => 'Edificio A',
         'level_count' => 1,
         'description' => 'Ciencias',
@@ -49,14 +49,13 @@ beforeEach(function (): void {
     ]);
 
     $this->level = Level::create([
-        'building_id' => $this->building->id,
         'name' => 'Planta Baja',
         'display_order' => 0,
     ]);
 
     $this->classroom = Classroom::create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
         'classroom_name' => 'Aula A-101',
         'classroom_type' => 'classroom',
         'status' => true,
@@ -65,7 +64,7 @@ beforeEach(function (): void {
 
 it('RF-05.1 rejects overlapping semester dates with exact error message', function (): void {
     Semester::create([
-        'institution_id' => $this->institution->id,
+        'institution_id' => $this->institution->institution_id,
         'name' => 'Semester Active',
         'start_date' => now()->subDays(5)->format('Y-m-d'),
         'end_date' => now()->addDays(5)->format('Y-m-d'),
@@ -73,7 +72,7 @@ it('RF-05.1 rejects overlapping semester dates with exact error message', functi
     ]);
 
     $response = $this->postJson('/api/v1/semesters', [
-        'institution_id' => $this->institution->id,
+        'institution_id' => $this->institution->institution_id,
         'name' => 'Overlapping Semester',
         'start_date' => now()->subDays(2)->format('Y-m-d'),
         'end_date' => now()->addDays(10)->format('Y-m-d'),
@@ -87,7 +86,7 @@ it('RF-05.1 rejects overlapping semester dates with exact error message', functi
 it('RF-05.3 blocks schedules registry when no current semester is active', function (): void {
     // Create an expired semester (exists, but not active/vigente)
     $expiredSemester = Semester::create([
-        'institution_id' => $this->institution->id,
+        'institution_id' => $this->institution->institution_id,
         'name' => 'Expired 2025',
         'start_date' => '2025-01-01',
         'end_date' => '2025-06-30',
@@ -95,8 +94,8 @@ it('RF-05.3 blocks schedules registry when no current semester is active', funct
     ]);
 
     $response = $this->postJson('/api/v1/class-schedules', [
-        'semester_id' => $expiredSemester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $expiredSemester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'teacher_external_id' => 'SAM-12345',
         'subject_name' => 'Química',
         'group_name' => '1B',

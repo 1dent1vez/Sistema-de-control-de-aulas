@@ -32,7 +32,7 @@ class ClassroomResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->classroom_id,
             'buildingId' => $this->building_id,
             'buildingName' => $this->building?->name ?? null,
             'levelId' => $this->level_id,
@@ -43,8 +43,8 @@ class ClassroomResource extends JsonResource
             'isActive' => (bool) $this->status,
             'status' => $this->status,
             'hasActiveQr' => $this->relationLoaded('activeQr') ? ! is_null($this->activeQr) : $this->activeQr()->exists(),
-            'activeQrId' => ($activeQr = $this->relationLoaded('activeQr') ? $this->activeQr : $this->activeQr()->first())?->id,
-            'qrImageUrl' => $activeQr ? "api/v1/qr-codes/{$activeQr->id}/file" : null,
+            'activeQrId' => ($activeQr = $this->relationLoaded('activeQr') ? $this->activeQr : $this->activeQr()->first())?->qr_id,
+            'qrImageUrl' => $activeQr ? "api/v1/qr-codes/{$activeQr->qr_id}/file" : null,
             'level' => new LevelResource($this->whenLoaded('level')),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),

@@ -73,7 +73,7 @@ class GamaSemesterService
     public function create(array $data): Semester
     {
         try {
-            $hasOverlap = $this->repository->hasOverlap($data['institution_id'], $data['start_date'], $data['end_date']);
+            $hasOverlap = $this->repository->hasOverlap($data['institution_id'] ?? null, $data['start_date'], $data['end_date']);
         } catch (\Exception $e) {
             Log::error('Fallo de BD al verificar solapamiento: '.$e->getMessage());
             throw new \RuntimeException('Error al consultar la base de datos. Intente nuevamente.');
@@ -105,8 +105,10 @@ class GamaSemesterService
             $startDate = $data['start_date'] ?? Carbon::parse($semester->start_date)->format('Y-m-d');
             $endDate = $data['end_date'] ?? Carbon::parse($semester->end_date)->format('Y-m-d');
 
+            $institutionId = array_key_exists('institution_id', $data) ? $data['institution_id'] : $semester->institution_id;
+
             try {
-                $hasOverlap = $this->repository->hasOverlap($semester->institution_id, $startDate, $endDate, $id);
+                $hasOverlap = $this->repository->hasOverlap($institutionId, $startDate, $endDate, $id);
             } catch (\Exception $e) {
                 Log::error('Fallo de BD al verificar solapamiento: '.$e->getMessage());
                 throw new \RuntimeException('Error al consultar la base de datos. Intente nuevamente.');

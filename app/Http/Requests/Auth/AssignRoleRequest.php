@@ -54,7 +54,7 @@ class AssignRoleRequest extends FormRequest
     {
         return [
             'role.required' => 'El rol es obligatorio.',
-            'role.in' => 'El rol debe ser admin o teacher.',
+            'role.in' => 'El rol debe ser uno de los siguientes: admin, coordinator, teacher, viewer.',
             'current_password.required' => 'La contraseña del administrador actual es obligatoria para asignar el rol de administrador.',
         ];
     }

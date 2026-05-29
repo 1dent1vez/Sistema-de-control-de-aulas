@@ -35,21 +35,21 @@ it('executes the QR lifecycle flow correctly', function () {
 
     // 1. Preparar infraestructura base
     $institution = Institution::factory()->create();
-    $building = Building::factory()->create(['institution_id' => $institution->id]);
-    $level = Level::factory()->create(['building_id' => $building->id]);
+    $building = Building::factory()->create();
+    $level = Level::factory()->create();
     $classroom = Classroom::factory()->create([
-        'building_id' => $building->id,
-        'level_id' => $level->id,
+        'building_id' => $building->building_id,
+        'level_id' => $level->level_id,
     ]);
 
     // 2. Generar QR inicial para el Aula
-    $response = $this->postJson("/api/v1/classrooms/{$classroom->id}/qr");
+    $response = $this->postJson("/api/v1/classrooms/{$classroom->classroom_id}/qr");
 
     $response->assertStatus(201);
     $firstQrId = $response->json('data.id');
 
     // 3. Intentar generar de nuevo sin el flag force (debe tener éxito directo y desactivar el anterior)
-    $response = $this->postJson("/api/v1/classrooms/{$classroom->id}/qr");
+    $response = $this->postJson("/api/v1/classrooms/{$classroom->classroom_id}/qr");
 
     $response->assertStatus(201);
     $secondQrId = $response->json('data.id');
@@ -64,7 +64,7 @@ it('executes the QR lifecycle flow correctly', function () {
 
     // 6. Ejecutar descarga masiva en lote y verificar que procesa solo el activo
     $response = $this->postJson('/api/v1/qr-codes/download', [
-        'classroom_ids' => [$classroom->id],
+        'classroom_ids' => [$classroom->classroom_id],
         'format' => 'png',
     ]);
 

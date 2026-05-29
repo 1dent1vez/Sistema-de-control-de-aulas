@@ -13,18 +13,17 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $institution = Institution::factory()->create();
-    $building = Building::factory()->create(['institution_id' => $institution->id]);
-    $level = Level::factory()->create(['building_id' => $building->id]);
+    $building = Building::factory()->create();
+    $level = Level::factory()->create();
     $this->classroom = Classroom::factory()->create([
-        'building_id' => $building->id,
-        'level_id' => $level->id,
+        'building_id' => $building->building_id,
+        'level_id' => $level->level_id,
     ]);
 });
 
 it('can generate a new QR code', function (): void {
     $this->loginAsAdmin();
-    $response = $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", []);
+    $response = $this->postJson("/api/v1/classrooms/{$this->classroom->classroom_id}/qr", []);
 
     $response->assertStatus(201)
         ->assertJsonStructure([
@@ -33,8 +32,8 @@ it('can generate a new QR code', function (): void {
             'errors',
         ]);
 
-    $this->assertDatabaseHas('gama_qr_codes', [
-        'classroom_id' => $this->classroom->id,
+    $this->assertDatabaseHas('qr_codes', [
+        'classroom_id' => $this->classroom->classroom_id,
         'is_active' => true,
     ]);
 });
@@ -42,15 +41,15 @@ it('can generate a new QR code', function (): void {
 it('allows regeneration without force flag', function (): void {
     $this->loginAsAdmin();
     $existing = QrCode::factory()->create([
-        'classroom_id' => $this->classroom->id,
+        'classroom_id' => $this->classroom->classroom_id,
         'is_active' => true,
     ]);
 
-    $response = $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", []);
+    $response = $this->postJson("/api/v1/classrooms/{$this->classroom->classroom_id}/qr", []);
 
     $response->assertStatus(201);
-    $this->assertDatabaseMissing('gama_qr_codes', [
-        'id' => $existing->id,
+    $this->assertDatabaseMissing('qr_codes', [
+        'qr_id' => $existing->qr_id,
         'is_active' => true,
     ]);
 });
@@ -58,17 +57,17 @@ it('allows regeneration without force flag', function (): void {
 it('allows regeneration with force flag', function (): void {
     $this->loginAsAdmin();
     $existing = QrCode::factory()->create([
-        'classroom_id' => $this->classroom->id,
+        'classroom_id' => $this->classroom->classroom_id,
         'is_active' => true,
     ]);
 
-    $response = $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", [
+    $response = $this->postJson("/api/v1/classrooms/{$this->classroom->classroom_id}/qr", [
         'force_regenerate' => true,
     ]);
 
     $response->assertStatus(201);
-    $this->assertDatabaseMissing('gama_qr_codes', [
-        'id' => $existing->id,
+    $this->assertDatabaseMissing('qr_codes', [
+        'qr_id' => $existing->qr_id,
         'is_active' => true,
     ]);
 });
@@ -76,11 +75,11 @@ it('allows regeneration with force flag', function (): void {
 it('can show active QR code for a classroom', function (): void {
     $this->loginAsAdmin();
     QrCode::factory()->create([
-        'classroom_id' => $this->classroom->id,
+        'classroom_id' => $this->classroom->classroom_id,
         'is_active' => true,
     ]);
 
-    $response = $this->getJson("/api/v1/classrooms/{$this->classroom->id}/qr");
+    $response = $this->getJson("/api/v1/classrooms/{$this->classroom->classroom_id}/qr");
 
     $response->assertStatus(200)
         ->assertJsonPath('data.isActive', true);
@@ -88,16 +87,16 @@ it('can show active QR code for a classroom', function (): void {
 
 it('returns 404 when no active QR for classroom', function (): void {
     $this->loginAsAdmin();
-    $this->getJson("/api/v1/classrooms/{$this->classroom->id}/qr")
+    $this->getJson("/api/v1/classrooms/{$this->classroom->classroom_id}/qr")
         ->assertStatus(404);
 });
 
 it('can download QR batch', function (): void {
     $this->loginAsAdmin();
-    $this->postJson("/api/v1/classrooms/{$this->classroom->id}/qr", []);
+    $this->postJson("/api/v1/classrooms/{$this->classroom->classroom_id}/qr", []);
 
     $response = $this->postJson('/api/v1/qr-codes/download', [
-        'classroom_ids' => [$this->classroom->id],
+        'classroom_ids' => [$this->classroom->classroom_id],
         'format' => 'png',
     ]);
 
@@ -107,12 +106,11 @@ it('can download QR batch', function (): void {
 
 it('allows guest to view public classroom schedule via QR link', function (): void {
     $semester = Semester::factory()->create([
-        'institution_id' => $this->classroom->building->institution_id,
         'start_date' => now()->subDay()->format('Y-m-d'),
         'end_date' => now()->addDay()->format('Y-m-d'),
     ]);
 
-    $response = $this->get(route('qr.aula.horario', ['aula_id' => $this->classroom->id]));
+    $response = $this->get(route('qr.aula.horario', ['aula_id' => $this->classroom->classroom_id]));
 
     $response->assertStatus(200)
         ->assertSee($this->classroom->classroom_name);

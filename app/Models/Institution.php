@@ -34,7 +34,9 @@ class Institution extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_institutions';
+    protected $table = 'institutions';
+
+    protected $primaryKey = 'institution_id';
 
     protected $fillable = [
         'name',
@@ -47,11 +49,6 @@ class Institution extends Model
         return [
             'is_active' => 'boolean',
         ];
-    }
-
-    public function buildings(): HasMany
-    {
-        return $this->hasMany(Building::class, 'institution_id');
     }
 
     public function scopeActive(Builder $query): Builder

@@ -23,7 +23,7 @@ it('forbids teacher to create building', function () {
     Sanctum::actingAs($teacher, ['teacher']);
 
     $response = $this->postJson('/api/v1/buildings', [
-        'name' => 'B1', 'code' => 'B1', 'institution_id' => Institution::factory()->create()->id, 'level_count' => 1,
+        'name' => 'B1', 'code' => 'B1', 'level_count' => 1,
     ]);
     $response->assertStatus(403);
 });
@@ -33,7 +33,7 @@ it('allows admin to create building', function () {
     Sanctum::actingAs($admin, ['*']);
 
     $response = $this->postJson('/api/v1/buildings', [
-        'name' => 'B1', 'code' => 'B1', 'is_active' => true, 'institution_id' => Institution::factory()->create()->id, 'level_count' => 1,
+        'name' => 'B1', 'code' => 'B1', 'is_active' => true, 'level_count' => 1,
     ]);
     $response->assertStatus(201);
 });
@@ -50,7 +50,7 @@ it('allows teacher to create own absence', function () {
     $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     foreach ($days as $day) {
         ClassSchedule::factory()->create([
-            'semester_id' => $semester->id,
+            'semester_id' => $semester->semester_id,
             'teacher_external_id' => $teacher->external_id,
             'weekday' => $day,
             'status' => true,
@@ -61,7 +61,7 @@ it('allows teacher to create own absence', function () {
         'teacher_external_id' => $teacher->external_id,
         'start_date' => now()->addDays(5)->format('Y-m-d H:i:s'),
         'end_date' => now()->addDays(5)->addHours(2)->format('Y-m-d H:i:s'),
-        'absence_type_id' => AbsenceType::factory()->create()->id,
+        'absence_type_id' => AbsenceType::factory()->create()->absence_type_id,
         'is_confirmed' => true,
         'comments' => 'test',
     ]);
@@ -74,10 +74,10 @@ it('forbids teacher to view other absence', function () {
 
     $otherAbsence = TeacherAbsence::factory()->create([
         'teacher_external_id' => 'OTHER123',
-        'absence_type_id' => AbsenceType::factory()->create()->id,
+        'absence_type_id' => AbsenceType::factory()->create()->absence_type_id,
     ]);
 
-    $response = $this->getJson("/api/v1/teacher-absences/{$otherAbsence->id}");
+    $response = $this->getJson("/api/v1/teacher-absences/{$otherAbsence->teacher_absence_id}");
     $response->assertStatus(403);
 });
 
@@ -87,9 +87,9 @@ it('allows admin to view all absences', function () {
 
     $otherAbsence = TeacherAbsence::factory()->create([
         'teacher_external_id' => 'OTHER123',
-        'absence_type_id' => AbsenceType::factory()->create()->id,
+        'absence_type_id' => AbsenceType::factory()->create()->absence_type_id,
     ]);
 
-    $response = $this->getJson("/api/v1/teacher-absences/{$otherAbsence->id}");
+    $response = $this->getJson("/api/v1/teacher-absences/{$otherAbsence->teacher_absence_id}");
     $response->assertStatus(200);
 });

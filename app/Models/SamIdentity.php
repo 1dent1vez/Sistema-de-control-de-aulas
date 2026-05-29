@@ -41,7 +41,9 @@ class SamIdentity extends Model implements Authenticatable
 {
     use AuthenticatableTrait, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    protected $table = 'gama_sam_identities';
+    protected $table = 'sam_identities';
+
+    protected $primaryKey = 'sam_id';
 
     protected $fillable = [
         'external_id',
@@ -108,6 +110,6 @@ class SamIdentity extends Model implements Authenticatable
 
     public function notifications(): MorphMany
     {
-        return $this->morphMany(GamaNotification::class, 'notifiable')->latest();
+        return $this->morphMany(GamaNotification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'sam_id')->latest();
     }
 }

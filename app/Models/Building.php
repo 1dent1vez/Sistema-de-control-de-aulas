@@ -34,10 +34,11 @@ class Building extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_buildings';
+    protected $table = 'buildings';
+
+    protected $primaryKey = 'building_id';
 
     protected $fillable = [
-        'institution_id',
         'name',
         'level_count',
         'description',
@@ -52,18 +53,8 @@ class Building extends Model
         ];
     }
 
-    public function levels(): HasMany
-    {
-        return $this->hasMany(Level::class);
-    }
-
     public function classrooms(): HasMany
     {
-        return $this->hasMany(Classroom::class);
-    }
-
-    public function institution(): BelongsTo
-    {
-        return $this->belongsTo(Institution::class, 'institution_id');
+        return $this->hasMany(Classroom::class, 'building_id', 'building_id');
     }
 }

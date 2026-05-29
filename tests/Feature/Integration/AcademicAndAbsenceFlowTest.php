@@ -34,17 +34,17 @@ it('executes the academic and teacher absence flow correctly', function () {
     $this->loginAsAdmin('TEACHER-INT');
     // 1. Preparar infraestructura base
     $institution = Institution::factory()->create();
-    $building = Building::factory()->create(['institution_id' => $institution->id]);
-    $level = Level::factory()->create(['building_id' => $building->id]);
+    $building = Building::factory()->create();
+    $level = Level::factory()->create();
     $classroom = Classroom::factory()->create([
-        'building_id' => $building->id,
-        'level_id' => $level->id,
+        'building_id' => $building->building_id,
+        'level_id' => $level->level_id,
     ]);
     $absenceType = AbsenceType::factory()->create();
 
     // 2. Crear un Semestre vigente
     $response = $this->postJson('/api/v1/semesters', [
-        'institution_id' => $institution->id,
+        'institution_id' => $institution->institution_id,
         'name' => 'Semestre de Pruebas',
         'start_date' => Carbon::now()->subDays(10)->format('Y-m-d'),
         'end_date' => Carbon::now()->addDays(90)->format('Y-m-d'),
@@ -58,7 +58,7 @@ it('executes the academic and teacher absence flow correctly', function () {
     $dynamicDay = strtolower(Carbon::now()->addDays(3)->format('l'));
     $response = $this->postJson('/api/v1/class-schedules', [
         'semester_id' => $semesterId,
-        'classroom_id' => $classroom->id,
+        'classroom_id' => $classroom->classroom_id,
         'teacher_external_id' => 'TEACHER-INT',
         'subject_name' => 'Física Cuántica',
         'group_name' => 'Q1',
@@ -70,9 +70,10 @@ it('executes the academic and teacher absence flow correctly', function () {
     $response->assertStatus(201);
 
     // 4. Intentar asignar horario que se empalma en la misma aula
+    \App\Models\SamIdentity::factory()->create(['external_id' => 'TEACHER-OTHER']);
     $response = $this->postJson('/api/v1/class-schedules', [
         'semester_id' => $semesterId,
-        'classroom_id' => $classroom->id,
+        'classroom_id' => $classroom->classroom_id,
         'teacher_external_id' => 'TEACHER-OTHER',
         'subject_name' => 'Química',
         'group_name' => 'Q2',
@@ -89,7 +90,7 @@ it('executes the academic and teacher absence flow correctly', function () {
     // Primero creamos una ausencia
     $this->postJson('/api/v1/teacher-absences', [
         'teacher_external_id' => 'TEACHER-INT',
-        'absence_type_id' => $absenceType->id,
+        'absence_type_id' => $absenceType->absence_type_id,
         'start_date' => Carbon::now()->addDays(1)->format('Y-m-d'),
         'end_date' => Carbon::now()->addDays(5)->format('Y-m-d'),
     ])->assertStatus(201);
@@ -97,7 +98,7 @@ it('executes the academic and teacher absence flow correctly', function () {
     // Intentamos empalmar otra ausencia
     $response = $this->postJson('/api/v1/teacher-absences', [
         'teacher_external_id' => 'TEACHER-INT',
-        'absence_type_id' => $absenceType->id,
+        'absence_type_id' => $absenceType->absence_type_id,
         'start_date' => Carbon::now()->addDays(3)->format('Y-m-d'),
         'end_date' => Carbon::now()->addDays(7)->format('Y-m-d'),
     ]);
@@ -108,7 +109,7 @@ it('executes the academic and teacher absence flow correctly', function () {
     // 6. Confirmar la ausencia (bypass del traslape)
     $response = $this->postJson('/api/v1/teacher-absences', [
         'teacher_external_id' => 'TEACHER-INT',
-        'absence_type_id' => $absenceType->id,
+        'absence_type_id' => $absenceType->absence_type_id,
         'start_date' => Carbon::now()->addDays(3)->format('Y-m-d'),
         'end_date' => Carbon::now()->addDays(7)->format('Y-m-d'),
         'is_confirmed' => true,

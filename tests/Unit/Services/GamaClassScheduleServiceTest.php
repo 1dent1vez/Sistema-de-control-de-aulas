@@ -33,19 +33,23 @@ use App\Services\Schedules\GamaClassScheduleService;
 beforeEach(function () {
     $this->service = app(GamaClassScheduleService::class);
     $this->institution = Institution::factory()->create();
-    $this->semester = Semester::factory()->create(['institution_id' => $this->institution->id]);
-    $this->building = Building::factory()->create(['institution_id' => $this->institution->id]);
-    $this->level = Level::factory()->create(['building_id' => $this->building->id]);
+    $this->semester = Semester::factory()->create(['institution_id' => $this->institution->institution_id]);
+    $this->building = Building::factory()->create();
+    $this->level = Level::factory()->create();
     $this->classroom = Classroom::factory()->create([
-        'building_id' => $this->building->id,
-        'level_id' => $this->level->id,
+        'building_id' => $this->building->building_id,
+        'level_id' => $this->level->level_id,
     ]);
 });
 
 it('can get all schedules', function () {
-    ClassSchedule::factory()->count(2)->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+    ClassSchedule::factory()->create([
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
+    ]);
+    ClassSchedule::factory()->create([
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
     ]);
 
     $schedules = $this->service->getAll();
@@ -55,19 +59,19 @@ it('can get all schedules', function () {
 
 it('can get schedule by id', function () {
     $schedule = ClassSchedule::factory()->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
     ]);
 
-    $found = $this->service->getById($schedule->id);
+    $found = $this->service->getById($schedule->class_schedule_id);
 
-    expect($found->id)->toBe($schedule->id);
+    expect($found->class_schedule_id)->toBe($schedule->class_schedule_id);
 });
 
 it('can create schedule', function () {
     $data = [
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'teacher_external_id' => 'TEACHER-001',
         'subject_name' => 'Math',
         'group_name' => 'A1',
@@ -81,13 +85,13 @@ it('can create schedule', function () {
     expect($schedule->teacher_external_id)->toBe('TEACHER-001')
         ->and($schedule->subject_name)->toBe('Math');
 
-    $this->assertDatabaseHas('gama_class_schedules', ['subject_name' => 'Math']);
+    $this->assertDatabaseHas('class_schedules', ['subject_name' => 'Math']);
 });
 
 it('throws exception if semester does not exist', function () {
     $data = [
         'semester_id' => 9999,
-        'classroom_id' => $this->classroom->id,
+        'classroom_id' => $this->classroom->classroom_id,
         'teacher_external_id' => 'TEACHER-001',
         'subject_name' => 'Math',
         'group_name' => 'A1',
@@ -101,16 +105,16 @@ it('throws exception if semester does not exist', function () {
 
 it('throws exception on create with time overlap', function () {
     ClassSchedule::factory()->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'weekday' => 'monday',
         'start_time' => '08:00',
         'end_time' => '10:00',
     ]);
 
     $data = [
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'teacher_external_id' => 'TEACHER-002',
         'subject_name' => 'Physics',
         'group_name' => 'A2',
@@ -124,46 +128,46 @@ it('throws exception on create with time overlap', function () {
 
 it('can update schedule', function () {
     $schedule = ClassSchedule::factory()->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'subject_name' => 'Math',
     ]);
 
-    $updated = $this->service->update($schedule->id, ['subject_name' => 'Advanced Math']);
+    $updated = $this->service->update($schedule->class_schedule_id, ['subject_name' => 'Advanced Math']);
 
     expect($updated->subject_name)->toBe('Advanced Math');
 });
 
 it('throws exception on update with time overlap', function () {
     $schedule1 = ClassSchedule::factory()->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'weekday' => 'monday',
         'start_time' => '08:00',
         'end_time' => '10:00',
     ]);
 
     $schedule2 = ClassSchedule::factory()->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
         'weekday' => 'monday',
         'start_time' => '10:00',
         'end_time' => '12:00',
     ]);
 
-    expect(fn () => $this->service->update($schedule2->id, [
+    expect(fn () => $this->service->update($schedule2->class_schedule_id, [
         'start_time' => '09:00', // Overlaps with schedule1
     ]))->toThrow(RuntimeException::class);
 });
 
 it('can delete schedule', function () {
     $schedule = ClassSchedule::factory()->create([
-        'semester_id' => $this->semester->id,
-        'classroom_id' => $this->classroom->id,
+        'semester_id' => $this->semester->semester_id,
+        'classroom_id' => $this->classroom->classroom_id,
     ]);
 
-    $result = $this->service->delete($schedule->id);
+    $result = $this->service->delete($schedule->class_schedule_id);
 
     expect($result)->toBeTrue();
-    $this->assertSoftDeleted('gama_class_schedules', ['id' => $schedule->id]);
+    $this->assertSoftDeleted('class_schedules', ['class_schedule_id' => $schedule->class_schedule_id]);
 });

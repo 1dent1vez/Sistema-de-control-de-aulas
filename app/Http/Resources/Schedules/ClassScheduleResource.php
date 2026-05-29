@@ -32,7 +32,7 @@ class ClassScheduleResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->class_schedule_id,
             'semesterId' => $this->semester_id,
             'classroomId' => $this->classroom_id,
             'teacherExternalId' => $this->teacher_external_id,
@@ -44,6 +44,11 @@ class ClassScheduleResource extends JsonResource
             'endTime' => $this->end_time,
             'isActive' => (bool) $this->status,
             'status' => $this->status,
+            'classroom' => $this->whenLoaded('classroom', fn () => [
+                'id' => $this->classroom->classroom_id,
+                'classroomName' => $this->classroom->classroom_name,
+                'classroomType' => $this->classroom->classroom_type,
+            ]),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
         ];

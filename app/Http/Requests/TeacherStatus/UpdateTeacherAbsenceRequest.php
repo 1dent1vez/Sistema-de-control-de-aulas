@@ -38,7 +38,7 @@ class UpdateTeacherAbsenceRequest extends FormRequest
     {
         return [
             'teacher_external_id' => ['string', 'max:50'],
-            'absence_type_id' => ['integer', 'exists:gama_absence_types,id'],
+            'absence_type_id' => ['integer', 'exists:absence_types,absence_type_id'],
             'start_date' => ['date', 'before_or_equal:end_date', 'after_or_equal:today'],
             'end_date' => ['date', 'after_or_equal:start_date'],
             'observations' => ['nullable', 'string', 'max:500'],

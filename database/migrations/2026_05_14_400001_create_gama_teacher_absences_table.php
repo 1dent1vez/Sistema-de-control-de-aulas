@@ -1,25 +1,5 @@
 <?php
 
-/**
- * @descripcion  Migración que crea la tabla gama_teacher_absences.
- *
- * @autor        Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @autorizador  Ruben Alejandro Nolasco Ruiz <correo@dominio.com>
- *
- * @prueba       Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @mantenimiento Ghael Garcia Manjarrez <ghael.engineer@gmail.com>
- *
- * @version      1.0.0
- *
- * @creado       2026-05-14
- *
- * @modificado   2026-05-14
- *
- * @cambios      2026-05-14 - Creación inicial de la migración
- */
-
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
@@ -30,10 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('gama_teacher_absences', function (Blueprint $table): void {
-            $table->id();
-            $table->string('teacher_external_id', 50);
-            $table->foreignId('absence_type_id')->constrained('gama_absence_types');
+        Schema::create('teacher_absences', function (Blueprint $table): void {
+            $table->id('teacher_absence_id');
+            $table->string('teacher_external_id', 100); // corrected type VARCHAR(100)
+            $table->foreignId('absence_type_id')->constrained('absence_types', 'absence_type_id')->onDelete('restrict');
             $table->date('start_date');
             $table->date('end_date');
             $table->text('observations')->nullable();
@@ -49,6 +29,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('gama_teacher_absences');
+        Schema::dropIfExists('teacher_absences');
     }
 };

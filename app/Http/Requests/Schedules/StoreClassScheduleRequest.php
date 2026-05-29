@@ -44,7 +44,7 @@ class StoreClassScheduleRequest extends FormRequest
             'semester_id' => [
                 'required',
                 'integer',
-                Rule::exists('gama_semesters', 'id')->whereNull('deleted_at'),
+                Rule::exists('semesters', 'semester_id')->whereNull('deleted_at'),
                 function ($attribute, $value, $fail) {
                     try {
                         $today = now()->format('Y-m-d');
@@ -61,7 +61,7 @@ class StoreClassScheduleRequest extends FormRequest
                         }
 
                         $semestreVigente = $semesters->first();
-                        if ((int) $value !== $semestreVigente->id) {
+                        if ((int) $value !== $semestreVigente->semester_id) {
                             $fail('El semestre ha caducado. No se pueden registrar ni modificar horarios.');
                         }
                     } catch (\Exception $e) {
@@ -70,8 +70,8 @@ class StoreClassScheduleRequest extends FormRequest
                     }
                 },
             ],
-            'classroom_id' => ['required', 'integer', 'exists:gama_classrooms,id'],
-            'teacher_external_id' => ['required', 'string', 'max:50'],
+            'classroom_id' => ['required', 'integer', 'exists:classrooms,classroom_id'],
+            'teacher_external_id' => ['required', 'string', 'max:50', 'exists:sam_identities,external_id'],
             'subject_name' => ['required', 'string', 'max:100'],
             'group_name' => ['required', 'string', 'max:10'],
             'weekday' => ['required', 'string', Rule::in(Weekday::values())],
@@ -89,6 +89,7 @@ class StoreClassScheduleRequest extends FormRequest
             'classroom_id.required' => 'El aula es obligatoria.',
             'classroom_id.exists' => 'El aula seleccionada no existe o no esta disponible.',
             'teacher_external_id.required' => 'El docente es obligatorio.',
+            'teacher_external_id.exists' => 'El docente seleccionado no está registrado en el sistema.',
             'subject_name.required' => 'El nombre de la materia es obligatorio.',
             'subject_name.max' => 'El nombre de la materia no debe exceder :max caracteres.',
             'group_name.required' => 'El grupo es obligatorio.',

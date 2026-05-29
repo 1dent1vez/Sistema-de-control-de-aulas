@@ -66,6 +66,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/{buildingId}/classrooms', [GamaClassroomController::class, 'byBuilding'])->name('classrooms');
     });
 
+    // Levels (reads público)
+    Route::get('/levels', [GamaBuildingController::class, 'allLevels'])->name('levels.all');
+
     // Classrooms (reads público, writes admin)
     Route::prefix('classrooms')->name('classrooms.')->group(function () {
         Route::get('/', [GamaClassroomController::class, 'index'])->name('index');
@@ -117,6 +120,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // Auth + SamIdentities — protegido
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('my-schedules', [GamaClassScheduleController::class, 'mySchedules'])->name('my-schedules');
+        Route::get('my-absences', [GamaTeacherAbsenceController::class, 'myAbsences'])->name('my-absences');
+        Route::post('my-absences', [GamaTeacherAbsenceController::class, 'store'])->name('my-absences.store');
+
         // Teacher Absences (Privado)
         Route::prefix('teacher-absences')->name('teacher-absences.')->group(function () {
             Route::get('/', [GamaTeacherAbsenceController::class, 'index'])->name('index');

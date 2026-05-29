@@ -33,7 +33,9 @@ class QrCode extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'gama_qr_codes';
+    protected $table = 'qr_codes';
+
+    protected $primaryKey = 'qr_id';
 
     protected $fillable = [
         'classroom_id',
@@ -57,6 +59,6 @@ class QrCode extends Model
 
     public function classroom(): BelongsTo
     {
-        return $this->belongsTo(Classroom::class);
+        return $this->belongsTo(Classroom::class, 'classroom_id', 'classroom_id');
     }
 }

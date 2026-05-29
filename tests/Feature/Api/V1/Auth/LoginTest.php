@@ -175,7 +175,7 @@ it('falls back to local database when obtenerPerfil fails', function () {
         ->assertJsonPath('data.role', 'teacher')
         ->assertJsonPath('data.redirectUrl', '/docente/dashboard');
 
-    $this->assertDatabaseHas('gama_sam_identities', [
+    $this->assertDatabaseHas('sam_identities', [
         'external_id' => 'NEW_TCH_001',
         'role' => 'teacher',
     ]);

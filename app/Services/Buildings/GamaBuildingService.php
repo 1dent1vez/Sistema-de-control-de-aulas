@@ -46,9 +46,7 @@ class GamaBuildingService
      */
     public function getAll(): Collection
     {
-        $activeInstitution = Institution::where('is_active', true)->first();
-
-        return $this->buildingRepository->all($activeInstitution?->id);
+        return $this->buildingRepository->all();
     }
 
     /**
@@ -66,28 +64,8 @@ class GamaBuildingService
      */
     public function store(array $data): Building
     {
-        $institution = Institution::find($data['institution_id']);
-        if (! $institution || ! $institution->is_active) {
-            throw new \RuntimeException('La institución seleccionada no está activa o no existe.');
-        }
-
         return DB::transaction(function () use ($data): Building {
-            $building = $this->buildingRepository->create($data);
-
-            $levels = [];
-            for ($i = 0; $i < $data['level_count']; $i++) {
-                $levels[] = [
-                    'building_id' => $building->id,
-                    'name' => $i === 0 ? 'PB' : "P{$i}",
-                    'display_order' => $i,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-
-            $this->levelRepository->insertMultiple($levels);
-
-            return $building->fresh()->load('levels');
+            return $this->buildingRepository->create($data);
         });
     }
 
