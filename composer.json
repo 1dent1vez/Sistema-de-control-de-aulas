@@ -3,7 +3,11 @@
     "name": "gama/control-aulas",
     "type": "project",
     "description": "Sistema de Control de Aulas (GAMA) — Gestión de edificios, aulas, horarios, QR y autenticación SAM.",
-    "keywords": ["gama", "control-aulas", "laravel"],
+    "keywords": [
+        "gama",
+        "control-aulas",
+        "laravel"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.3",
@@ -12,7 +16,18 @@
         "laravel/sanctum": "*",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "*",
-        "simplesoftwareio/simple-qrcode": "^4.2"
+        "simplesoftwareio/simple-qrcode": "^4.2",
+        "ext-gd": "*",
+        "ext-zip": "*",
+        "ext-fileinfo": "*",
+        "ext-mbstring": "*",
+        "ext-curl": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-xml": "*",
+        "ext-tokenizer": "*",
+        "ext-ctype": "*",
+        "ext-json": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
