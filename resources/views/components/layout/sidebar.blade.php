@@ -1331,10 +1331,7 @@
               <i class="fas fa-user-clock nav-icon"></i>
               <span class="nav-text">Gestión de Ausencias</span>
             </a>
-            <a href="{{ route('aulas.horario_publico') }}" class="nav-item {{ request()->routeIs('aulas.horario_publico') ? 'active' : '' }}" data-tooltip="Horario Público QR">
-              <i class="fas fa-clock nav-icon"></i>
-              <span class="nav-text">Horario Público QR</span>
-            </a>
+
             <a href="{{ route('horarios.manual') }}" class="nav-item {{ request()->routeIs('horarios.manual') ? 'active' : '' }}" data-tooltip="Horarios Manuales">
               <i class="fas fa-calendar-alt nav-icon"></i>
               <span class="nav-text">Horarios Manuales</span>
@@ -1354,16 +1351,6 @@
           </div>
           @endif
 
-          <!-- Configuración -->
-          @if ($isAdmin)
-          <div class="nav-section">
-            <span class="nav-label">Configuración</span>
-            <a href="{{ route('configuracion') }}" class="nav-item {{ request()->routeIs('configuracion') ? 'active' : '' }}" data-tooltip="Configuración">
-              <i class="fas fa-cog nav-icon"></i>
-              <span class="nav-text">Configuración</span>
-            </a>
-          </div>
-          @endif
         </nav>
 
         <!-- Sidebar Footer -->

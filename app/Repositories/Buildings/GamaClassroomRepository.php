@@ -42,7 +42,7 @@ class GamaClassroomRepository implements ClassroomRepositoryInterface
 
     public function findByBuildingId(int $buildingId): Collection
     {
-        return Classroom::where('building_id', $buildingId)->whereHas('building')->with(['level', 'activeQr'])->get();
+        return Classroom::where('building_id', $buildingId)->whereHas('building')->with(['building', 'level', 'activeQr'])->get();
     }
 
     public function create(array $data): Classroom

@@ -37,6 +37,18 @@ class Semester extends Model
 
     protected $table = 'semesters';
 
+    protected static function booted(): void
+    {
+        static::saved(function (): void {
+            \Illuminate\Support\Facades\Cache::forget('active_semester_today');
+            \Illuminate\Support\Facades\Cache::forget('active_semester_today_unfiltered');
+        });
+        static::deleted(function (): void {
+            \Illuminate\Support\Facades\Cache::forget('active_semester_today');
+            \Illuminate\Support\Facades\Cache::forget('active_semester_today_unfiltered');
+        });
+    }
+
     protected $primaryKey = 'semester_id';
 
     protected $fillable = [

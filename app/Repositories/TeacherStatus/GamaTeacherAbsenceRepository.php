@@ -32,7 +32,7 @@ class GamaTeacherAbsenceRepository implements TeacherAbsenceRepositoryInterface
 {
     public function all(array $filters = []): Collection
     {
-        $query = TeacherAbsence::with('absenceType');
+        $query = TeacherAbsence::with(['absenceType', 'teacher']);
 
         if (! empty($filters['teacher_external_id'])) {
             $query->where('teacher_external_id', $filters['teacher_external_id']);
@@ -51,7 +51,7 @@ class GamaTeacherAbsenceRepository implements TeacherAbsenceRepositoryInterface
 
     public function findById(int $id): ?TeacherAbsence
     {
-        return TeacherAbsence::with('absenceType')->find($id);
+        return TeacherAbsence::with(['absenceType', 'teacher'])->find($id);
     }
 
     public function create(array $data): TeacherAbsence
@@ -63,7 +63,7 @@ class GamaTeacherAbsenceRepository implements TeacherAbsenceRepositoryInterface
     {
         $absence->update($data);
 
-        return $absence->fresh()->load('absenceType');
+        return $absence->fresh()->load(['absenceType', 'teacher']);
     }
 
     public function delete(TeacherAbsence $absence): bool

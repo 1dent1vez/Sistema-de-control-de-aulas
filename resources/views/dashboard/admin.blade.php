@@ -51,23 +51,9 @@
       </div>
     </article>
 
-    <!-- Clases Activas -->
-    <article class="kpi-card admin-kpi-card">
-      <div class="kpi-icon"><i class="fas fa-book-open"></i></div>
-      <div class="kpi-content">
-        <span class="kpi-value shimmer" id="kpiSchedules"></span>
-        <span class="kpi-label">Clases Activas</span>
-      </div>
-    </article>
 
-    <!-- Horarios de Hoy -->
-    <article class="kpi-card admin-kpi-card">
-      <div class="kpi-icon"><i class="fas fa-clock"></i></div>
-      <div class="kpi-content">
-        <span class="kpi-value shimmer" id="kpiTodaySchedules"></span>
-        <span class="kpi-label">Clases Hoy</span>
-      </div>
-    </article>
+
+
 
     <!-- Semestre Activo -->
     <article class="kpi-card admin-kpi-card">
@@ -157,34 +143,7 @@
     </div>
   </div>
 
-  <!-- SECCIÓN TABLA DE HORARIOS -->
-  <section class="card table-card">
-    <div class="card-header">
-      <h2 class="card-title"><i class="fas fa-calendar-day"></i> Horarios de Hoy</h2>
-    </div>
-    
-    <div class="table-container">
-      <table class="dynamic-table admin-schedule-table">
-        <thead>
-          <tr>
-            <th>Hora</th>
-            <th>Aula</th>
-            <th>Materia</th>
-            <th>Docente</th>
-            <th>Grupo</th>
-            <th>Edificio</th>
-          </tr>
-        </thead>
-        <tbody id="scheduleBody">
-          <tr>
-            <td colspan="6" style="text-align: center; color: var(--soft-steel); padding: 26px;">
-              <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Cargando horarios...
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+
 
   <!-- FOOTER -->
   <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid var(--mist-blue); font-size: 12px; color: var(--soft-steel); font-weight: 500;">
@@ -212,8 +171,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function setKpi(id, val) {
     var el = $(id);
-    el.textContent = val;
-    el.classList.remove('shimmer');
+    if (el) {
+      el.textContent = val;
+      el.classList.remove('shimmer');
+    }
   }
 
   function buildUrl(base, params) {
@@ -320,27 +281,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Renderizar Horarios de Hoy
     var tbody = $('scheduleBody');
-    if (todaySchedules.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px;">No hay clases programadas para hoy.</td></tr>';
-      return;
-    }
+    if (tbody) {
+      if (todaySchedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px;">No hay clases programadas para hoy.</td></tr>';
+        return;
+      }
 
-    tbody.innerHTML = todaySchedules.map(function (s) {
-      var hora = (s.startTime || '').substring(0, 5) + ' - ' + (s.endTime || '').substring(0, 5);
-      var roomInfo = classroomsData.find(function (c) { return c.id === s.classroomId; });
-      var roomName = roomInfo ? roomInfo.classroomName : 'Desconocido';
-      var bldId = roomInfo ? roomInfo.buildingId : null;
-      var bldName = getBuildingName(buildingMap, bldId);
-      
-      return '<tr class="schedule-row" style="cursor:pointer;" onclick="window.location.href=\'/aulas?aula=' + encodeURIComponent(roomName) + '\'">' +
-        '<td>' + hora + '</td>' +
-        '<td>' + roomName + '</td>' +
-        '<td>' + (s.subjectName || '--') + '</td>' +
-        '<td>' + (s.teacherExternalId || '--') + '</td>' +
-        '<td>' + (s.groupName || '--') + '</td>' +
-        '<td>' + bldName + '</td>' +
-        '</tr>';
-    }).join('');
+      tbody.innerHTML = todaySchedules.map(function (s) {
+        var hora = (s.startTime || '').substring(0, 5) + ' - ' + (s.endTime || '').substring(0, 5);
+        var roomInfo = classroomsData.find(function (c) { return c.id === s.classroomId; });
+        var roomName = roomInfo ? roomInfo.classroomName : 'Desconocido';
+        var bldId = roomInfo ? roomInfo.buildingId : null;
+        var bldName = getBuildingName(buildingMap, bldId);
+        
+        return '<tr class="schedule-row" style="cursor:pointer;" onclick="window.location.href=\'/aulas?aula=' + encodeURIComponent(roomName) + '\'">' +
+          '<td>' + hora + '</td>' +
+          '<td>' + roomName + '</td>' +
+          '<td>' + (s.subjectName || '--') + '</td>' +
+          '<td>' + (s.teacherExternalId || '--') + '</td>' +
+          '<td>' + (s.groupName || '--') + '</td>' +
+          '<td>' + bldName + '</td>' +
+          '</tr>';
+      }).join('');
+    }
   })['catch'](function (err) {
     console.error("Error al cargar los datos:", err);
     setKpi('kpiBuildings', 'Error');
@@ -349,7 +312,10 @@ document.addEventListener('DOMContentLoaded', function () {
     setKpi('kpiTodaySchedules', 'Error');
     setKpi('kpiSemester', 'Error');
     setKpi('kpiAbsences', 'Error');
-    $('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:26px;"><i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i> Error al cargar datos del servidor</td></tr>';
+    var tbody = $('scheduleBody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:26px;"><i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i> Error al cargar datos del servidor</td></tr>';
+    }
   });
 });
 </script>

@@ -32,7 +32,7 @@ class GamaClassScheduleRepository implements ClassScheduleRepositoryInterface
 {
     public function all(array $filters = []): Collection
     {
-        $query = ClassSchedule::with(['semester', 'classroom.level']);
+        $query = ClassSchedule::with(['semester', 'classroom.level', 'classroom.building', 'teacher']);
 
         if (! empty($filters['semester_id'])) {
             $query->where('semester_id', $filters['semester_id']);
@@ -57,7 +57,7 @@ class GamaClassScheduleRepository implements ClassScheduleRepositoryInterface
 
     public function findById(int $id): ?ClassSchedule
     {
-        return ClassSchedule::with(['semester', 'classroom.level'])->find($id);
+        return ClassSchedule::with(['semester', 'classroom.level', 'classroom.building', 'teacher'])->find($id);
     }
 
     public function create(array $data): ClassSchedule
@@ -69,7 +69,7 @@ class GamaClassScheduleRepository implements ClassScheduleRepositoryInterface
     {
         $schedule->update($data);
 
-        return $schedule->fresh()->load(['semester', 'classroom.level']);
+        return $schedule->fresh()->load(['semester', 'classroom.level', 'classroom.building', 'teacher']);
     }
 
     public function delete(ClassSchedule $schedule): bool

@@ -74,10 +74,12 @@ class GamaQrCodeService
             }
 
             // 1. Obtener semestre vigente
-            $semester = \App\Models\Semester::where('is_active', true)
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
-                ->first();
+            $semester = \Illuminate\Support\Facades\Cache::remember('active_semester_today', 3600, function () {
+                return \App\Models\Semester::where('is_active', true)
+                    ->whereDate('start_date', '<=', now())
+                    ->whereDate('end_date', '>=', now())
+                    ->first();
+            });
 
             if (! $semester) {
                 if (app()->environment('testing')) {

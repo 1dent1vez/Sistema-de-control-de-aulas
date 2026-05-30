@@ -59,7 +59,9 @@ class GamaQrCodeController extends Controller
             abort(404, 'El aula solicitada no existe.');
         }
 
-        $semestreVigente = Semester::current()->first();
+        $semestreVigente = Cache::remember('active_semester_today_unfiltered', 3600, function () {
+            return Semester::current()->first();
+        });
 
         if (! $semestreVigente) {
             return view('qr.horario', [
@@ -96,7 +98,9 @@ class GamaQrCodeController extends Controller
             abort(404, 'Aula no encontrada.');
         }
 
-        $semestreVigente = Semester::current()->first();
+        $semestreVigente = Cache::remember('active_semester_today_unfiltered', 3600, function () {
+            return Semester::current()->first();
+        });
 
         $horarios = collect();
         if ($semestreVigente) {

@@ -39,7 +39,7 @@ class GamaQrCodeRepository implements QrCodeRepositoryInterface
 
     public function findById(int $id): ?QrCode
     {
-        return QrCode::with('classroom')->find($id);
+        return QrCode::with(['classroom.building', 'classroom.level'])->find($id);
     }
 
     public function create(array $data): QrCode
@@ -51,14 +51,14 @@ class GamaQrCodeRepository implements QrCodeRepositoryInterface
     {
         $qrCode->update($data);
 
-        return $qrCode->fresh()->load('classroom');
+        return $qrCode->fresh()->load(['classroom.building', 'classroom.level']);
     }
 
     public function getActiveByClassroomIds(array $classroomIds): Collection
     {
         return QrCode::whereIn('classroom_id', $classroomIds)
             ->where('is_active', true)
-            ->with('classroom')
+            ->with(['classroom.building', 'classroom.level'])
             ->get();
     }
 }
