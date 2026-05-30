@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.3"
+    }
+  },
+  "routes": [
+    {
+      "src": "/build/(.*)",
+      "dest": "/public/build/$1"
+    },
+    {
+      "src": "/(css|js|img|favicon.ico)/(.*)",
+      "dest": "/public/$1/$2"
+    },
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "https://TU_BACKEND_RAILWAY_URL/api/v1/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
+  ]
+}
