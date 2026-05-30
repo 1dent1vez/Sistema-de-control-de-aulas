@@ -32,7 +32,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AbsenceTypeSeeder::class,
-            TestingDataSeeder::class, // Descomentar solo para desarrollo con datos de prueba
         ]);
+
+        if (app()->environment('local')) {
+            $this->call(TestingDataSeeder::class);
+        }
     }
 }
