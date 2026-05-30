@@ -35,4 +35,4 @@ Thumbs.db
 /docs/
 
 # Todos los .md en la raíz del proyecto (reportes, auditorías, etc.)
-/*.md
+#/*.md
