@@ -1,6 +1,13 @@
 {
   "version": 2,
   "outputDirectory": "public",
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "true",
+    "VIEW_COMPILED_PATH": "/tmp",
+    "LOG_CHANNEL": "stderr",
+    "SESSION_DRIVER": "cookie"
+  },
   "functions": {
     "api/index.php": {
       "runtime": "vercel-php@0.7.3"
