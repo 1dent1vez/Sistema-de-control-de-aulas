@@ -321,6 +321,10 @@ document.addEventListener('DOMContentLoaded', function () {
   var fFin = $('fFin');
   fInicio.min = toIso(today);
   fFin.min = toIso(today);
+  fInicio.value = toIso(today);
+  fFin.value = toIso(today);
+  selectedStart = today;
+  selectedEnd = today;
 
   function toIso(d) {
     var y = d.getFullYear();
@@ -514,8 +518,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     list.innerHTML = absences.map(function (a) {
       var typeName = a.absenceType ? a.absenceType.name : 'Tipo #' + a.absenceTypeId;
+      
+      var regDateStr = '';
+      if (a.createdAt) {
+        var regDate = new Date(a.createdAt);
+        regDateStr = regDate.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+
       return '<div class="history-item">' +
         '<div><span class="h-type">' + typeName + '</span> <span class="h-date">' + a.startDate + ' al ' + a.endDate + '</span></div>' +
+        (regDateStr ? '<div style="color:var(--soft-steel);font-size:11px;margin-top:2px;">Registrado: ' + regDateStr + '</div>' : '') +
         (a.observations ? '<div style="margin-top:3px;color:var(--dark-graphite);">' + a.observations + '</div>' : '') +
         '</div>';
     }).join('');

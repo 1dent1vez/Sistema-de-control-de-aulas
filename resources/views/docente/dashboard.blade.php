@@ -74,7 +74,6 @@
      </div>
       <div class="dm-actions">
         <a href="{{ route('docente.estatus') }}#registrar" class="btn btn-primary btn-sm" style="background: var(--corp-orange); border-color: var(--corp-orange); color: white;"><i class="fas fa-plus-circle"></i> Registrar Nueva Ausencia</a>
-        <a href="{{ route('docente.estatus') }}" class="btn btn-secondary btn-sm"><i class="fas fa-calendar-alt"></i> Estatus y Ausencias</a>
       </div>
    </div>
 
@@ -149,19 +148,11 @@
           <h2>Resumen de Mis Ausencias</h2>
         </div>
         <div class="doc-card-b" style="padding: 20px;">
-          <!-- Sub-grid de KPIs de Ausencias -->
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+          <!-- Resumen de Mis Ausencias (Total) -->
+          <div style="margin-bottom: 20px;">
             <div style="background: var(--ice-blue); border: 1px solid var(--mist-blue); padding: 12px; border-radius: 8px; text-align: center;">
               <div style="font-size: 20px; font-weight: 800; color: var(--midnight);" id="absTotal">0</div>
-              <div style="font-size: 11px; color: var(--soft-steel); font-weight: 600;">Total</div>
-            </div>
-            <div style="background: rgba(90,154,90,0.1); border: 1px solid rgba(90,154,90,0.2); padding: 12px; border-radius: 8px; text-align: center;">
-              <div style="font-size: 20px; font-weight: 800; color: var(--status-active);" id="absConfirmed">0</div>
-              <div style="font-size: 11px; color: var(--status-active); font-weight: 600;">Confirmadas</div>
-            </div>
-            <div style="background: rgba(242,139,44,0.1); border: 1px solid rgba(242,139,44,0.2); padding: 12px; border-radius: 8px; text-align: center;">
-              <div style="font-size: 20px; font-weight: 800; color: var(--deep-orange);" id="absPending">0</div>
-              <div style="font-size: 11px; color: var(--deep-orange); font-weight: 600;">Pendientes</div>
+              <div style="font-size: 11px; color: var(--soft-steel); font-weight: 600;">Total de Ausencias</div>
             </div>
           </div>
 
@@ -315,12 +306,8 @@
 
         // 2. Resumen de Mis Ausencias y Lista de Ausencias Recientes
         var totalAbs = absencesData.length;
-        var confirmedAbs = absencesData.filter(function (a) { return a.isConfirmed; }).length;
-        var pendingAbs = totalAbs - confirmedAbs;
 
         $('absTotal').textContent = totalAbs;
-        $('absConfirmed').textContent = confirmedAbs;
-        $('absPending').textContent = pendingAbs;
 
         var recList = $('myRecentAbsencesList');
         if (absencesData.length === 0) {
@@ -332,16 +319,19 @@
 
           recList.innerHTML = sortedAbs.slice(0, 5).map(function (a) {
             var typeName = a.absenceType ? a.absenceType.name : 'Ausencia';
-            var statusBadge = a.isConfirmed 
-              ? '<span style="color:var(--status-active);font-weight:700;font-size:11px;">Confirmado</span>' 
-              : '<span style="color:var(--deep-orange);font-weight:700;font-size:11px;">Pendiente</span>';
+
+            var regDateStr = '';
+            if (a.createdAt) {
+              var regDate = new Date(a.createdAt);
+              regDateStr = regDate.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
 
             return '<div style="border:1px solid var(--mist-blue);border-radius:8px;padding:10px;background:var(--ice-blue);font-size:12px;margin-bottom:8px;">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
                 '<strong style="color:var(--deep-blue);">' + typeName + '</strong>' +
-                statusBadge +
               '</div>' +
               '<div style="color:var(--dark-graphite);">Del <b>' + a.startDate + '</b> al <b>' + a.endDate + '</b></div>' +
+              (regDateStr ? '<div style="color:var(--soft-steel);font-size:10px;margin-top:2px;">Registrado: ' + regDateStr + '</div>' : '') +
               (a.observations ? '<div style="margin-top:4px;color:var(--soft-steel);font-style:italic;">"' + a.observations + '"</div>' : '') +
               '</div>';
           }).join('');

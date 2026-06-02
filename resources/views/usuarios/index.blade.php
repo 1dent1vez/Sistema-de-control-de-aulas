@@ -220,8 +220,6 @@
           <template x-if="!isLocalAdmin(selectedEmployee?.externalId)">
             <select class="usr-select" x-model="selectedRole">
               <option value="teacher">Docente</option>
-              <option value="coordinator">Coordinador</option>
-              <option value="viewer">Espectador</option>
               <option value="admin">Administrador</option>
             </select>
           </template>

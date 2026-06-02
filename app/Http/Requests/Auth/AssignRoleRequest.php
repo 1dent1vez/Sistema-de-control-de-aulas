@@ -41,7 +41,7 @@ class AssignRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['required', 'string', new In(SamRole::values())],
+            'role' => ['required', 'string', new In([SamRole::ADMIN->value, SamRole::TEACHER->value])],
             'current_password' => [
                 'required_if:role,'.SamRole::ADMIN->value,
                 'string',
@@ -54,7 +54,7 @@ class AssignRoleRequest extends FormRequest
     {
         return [
             'role.required' => 'El rol es obligatorio.',
-            'role.in' => 'El rol debe ser uno de los siguientes: admin, coordinator, teacher, viewer.',
+            'role.in' => 'El rol debe ser uno de los siguientes: admin, teacher.',
             'current_password.required' => 'La contraseña del administrador actual es obligatoria para asignar el rol de administrador.',
         ];
     }

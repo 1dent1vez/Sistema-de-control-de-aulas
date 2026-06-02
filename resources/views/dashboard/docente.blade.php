@@ -73,7 +73,7 @@
       <p class="dm-sub">Resumen de mis actividades y clases programadas.</p>
     </div>
     <div class="dm-actions">
-      <a href="{{ route('docente.estatus') }}" class="btn btn-primary btn-sm"><i class="fas fa-calendar-alt"></i> Estatus y Ausencias</a>
+      <a href="{{ route('docente.estatus') }}#registrar" class="btn btn-primary btn-sm" style="background: var(--corp-orange); border-color: var(--corp-orange); color: white;"><i class="fas fa-plus-circle"></i> Registrar Nueva Ausencia</a>
     </div>
   </div>
 

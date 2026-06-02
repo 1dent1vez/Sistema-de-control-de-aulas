@@ -53,9 +53,46 @@ class SamIdentityController extends Controller
     {
         $this->authorize('viewAny', SamIdentity::class);
         $request->validate(['q' => 'required|string|min:2|max:100']);
-        $emps = SamEmployee::search($request->query('q'))->limit(20)->get();
+        $q = $request->query('q');
 
-        return $this->success(SamEmployeeResource::collection($emps), 'Empleados recuperados.');
+        // Buscar primeramente en la tabla sam_identities de Railway
+        $identities = SamIdentity::where(fn ($query) => $query->whereIn('role', SamRole::values())->orWhereNull('role'))
+            ->where(fn ($query) => $query->where('external_id', 'like', "%{$q}%")
+                ->orWhere('email', 'like', "%{$q}%")
+                ->orWhere('full_name', 'like', "%{$q}%")
+            )
+            ->limit(20)
+            ->get();
+
+        if ($identities->isNotEmpty()) {
+            $mapped = $identities->map(function ($id) {
+                return [
+                    'externalId' => (string) $id->external_id,
+                    'external_id' => (string) $id->external_id,
+                    'nombre' => $id->full_name ?? '',
+                    'apellidoPa' => '',
+                    'apellidoMa' => '',
+                    'fullName' => $id->full_name ?? 'Usuario SAM',
+                    'usuario' => explode('@', $id->email)[0] ?? $id->external_id,
+                    'correo' => $id->email,
+                    'email' => $id->email,
+                ];
+            });
+
+            return $this->success($mapped, 'Empleados recuperados.');
+        }
+
+        // Fallback a base de datos de SAM si no hay registros en la base de datos de Railway
+        try {
+            $emps = SamEmployee::search($q)->limit(20)->get();
+            if ($emps->isNotEmpty()) {
+                return $this->success(SamEmployeeResource::collection($emps), 'Empleados recuperados de SAM.');
+            }
+        } catch (\Throwable $e) {
+            // Silenciar e ir al listado vacío
+        }
+
+        return $this->success([], 'Empleados recuperados.');
     }
 
     public function search(Request $request): JsonResponse

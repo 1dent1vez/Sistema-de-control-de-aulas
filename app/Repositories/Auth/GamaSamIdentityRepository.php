@@ -33,7 +33,9 @@ class GamaSamIdentityRepository implements SamIdentityRepositoryInterface
 {
     public function all(): LengthAwarePaginator
     {
-        return SamIdentity::paginate(20);
+        return SamIdentity::whereIn('role', \App\Enums\Auth\SamRole::values())
+            ->orWhereNull('role')
+            ->paginate(20);
     }
 
     public function findByEmail(string $email): ?SamIdentity
@@ -48,10 +50,11 @@ class GamaSamIdentityRepository implements SamIdentityRepositoryInterface
 
     public function search(string $query): Collection
     {
-        return SamIdentity::where('external_id', $query)
-            ->orWhere('email', $query)
-            ->orWhere('full_name', 'like', "%{$query}%")
-            ->get();
+        return SamIdentity::where(fn($q) => $q->whereIn('role', \App\Enums\Auth\SamRole::values())->orWhereNull('role'))
+            ->where(fn($q) => $q->where('external_id', $query)
+                ->orWhere('email', $query)
+                ->orWhere('full_name', 'like', "%{$query}%")
+            )->get();
     }
 
     public function create(array $data): SamIdentity

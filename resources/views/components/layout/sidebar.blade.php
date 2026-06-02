@@ -1283,14 +1283,14 @@
           <div class="nav-section">
             <span class="nav-label">Principal</span>
             @if (Auth::user()?->role?->value === 'admin')
-              <a href="{{ route('admin.dashboard') }}" class="nav-item {{ (request()->routeIs('admin.dashboard') || (request()->routeIs('dashboard') && Auth::user()?->role?->value === 'admin')) ? 'active' : '' }}" data-tooltip="Dashboard Admin">
+              <a href="{{ route('admin.dashboard') }}" class="nav-item {{ (request()->routeIs('admin.dashboard') || (request()->routeIs('dashboard') && Auth::user()?->role?->value === 'admin')) ? 'active' : '' }}" data-tooltip="Dashboard Administrador">
                 <i class="fas fa-home nav-icon"></i>
-                <span class="nav-text">Dashboard Admin</span>
+                <span class="nav-text">Dashboard</span>
               </a>
             @elseif (Auth::user()?->role?->value === 'teacher')
               <a href="{{ route('docente.dashboard') }}" class="nav-item {{ (request()->routeIs('docente.dashboard') || (request()->routeIs('dashboard') && Auth::user()?->role?->value === 'teacher')) ? 'active' : '' }}" data-tooltip="Dashboard Docente">
                 <i class="fas fa-home nav-icon"></i>
-                <span class="nav-text">Dashboard Docente</span>
+                <span class="nav-text">Dashboard</span>
               </a>
             @else
               <a href="{{ route('espera.rol') }}" class="nav-item active" data-tooltip="Espera de Rol">
@@ -1300,16 +1300,7 @@
             @endif
           </div>
 
-          <!-- DOCENTE -->
-          @if (Auth::user()?->role?->value === 'teacher')
-          <div class="nav-section">
-            <span class="nav-label">DOCENTE</span>
-            <a href="{{ route('docente.estatus') }}" class="nav-item {{ request()->routeIs('docente.estatus') ? 'active' : '' }}" data-tooltip="Estatus Docente">
-              <i class="fas fa-chalkboard-teacher nav-icon"></i>
-              <span class="nav-text">Estatus Docente</span>
-            </a>
-          </div>
-          @endif
+
 
           <!-- GESTIÓN ACADÉMICA -->
           @if ($isAdmin)
@@ -1326,10 +1317,6 @@
             <a href="{{ route('edificios') }}" class="nav-item {{ request()->routeIs('edificios') ? 'active' : '' }}" data-tooltip="Edificios">
               <i class="fas fa-building nav-icon"></i>
               <span class="nav-text">Edificios</span>
-            </a>
-            <a href="{{ route('admin.teacher-absences.index') }}" class="nav-item {{ request()->routeIs('admin.teacher-absences.index') ? 'active' : '' }}" data-tooltip="Gestión de Ausencias">
-              <i class="fas fa-user-clock nav-icon"></i>
-              <span class="nav-text">Gestión de Ausencias</span>
             </a>
 
             <a href="{{ route('horarios.manual') }}" class="nav-item {{ request()->routeIs('horarios.manual') ? 'active' : '' }}" data-tooltip="Horarios Manuales">
@@ -1415,7 +1402,15 @@
             if (res && res.data) {
               var u = res.data;
               document.getElementById('sidebarName').textContent = u.fullName || u.externalId || 'Usuario';
-              document.getElementById('sidebarRole').textContent = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : '--';
+              var roleText = '--';
+              if (u.role === 'admin') {
+                roleText = 'Administrador';
+              } else if (u.role === 'teacher') {
+                roleText = 'Docente';
+              } else if (u.role) {
+                roleText = u.role.charAt(0).toUpperCase() + u.role.slice(1);
+              }
+              document.getElementById('sidebarRole').textContent = roleText;
               var initials = (u.fullName || u.externalId || 'U').substring(0, 2).toUpperCase();
               document.getElementById('sidebarAvatar').textContent = initials;
             }

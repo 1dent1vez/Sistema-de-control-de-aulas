@@ -87,6 +87,13 @@ class SamIdentity extends Model implements Authenticatable
      */
     public function getProfileFromSam(): array
     {
+        if (! empty($this->full_name) && ! empty($this->email)) {
+            return [
+                'fullName' => $this->full_name,
+                'email' => $this->email,
+            ];
+        }
+
         try {
             $employee = SamEmployee::find($this->external_id);
 

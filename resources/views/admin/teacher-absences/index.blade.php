@@ -546,12 +546,21 @@ document.addEventListener('DOMContentLoaded', function () {
       const teacherName = teacherObj ? (teacherObj.fullName || teacherObj.email) : a.teacherExternalId;
       const classCount = a.classSchedules ? a.classSchedules.length : 0;
 
+      let regDateStr = '';
+      if (a.createdAt) {
+        const regDate = new Date(a.createdAt);
+        regDateStr = regDate.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+
       return `
         <tr>
           <td>${idx + 1}</td>
           <td style="font-weight:600;color:var(--midnight);">${teacherName} (${a.teacherExternalId})</td>
           <td><span style="color:var(--corp-orange);font-weight:600;">${typeName}</span></td>
-          <td><b>${a.startDate}</b> al <b>${a.endDate}</b></td>
+          <td>
+            <b>${a.startDate}</b> al <b>${a.endDate}</b>
+            ${regDateStr ? `<div style="font-size:11px;color:var(--soft-steel);margin-top:2px;">Reg: ${regDateStr}</div>` : ''}
+          </td>
           <td><span class="badge-count">${classCount} clases</span></td>
           <td>${a.observations || '<span style="color:var(--soft-steel);">Ninguna</span>'}</td>
           <td>
@@ -576,9 +585,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const typeObj = absenceTypes.find(t => t.id === a.absenceTypeId);
     const typeName = typeObj ? typeObj.name : `Tipo #${a.absenceTypeId}`;
 
+    let regDateStr = 'N/A';
+    if (a.createdAt) {
+      const regDate = new Date(a.createdAt);
+      regDateStr = regDate.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
     $('detDocente').textContent = teacherName;
     $('detTipo').textContent = typeName;
-    $('detPeriodo').textContent = `${a.startDate} al ${a.endDate}`;
+    $('detPeriodo').innerHTML = `<b>${a.startDate} al ${a.endDate}</b><div style="font-size:12px;color:var(--soft-steel);margin-top:4px;">Registrado el: ${regDateStr}</div>`;
     $('detObs').textContent = a.observations || 'Sin notas.';
 
     const cList = $('detClassList');
