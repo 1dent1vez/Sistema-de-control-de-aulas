@@ -34,6 +34,7 @@ use App\Models\Building;
 use App\Services\Buildings\GamaBuildingService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class GamaBuildingController extends Controller
 {
@@ -45,12 +46,19 @@ class GamaBuildingController extends Controller
 
     public function index(): JsonResponse
     {
-        return $this->success(BuildingResource::collection($this->service->getAll()));
+        $buildings = Cache::remember('buildings.all', 3600, function () {
+            return $this->service->getAll();
+        });
+
+        return $this->success(BuildingResource::collection($buildings));
     }
 
     public function show(int $id): JsonResponse
     {
-        $building = $this->service->getById($id);
+        $building = Cache::remember("buildings.show.{$id}", 3600, function () use ($id) {
+            return $this->service->getById($id);
+        });
+
         if (! $building) {
             return $this->error('El edificio solicitado no existe o no esta registrado en el sistema.', 404);
         }
@@ -62,7 +70,12 @@ class GamaBuildingController extends Controller
     {
         $this->authorize('create', Building::class);
 
-        return $this->created(new BuildingResource($this->service->store($request->validated())));
+        $building = $this->service->store($request->validated());
+
+        // Invalidate building cache
+        Cache::forget('buildings.all');
+
+        return $this->created(new BuildingResource($building));
     }
 
     public function update(UpdateBuildingRequest $request, int $id): JsonResponse
@@ -72,6 +85,10 @@ class GamaBuildingController extends Controller
         if (! $building) {
             return $this->error('El edificio solicitado no existe o no esta registrado en el sistema.', 404);
         }
+
+        // Invalidate building cache
+        Cache::forget('buildings.all');
+        Cache::forget("buildings.show.{$id}");
 
         return $this->success(new BuildingResource($building));
     }
@@ -83,6 +100,10 @@ class GamaBuildingController extends Controller
         if (! $deleted) {
             return $this->error('El edificio solicitado no existe o no esta registrado en el sistema.', 404);
         }
+
+        // Invalidate building cache
+        Cache::forget('buildings.all');
+        Cache::forget("buildings.show.{$id}");
 
         return $this->success(null, 'Edificio eliminado exitosamente.');
     }

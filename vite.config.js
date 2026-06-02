@@ -7,10 +7,6 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/css/gama-dashboard.css',
-                'resources/css/sidebar.css',
-                'resources/css/footer.css',
-                'resources/css/qr-screen.css',
                 'resources/js/app.js',
             ],
             refresh: true,

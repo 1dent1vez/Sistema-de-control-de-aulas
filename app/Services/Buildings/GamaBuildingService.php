@@ -46,7 +46,7 @@ class GamaBuildingService
      */
     public function getAll(): Collection
     {
-        return $this->buildingRepository->all();
+        return $this->buildingRepository->all()->load(['levels.classrooms', 'institution']);
     }
 
     /**
@@ -54,7 +54,9 @@ class GamaBuildingService
      */
     public function getById(int $id): ?Building
     {
-        return $this->buildingRepository->findById($id);
+        $building = $this->buildingRepository->findById($id);
+
+        return $building ? $building->load(['levels.classrooms', 'institution']) : null;
     }
 
     /**

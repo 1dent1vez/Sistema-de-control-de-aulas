@@ -23,6 +23,10 @@ use App\Http\Controllers\Api\V1\Qr\GamaQrCodeController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas (sin autenticación)
+Route::get('/up', function () {
+    return response()->noContent();
+});
+
 Route::get('/', function () {
     return view('login');
 })->name('login');

@@ -21,6 +21,8 @@ beforeEach(function () {
         'prefix' => '',
     ]]);
 
+    config(['sam.mock_enabled' => true]);
+
     // Crear la tabla empleados en la base de datos 'sam' en memoria
     Schema::connection('sam')->create('empleados', function ($table) {
         $table->id('id_empleado');

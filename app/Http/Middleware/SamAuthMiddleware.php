@@ -48,17 +48,21 @@ class SamAuthMiddleware
         $cookie = $request->cookie('sam_token');
         $token = $bearer ?? $cookie;
 
-        Log::channel('sam_auth')->debug('[SAM-AUTH] Entrada | Context: '.json_encode([
-            'method' => $request->method(),
-            'uri' => $request->fullUrl(),
-            'has_bearer' => $bearer !== null,
-            'has_cookie' => $cookie !== null,
-        ]));
+        if (config('app.debug')) {
+            Log::channel('sam_auth')->debug('[SAM-AUTH] Entrada | Context: '.json_encode([
+                'method' => $request->method(),
+                'uri' => $request->fullUrl(),
+                'has_bearer' => $bearer !== null,
+                'has_cookie' => $cookie !== null,
+            ]));
+        }
 
         if ($token) {
-            Log::channel('sam_auth')->debug('[SAM-AUTH] Extracción de token | Context: '.json_encode([
-                'source' => $bearer !== null ? 'bearer' : 'cookie',
-            ]));
+            if (config('app.debug')) {
+                Log::channel('sam_auth')->debug('[SAM-AUTH] Extracción de token | Context: '.json_encode([
+                    'source' => $bearer !== null ? 'bearer' : 'cookie',
+                ]));
+            }
 
             // Eager loading para evitar N+1
             $accessToken = null;
@@ -77,21 +81,25 @@ class SamAuthMiddleware
             if ($accessToken) {
                 $isExpired = $accessToken->expires_at && $accessToken->expires_at->isPast();
 
-                Log::channel('sam_auth')->debug('[SAM-AUTH] Consulta DB | Context: '.json_encode([
-                    'found' => true,
-                    'token_id' => $accessToken->id,
-                    'tokenable_type' => $accessToken->tokenable_type,
-                    'tokenable_id' => $accessToken->tokenable_id,
-                    'last_used_at' => $accessToken->last_used_at?->toIso8601String(),
-                    'expires_at' => $accessToken->expires_at?->toIso8601String(),
-                    'is_expired' => $isExpired,
-                ]));
+                if (config('app.debug')) {
+                    Log::channel('sam_auth')->debug('[SAM-AUTH] Consulta DB | Context: '.json_encode([
+                        'found' => true,
+                        'token_id' => $accessToken->id,
+                        'tokenable_type' => $accessToken->tokenable_type,
+                        'tokenable_id' => $accessToken->tokenable_id,
+                        'last_used_at' => $accessToken->last_used_at?->toIso8601String(),
+                        'expires_at' => $accessToken->expires_at?->toIso8601String(),
+                        'is_expired' => $isExpired,
+                    ]));
+                }
 
                 if ($isExpired) {
-                    Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
-                        'decision' => 'auth fail',
-                        'reason' => 'Token expirado',
-                    ]));
+                    if (config('app.debug')) {
+                        Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
+                            'decision' => 'auth fail',
+                            'reason' => 'Token expirado',
+                        ]));
+                    }
 
                     if (! $request->expectsJson()) {
                         return redirect()->route('login')->with('error', 'Sesión expirada')->withoutCookie('sam_token');
@@ -102,31 +110,39 @@ class SamAuthMiddleware
                 $identity = $accessToken->tokenable;
 
                 if ($identity && $identity instanceof SamIdentity) {
-                    Log::channel('sam_auth')->debug('[SAM-AUTH] Resolución de modelo | Context: '.json_encode([
-                        'resolved' => true,
-                        'identity_id' => $identity->id,
-                        'email' => $identity->email,
-                    ]));
+                    if (config('app.debug')) {
+                        Log::channel('sam_auth')->debug('[SAM-AUTH] Resolución de modelo | Context: '.json_encode([
+                            'resolved' => true,
+                            'identity_id' => $identity->id,
+                            'email' => $identity->email,
+                        ]));
+                    }
 
                     Auth::login($identity);
 
-                    Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
-                        'decision' => 'auth pass',
-                        'reason' => 'Usuario autenticado exitosamente',
-                        'identity_id' => $identity->id,
-                    ]));
+                    if (config('app.debug')) {
+                        Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
+                            'decision' => 'auth pass',
+                            'reason' => 'Usuario autenticado exitosamente',
+                            'identity_id' => $identity->id,
+                        ]));
+                    }
 
                     return $next($request);
                 } else {
-                    Log::channel('sam_auth')->debug('[SAM-AUTH] Resolución de modelo | Context: '.json_encode([
-                        'resolved' => false,
-                        'reason' => 'Tokenable inválido o no es instancia de SamIdentity',
-                    ]));
+                    if (config('app.debug')) {
+                        Log::channel('sam_auth')->debug('[SAM-AUTH] Resolución de modelo | Context: '.json_encode([
+                            'resolved' => false,
+                            'reason' => 'Tokenable inválido o no es instancia de SamIdentity',
+                        ]));
+                    }
 
-                    Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
-                        'decision' => 'auth fail',
-                        'reason' => 'Identidad no válida',
-                    ]));
+                    if (config('app.debug')) {
+                        Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
+                            'decision' => 'auth fail',
+                            'reason' => 'Identidad no válida',
+                        ]));
+                    }
 
                     if (! $request->expectsJson()) {
                         return redirect()->route('login')->with('error', 'Identidad no válida')->withoutCookie('sam_token');
@@ -134,14 +150,18 @@ class SamAuthMiddleware
                     throw new AuthenticationException('Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.', ['sanctum']);
                 }
             } else {
-                Log::channel('sam_auth')->debug('[SAM-AUTH] Consulta DB | Context: '.json_encode([
-                    'found' => false,
-                ]));
+                if (config('app.debug')) {
+                    Log::channel('sam_auth')->debug('[SAM-AUTH] Consulta DB | Context: '.json_encode([
+                        'found' => false,
+                    ]));
+                }
 
-                Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
-                    'decision' => 'auth fail',
-                    'reason' => 'Token no existe en DB',
-                ]));
+                if (config('app.debug')) {
+                    Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
+                        'decision' => 'auth fail',
+                        'reason' => 'Token no existe en DB',
+                    ]));
+                }
 
                 if (! $request->expectsJson()) {
                     return redirect()->route('login')->with('error', 'Token inválido')->withoutCookie('sam_token');
@@ -149,10 +169,12 @@ class SamAuthMiddleware
                 throw new AuthenticationException('Sesion expirada. Su sesion ha caducado o el token es invalido. Inicie sesion nuevamente.', ['sanctum']);
             }
         } else {
-            Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
-                'decision' => 'auth fail',
-                'reason' => 'No se encontró token en cookie ni header Bearer',
-            ]));
+            if (config('app.debug')) {
+                Log::channel('sam_auth')->debug('[SAM-AUTH] Decisión | Context: '.json_encode([
+                    'decision' => 'auth fail',
+                    'reason' => 'No se encontró token en cookie ni header Bearer',
+                ]));
+            }
 
             if (! $request->expectsJson()) {
                 return redirect()->route('login')->with('error', 'Sesión no iniciada')->withoutCookie('sam_token');

@@ -71,7 +71,7 @@ class GamaClassroomService
     public function create(array $data): Classroom
     {
         return DB::transaction(function () use ($data): Classroom {
-            return $this->repository->create($data);
+            return $this->repository->create($data)->load(['building', 'level', 'activeQr']);
         });
     }
 
@@ -88,7 +88,9 @@ class GamaClassroomService
             return null;
         }
 
-        return $this->repository->update($classroom, $data);
+        $updated = $this->repository->update($classroom, $data);
+
+        return $updated ? $updated->load(['building', 'level', 'activeQr']) : null;
     }
 
     /**

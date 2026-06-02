@@ -29,6 +29,7 @@ use App\Http\Resources\Catalogs\AbsenceTypeResource;
 use App\Services\Catalogs\GamaAbsenceTypeService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class GamaAbsenceTypeController extends Controller
 {
@@ -40,7 +41,9 @@ class GamaAbsenceTypeController extends Controller
 
     public function index(): JsonResponse
     {
-        $absenceTypes = $this->service->getAll();
+        $absenceTypes = Cache::remember('absence_types.all', 3600, function () {
+            return $this->service->getAll();
+        });
 
         return $this->success(
             AbsenceTypeResource::collection($absenceTypes),
@@ -50,7 +53,9 @@ class GamaAbsenceTypeController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $absenceType = $this->service->getById($id);
+        $absenceType = Cache::remember("absence_types.show.{$id}", 3600, function () use ($id) {
+            return $this->service->getById($id);
+        });
 
         if (! $absenceType) {
             return $this->error('Tipo de ausencia no encontrado.', 404);

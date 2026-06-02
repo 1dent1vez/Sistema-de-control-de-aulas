@@ -27,6 +27,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -56,5 +57,22 @@ class Building extends Model
     public function classrooms(): HasMany
     {
         return $this->hasMany(Classroom::class, 'building_id', 'building_id');
+    }
+
+    public function levels(): BelongsToMany
+    {
+        return $this->belongsToMany(Level::class, 'classrooms', 'building_id', 'level_id')
+            ->distinct()
+            ->whereNull('classrooms.deleted_at');
+    }
+
+    public function institution(): BelongsTo
+    {
+        return $this->belongsTo(Institution::class, 'building_id', 'institution_id')
+            ->withDefault([
+                'name' => 'Instituto Tecnológico de Toluca',
+                'code' => 'ITT',
+                'is_active' => true,
+            ]);
     }
 }

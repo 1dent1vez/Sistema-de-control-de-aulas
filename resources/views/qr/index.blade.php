@@ -2,9 +2,7 @@
 
 @section('title', 'Codigo QR')
 
-@push('styles')
-@vite(['resources/css/qr-screen.css'])
-@endpush
+
 
 @section('content')
 
