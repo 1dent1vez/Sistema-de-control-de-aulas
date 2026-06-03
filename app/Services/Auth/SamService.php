@@ -133,7 +133,10 @@ class SamService
                 'png' => (string) $response->getBody(),
                 'sessionId' => $sessionId,
             ];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::error('[SAM] Error al obtener captcha: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
             return ['png' => null, 'sessionId' => null];
         }
     }
@@ -157,7 +160,10 @@ class SamService
             }
 
             return $body === 'si';
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::error('[SAM] Error al validar captcha: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
             return false;
         }
     }
@@ -653,10 +659,9 @@ class SamService
             } catch (ConnectException|RequestException $e) {
                 $lastException = $e;
 
-                Log::channel('sam')->warning("SAM request attempt {$attempt} failed", [
+                Log::warning("SAM request attempt {$attempt} failed: " . $e->getMessage(), [
                     'uri' => $uri,
                     'method' => $method,
-                    'error' => $e->getMessage(),
                 ]);
 
                 if ($attempt === 1) {
@@ -665,11 +670,10 @@ class SamService
             }
         }
 
-        Log::channel('sam')->error('SAM request failed', [
+        Log::error('SAM request failed: ' . $lastException->getMessage(), [
             'uri' => $uri,
             'method' => $method,
             'attempt' => 2,
-            'error' => $lastException->getMessage(),
         ]);
 
         throw $lastException;
