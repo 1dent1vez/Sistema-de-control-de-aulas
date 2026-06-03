@@ -52,7 +52,11 @@ return [
     |
     */
 
-    'url' => str_contains((string) env('APP_URL', ''), '${{') ? 'http://localhost' : env('APP_URL', 'http://localhost'),
+    'url' => (function() {
+        $url = (string) env('APP_URL', 'http://localhost');
+        $host = parse_url($url, PHP_URL_HOST);
+        return (!$host || str_contains($host, '$') || str_contains($host, '{')) ? 'http://localhost' : $url;
+    })(),
 
     /*
     |--------------------------------------------------------------------------
