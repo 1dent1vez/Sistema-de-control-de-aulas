@@ -259,53 +259,11 @@
 /* â”€â”€ Botones de acciones â”€â”€ */
 .edif-actions { display: flex; gap: 6px; align-items: center; }
 
-.btn-editar {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    background: var(--royal-blue);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
+.btn-sm-fixed {
+    height: 34px;
+    padding: 0 12px;
     font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: var(--font-main);
-    transition: background 0.18s;
-    white-space: nowrap;
-    min-height: 34px;
-}
-
-.btn-editar:hover { background: var(--corp-orange); }
-
-.btn-eliminar-red {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    background: transparent;
-    color: var(--status-inactive);
-    border: 1px solid rgba(194, 120, 120, 0.4);
     border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: var(--font-main);
-    transition: all 0.18s;
-    white-space: nowrap;
-    min-height: 34px;
-}
-
-.btn-eliminar-red:hover:not([disabled]) {
-    color: white;
-    border-color: var(--status-inactive);
-    background: var(--status-inactive);
-}
-
-.btn-eliminar-red[disabled] {
-    opacity: 0.45;
-    cursor: not-allowed;
 }
 
 .btn-spinner {
@@ -936,11 +894,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                     <td>
                         <div class="edif-actions">
-                            <button class="btn-editar" data-action="editar" data-id="${r.id}">
-                                <i class="fas fa-edit"></i> Editar
+                            <button class="btn btn-secondary btn-sm btn-sm-fixed" data-action="editar" data-id="${r.id}" title="Editar">
+                                <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn-eliminar-red" data-action="eliminar" data-id="${r.id}" title="Eliminar edificio">
-                                <i class="fas fa-trash-alt"></i> Eliminar
+                            <button class="btn btn-secondary btn-sm btn-sm-fixed" style="background:#e3342f;color:#fff;border-color:#e3342f;" data-action="eliminar" data-id="${r.id}" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </td>

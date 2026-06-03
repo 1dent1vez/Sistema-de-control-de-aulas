@@ -65,7 +65,7 @@ class GamaScheduleImportController extends Controller
         $batchId = Str::uuid()->toString();
 
         $path = $file->storeAs('imports', $batchId.'.'.$file->getClientOriginalExtension());
-        ProcessScheduleImportJob::dispatch($path, $file->getClientOriginalName(), $semesterId, $batchId, false);
+        ProcessScheduleImportJob::dispatchSync($path, $file->getClientOriginalName(), $semesterId, $batchId, false);
 
         return $this->success([
             'batchId' => $batchId,

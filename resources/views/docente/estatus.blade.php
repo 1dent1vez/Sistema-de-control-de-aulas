@@ -510,6 +510,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function hideConflictModal() { pendingConfirmed = false; $('conflictModal').classList.remove('show'); }
 
+  function formatValDate(dStr) {
+    if (!dStr) return '';
+    var clean = dStr.split('T')[0];
+    var parts = clean.split('-');
+    if (parts.length === 3) {
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    return dStr;
+  }
+
   function renderHistory() {
     var list = $('historyList');
     if (!absences || absences.length === 0) {
@@ -526,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       return '<div class="history-item">' +
-        '<div><span class="h-type">' + typeName + '</span> <span class="h-date">' + a.startDate + ' al ' + a.endDate + '</span></div>' +
+        '<div><span class="h-type">' + typeName + '</span> <span class="h-date">' + formatValDate(a.startDate) + ' al ' + formatValDate(a.endDate) + '</span></div>' +
         (regDateStr ? '<div style="color:var(--soft-steel);font-size:11px;margin-top:2px;">Registrado: ' + regDateStr + '</div>' : '') +
         (a.observations ? '<div style="margin-top:3px;color:var(--dark-graphite);">' + a.observations + '</div>' : '') +
         '</div>';

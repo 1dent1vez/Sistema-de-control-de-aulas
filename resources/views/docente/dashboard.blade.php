@@ -156,11 +156,7 @@
             </div>
           </div>
 
-          <div style="margin-bottom: 20px;">
-            <a href="{{ route('docente.estatus') }}#registrar" class="btn btn-primary" style="width: 100%; text-align: center; display: block; background: var(--corp-orange); border-color: var(--corp-orange); color: white;">
-              <i class="fas fa-plus"></i> Registrar Nueva Ausencia
-            </a>
-          </div>
+
 
           <div>
             <h3 style="font-size: 13px; font-weight: 700; color: var(--midnight); margin-bottom: 10px;">Últimas ausencias registradas</h3>
@@ -212,6 +208,16 @@
     })['catch'](function(err) {
       console.error("Error cargando perfil:", err);
     });
+
+    function formatValDate(dStr) {
+      if (!dStr) return '';
+      var clean = dStr.split('T')[0];
+      var parts = clean.split('-');
+      if (parts.length === 3) {
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+      }
+      return dStr;
+    }
 
     function loadTeacherData() {
       Promise.all([
@@ -330,7 +336,7 @@
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
                 '<strong style="color:var(--deep-blue);">' + typeName + '</strong>' +
               '</div>' +
-              '<div style="color:var(--dark-graphite);">Del <b>' + a.startDate + '</b> al <b>' + a.endDate + '</b></div>' +
+              '<div style="color:var(--dark-graphite);">Del <b>' + formatValDate(a.startDate) + '</b> al <b>' + formatValDate(a.endDate) + '</b></div>' +
               (regDateStr ? '<div style="color:var(--soft-steel);font-size:10px;margin-top:2px;">Registrado: ' + regDateStr + '</div>' : '') +
               (a.observations ? '<div style="margin-top:4px;color:var(--soft-steel);font-style:italic;">"' + a.observations + '"</div>' : '') +
               '</div>';

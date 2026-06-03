@@ -45,37 +45,6 @@
                             <input type="text" id="searchAula" placeholder="Buscar aula...">
                         </div>
                     </div>
-                    <div class="toolbar-right">
-                        <button class="btn btn-outline" id="btnSelectAll">
-                            <i class="fas fa-check-square"></i>
-                            <span>Seleccionar todo</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Selection Bar -->
-                <div class="selection-bar" id="selectionBar">
-                    <div class="selection-info">
-                        <span class="selection-count" id="selectionCount">0 aulas seleccionadas</span>
-                        <button class="btn btn-ghost btn-sm" id="btnClearSelection">
-                            <i class="fas fa-times"></i>
-                            Limpiar seleccion
-                        </button>
-                    </div>
-                    <div class="selection-actions" style="display: flex; align-items: center; gap: 8px;">
-                        <button class="btn btn-primary btn-md" id="btnGenerarQRBulk">
-                            <i class="fas fa-qrcode"></i>
-                            Generar QR
-                        </button>
-                        <select id="bulkFormat" style="padding: 10px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--mist-blue); font-size: 13px; outline: none; background: #fff; cursor: pointer;">
-                            <option value="png">PNG (ZIP)</option>
-                            <option value="pdf">PDF</option>
-                        </select>
-                        <button class="btn btn-secondary btn-md" id="btnDescargarZIP">
-                            <i class="fas fa-download"></i>
-                            Descargar Lote
-                        </button>
-                    </div>
                 </div>
 
                 <!-- QR Gallery (dinamica) -->
@@ -131,12 +100,6 @@
             const filtroEdificio  = document.getElementById('filtroEdificio');
             const searchAula      = document.getElementById('searchAula');
             const qrGallery       = document.getElementById('qrGallery');
-            const selectionBar    = document.getElementById('selectionBar');
-            const selectionCount  = document.getElementById('selectionCount');
-            const btnSelectAll    = document.getElementById('btnSelectAll');
-            const btnClearSel     = document.getElementById('btnClearSelection');
-            const btnGenerarBulk  = document.getElementById('btnGenerarQRBulk');
-            const btnDescargarZIP = document.getElementById('btnDescargarZIP');
             const modalRegenerar  = document.getElementById('modalRegenerar');
             const modalAulaName   = document.getElementById('modalAulaName');
             const toastContainer  = document.getElementById('toastContainer');
@@ -236,7 +199,6 @@
                 }
 
                 qrGallery.innerHTML = visible.map(c => buildCard(c)).join('');
-                updateSelectionCount();
             }
 
             function qrImgHtml(c) {
@@ -279,9 +241,6 @@
                        </button>`;
 
                 return `<div class="qr-card" data-classroom-id="${c.id}" data-edificio-id="${c.edificioId}">
-                    <div class="qr-card-checkbox">
-                        <input type="checkbox" id="check-${c.id}" aria-label="Seleccionar ${esc(c.nombre)}">
-                    </div>
                     <div class="qr-card-header">
                         <div>
                             <div class="qr-card-title">${esc(c.nombre)}</div>
@@ -302,39 +261,6 @@
             filtroEdificio.addEventListener('change', renderGallery);
             let searchTimer;
             searchAula.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderGallery, 280); });
-
-            /* ---- Seleccion ---- */
-            qrGallery.addEventListener('change', e => {
-                if (e.target.type === 'checkbox') {
-                    e.target.closest('.qr-card').classList.toggle('selected', e.target.checked);
-                    updateSelectionCount();
-                }
-            });
-
-            function updateSelectionCount() {
-                const count = qrGallery.querySelectorAll('input[type="checkbox"]:checked').length;
-                selectionCount.textContent = `${count} ${count === 1 ? 'aula seleccionada' : 'aulas seleccionadas'}`;
-                selectionBar.classList.toggle('visible', count > 0);
-            }
-
-            btnSelectAll.addEventListener('click', () => {
-                const visibleCards = qrGallery.querySelectorAll('.qr-card');
-                const allChecked = Array.from(visibleCards).every(c => c.querySelector('input[type="checkbox"]').checked);
-                visibleCards.forEach(card => {
-                    const cb = card.querySelector('input[type="checkbox"]');
-                    cb.checked = !allChecked;
-                    card.classList.toggle('selected', !allChecked);
-                });
-                updateSelectionCount();
-            });
-
-            btnClearSel.addEventListener('click', () => {
-                qrGallery.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-                    cb.checked = false;
-                    cb.closest('.qr-card').classList.remove('selected');
-                });
-                updateSelectionCount();
-            });
 
             /* ---- Acciones de tarjeta ---- */
             qrGallery.addEventListener('click', e => {
@@ -458,147 +384,6 @@
                     btn.innerHTML = orig;
                 }
             }
-
-            /* ---- Generar QR masivo ---- */
-            async function generarBulk() {
-                const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
-                if (!selectedCards.length) {
-                    showToast('Sin selección', 'Por favor seleccione al menos un aula.', 'warning');
-                    return;
-                }
-
-                btnGenerarBulk.disabled = true;
-                btnGenerarBulk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
-
-                let ok = 0, fail = 0;
-                for (const card of selectedCards) {
-                    const id = Number(card.dataset.classroomId);
-                    try {
-                        const res = await apiFetch(`/api/v1/classrooms/${id}/qr`, { 
-                            method: 'POST'
-                        });
-                        const qr = res.data ?? {};
-                        const c = allClassrooms.find(x => x.id === id);
-                        if (c) { 
-                            c.hasActiveQr = true; 
-                            c.qrId = qr.id ?? qr.qrId ?? null; 
-                            c.qrImageUrl = qr.imagePath ?? qr.imageUrl ?? null; 
-                        }
-                        ok++;
-                    } catch (_) { fail++; }
-                }
-
-                renderGallery();
-                btnGenerarBulk.disabled = false;
-                btnGenerarBulk.innerHTML = '<i class="fas fa-qrcode"></i> Generar QR';
-
-                if (ok > 0) showToast('QR generados', `${ok} codigo(s) QR generado(s) exitosamente.`, 'success');
-                if (fail > 0) showToast('Errores parciales', `${fail} aula(s) no pudieron generarse.`, 'warning');
-            }
-
-            btnGenerarBulk.addEventListener('click', () => generarBulk());
-
-            /* ---- Descargar ZIP/PDF Lote ---- */
-            btnDescargarZIP.addEventListener('click', async () => {
-                const selectedCards = Array.from(qrGallery.querySelectorAll('.qr-card.selected'));
-                const classroomIds = selectedCards
-                    .map(card => Number(card.dataset.classroomId))
-                    .filter(id => allClassrooms.find(c => c.id === id)?.qrId);
-
-                if (!classroomIds.length) {
-                    showToast('Sin QR para descargar', 'Seleccione aulas con QR activo para descargar.', 'warning');
-                    return;
-                }
-
-                const format = document.getElementById('bulkFormat').value;
-
-                btnDescargarZIP.disabled = true;
-                btnDescargarZIP.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
-
-                try {
-                    const token = localStorage.getItem('auth_token');
-                    const res = await fetch('/api/v1/qr-codes/download', {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json', 
-                            'Accept': 'application/json', 
-                            'X-CSRF-TOKEN': getCsrf(),
-                            'Authorization': token ? 'Bearer ' + token : ''
-                        },
-                        body: JSON.stringify({ classroom_ids: classroomIds, format: format }),
-                    });
-                    if (!res.ok) throw new Error('Error al iniciar la descarga.');
-                    const data = await res.json();
-                    const batchId = data.data?.batchId ?? data.batchId;
-
-                    if (!batchId) throw new Error('No se recibió el identificador del lote.');
-
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusRes = await fetch(`/api/v1/qr-codes/download/${batchId}/status`, {
-                                headers: { 
-                                    'Accept': 'application/json',
-                                    'Authorization': token ? 'Bearer ' + token : ''
-                                }
-                            });
-                            if (!statusRes.ok) throw new Error();
-                            const statusData = await statusRes.json();
-                            const batch = statusData.data;
-
-                            if (batch.status === 'completed') {
-                                clearInterval(pollInterval);
-                                
-                                const fileRes = await fetch(batch.downloadUrl, {
-                                    headers: {
-                                        'Authorization': token ? 'Bearer ' + token : ''
-                                    }
-                                });
-                                if (!fileRes.ok) throw new Error();
-                                const blob = await fileRes.blob();
-                                
-                                const ext = format === 'pdf' ? 'pdf' : 'zip';
-                                const a = document.createElement('a');
-                                a.href = URL.createObjectURL(blob);
-                                a.download = `QR_Lote.${ext}`;
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(a.href);
-
-                                btnDescargarZIP.disabled = false;
-                                btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
-                                showToast('Descarga lista', 'El lote de códigos QR se ha generado con éxito.', 'success');
-                            } else if (batch.status === 'failed') {
-                                clearInterval(pollInterval);
-                                btnDescargarZIP.disabled = false;
-                                btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
-                                showToast('Error', 'No se pudo generar el archivo', 'error');
-                            } else {
-                                btnDescargarZIP.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Procesando (${batch.progress}%)...`;
-                            }
-                        } catch (e) {
-                            clearInterval(pollInterval);
-                            btnDescargarZIP.disabled = false;
-                            btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
-                            showToast('Error', 'No se pudo generar el archivo', 'error');
-                        }
-                    }, 2000);
-
-                    setTimeout(() => {
-                        clearInterval(pollInterval);
-                        if (btnDescargarZIP.disabled) {
-                            btnDescargarZIP.disabled = false;
-                            btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
-                            showToast('Timeout', 'La generación del lote tardó demasiado tiempo.', 'warning');
-                        }
-                    }, 300000);
-
-                } catch (err) {
-                    btnDescargarZIP.disabled = false;
-                    btnDescargarZIP.innerHTML = '<i class="fas fa-download"></i> Descargar Lote';
-                    showToast('Error', 'No se pudo generar el archivo', 'error');
-                }
-            });
 
 
 

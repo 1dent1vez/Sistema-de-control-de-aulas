@@ -126,6 +126,20 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   
   .usr-empty { padding: 40px; text-align: center; color: var(--gama-gris-500); font-size: 14px; }
+
+  .usr-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-sm-fixed {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: var(--radius-sm, 4px);
+  }
   
   @media (max-width: 1024px) {
     .usr-main { margin-left: 0; }
@@ -279,9 +293,9 @@
                     </span>
                   </td>
                   <td style="text-align: center;">
-                    <div class="usr-actions" style="justify-content: center; gap: 8px;">
+                    <div class="usr-actions">
                       <button 
-                        class="btn btn-outline btn-sm btn-icon" 
+                        class="btn btn-secondary btn-sm btn-sm-fixed" 
                         title="Restablecer a Docente"
                         @click="revokeRole(identity.externalId)"
                         :disabled="identity.role === 'teacher'"
@@ -290,8 +304,8 @@
                         <i class="fas fa-user-minus"></i>
                       </button>
                       <button 
-                        class="btn btn-outline btn-sm btn-icon" 
-                        style="color: var(--gama-rojo-500, #dc2626); border-color: rgba(220, 38, 38, 0.2);"
+                        class="btn btn-secondary btn-sm btn-sm-fixed" 
+                        style="background:#e3342f;color:#fff;border-color:#e3342f;"
                         title="Eliminar Físicamente"
                         @click="confirmPhysicalDelete(identity.externalId)"
                       >

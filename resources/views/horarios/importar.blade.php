@@ -882,6 +882,8 @@ document.addEventListener('DOMContentLoaded', function () {
     $('selectedContainer').style.display = 'none';
     $('previewWrapper').style.display = 'none';
     $('msgBox').innerHTML = '';
+    isSubmitting = false;
+    $('btnProcesar').disabled = false;
   }
 
   /* Descarga de plantilla */
@@ -900,11 +902,16 @@ document.addEventListener('DOMContentLoaded', function () {
   /* Procesar / Importar */
   let errorRowsLog = [];
   let currentBatchId = null;
+  let isSubmitting = false;
 
   $('btnProcesar').addEventListener('click', async () => {
+    if (isSubmitting) return;
     const semId = $('semestreDestino').value;
     if (!selectedFile) { showErrorAlert('Selecciona un archivo CSV/XLSX antes de procesar.'); return; }
     if (!semId)        { showErrorAlert('Selecciona el semestre destino antes de procesar.'); return; }
+
+    isSubmitting = true;
+    $('btnProcesar').disabled = true;
 
     $('selectedContainer').style.display = 'none';
     $('configSection').style.display = 'none';
@@ -936,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (batchId) {
         let attempts = 0;
-        const maxAttempts = 30; // 30 segundos
+        const maxAttempts = 15; // 30 segundos (15 intentos x 2s)
 
         const pollReport = async () => {
           try {
@@ -944,11 +951,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (rptRes.statusCode === 202) {
               if (attempts < maxAttempts) {
                 attempts++;
-                setTimeout(pollReport, 1000);
+                setTimeout(pollReport, 2000); // Polling cada 2 segundos
               } else {
                 showFinalError('La importación está tardando demasiado. Verifique la base de datos.');
               }
             } else {
+              isSubmitting = false;
+              $('btnProcesar').disabled = false;
               renderResults(rptRes.data ?? [], false); // false = Preview Mode
             }
           } catch (e) {
@@ -956,8 +965,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         };
 
-        setTimeout(pollReport, 1000);
+        setTimeout(pollReport, 2000); // Polling cada 2 segundos
       } else {
+        isSubmitting = false;
+        $('btnProcesar').disabled = false;
         renderResults(json.data?.rows ?? (Array.isArray(json.data) ? json.data : []), false);
       }
     } catch (err) {
@@ -966,6 +977,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function showFinalError(msg) {
+    isSubmitting = false;
+    $('btnProcesar').disabled = false;
     $('progressContainer').style.display = 'none';
     $('configSection').style.display = 'flex';
     $('selectedContainer').style.display = 'flex';
@@ -1086,11 +1099,16 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   /* Confirmar e Importar Realmente */
+  let isConfirming = false;
   $('btnConfirmarImportacion').addEventListener('click', async () => {
+    if (isConfirming) return;
     if (!currentBatchId) {
       showErrorAlert('ID de lote no disponible.');
       return;
     }
+
+    isConfirming = true;
+    $('btnConfirmarImportacion').disabled = true;
 
     $('resultContainer').style.display = 'none';
     
@@ -1115,8 +1133,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Recuperar el reporte original para mostrar como final
       const rptRes = await apiFetch(`/api/v1/class-schedules/import/${currentBatchId}/report`);
+      isConfirming = false;
+      $('btnConfirmarImportacion').disabled = false;
       renderResults(rptRes.data ?? [], true); // true = Final Success Mode
     } catch (err) {
+      isConfirming = false;
+      $('btnConfirmarImportacion').disabled = false;
       $('progressContainer').style.display = 'none';
       $('resultContainer').style.display = 'flex';
       showErrorAlert(err.json?.message ?? 'Error al guardar los horarios confirmados.');

@@ -226,25 +226,12 @@
 /* Botones de acciones */
 .sem-actions { display: flex; gap: 6px; align-items: center; }
 
-.btn-editar {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    background: var(--royal-blue);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
+.btn-sm-fixed {
+    height: 34px;
+    padding: 0 12px;
     font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: var(--font-main);
-    transition: background 0.18s;
-    white-space: nowrap;
-    min-height: 34px;
+    border-radius: var(--radius-sm);
 }
-
-.btn-editar:hover { background: var(--corp-orange); }
 
 /* Fila vacía */
 .sem-empty td {
@@ -994,7 +981,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 actionsHtml = `
                     <td>
                         <div class="sem-actions">
-                            <button class="btn-editar" data-id="${s.id}"><i class="fas fa-edit"></i>Editar</button>
+                            <button class="btn btn-secondary btn-sm btn-sm-fixed" data-id="${s.id}" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
                         </div>
                     </td>
                 `;

@@ -346,6 +346,37 @@
   </div>
 </aside>
 
+{{-- ──────────────────────────────────────────────────────────────────
+     Modal — Confirmar inactivar
+────────────────────────────────────────────────────────────────── --}}
+<div class="modal-overlay" id="inactivarModal" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <div>
+                <h3 class="modal-title">Inactivar Aula</h3>
+                <p style="font-size:13px;color:var(--soft-steel);margin-top:3px;">
+                    Esta acción inactivará el aula del sistema
+                </p>
+            </div>
+            <button class="modal-close" id="btnCloseInactivar" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div class="modal-warn-icon" style="width: 64px; height: 64px; margin: 0 auto 20px; background: rgba(194, 120, 120, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-ban" style="font-size: 28px; color: var(--status-inactive);"></i>
+            </div>
+            <p class="modal-text" id="inactivarText" style="text-align: center; color: var(--dark-graphite); line-height: 1.6;"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="btnCancelInactivar">Cancelar</button>
+            <button class="btn btn-primary" id="btnConfirmInactivar" style="background:#e3342f;color:#fff;border-color:#e3342f;">
+                <i class="fas fa-ban" style="margin-right:7px;"></i>Inactivar
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
@@ -660,18 +691,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* ── Inactivar Aula ── */
-  async function deleteAula(id) {
+  /* ── Inactivar Aula Modal ── */
+  let inactivarTargetId = null;
+
+  function openInactivarModal(id) {
     const record = state.aulas.find(x => x.id === id);
     if (!record) return;
-    if (!confirm(`¿Está seguro de que desea inactivar el aula "${record.nombre}"?`)) return;
-    try {
-      await apiFetch(`/api/v1/classrooms/${id}`, { method: 'DELETE' });
-      showToast('Aula inactivada', 'El aula fue inactivada correctamente.', 'success');
-      await loadAll();
-    } catch(err) {
-      showToast('Error', err.json?.message ?? 'No se pudo inactivar el aula.', 'error');
-    }
+    inactivarTargetId = id;
+    $('inactivarText').innerHTML = `¿Está seguro de que desea inactivar el aula <strong style="color:var(--midnight);">"${esc(record.nombre)}"</strong>?`;
+    $('inactivarModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeInactivarModal() {
+    inactivarTargetId = null;
+    $('inactivarModal').classList.remove('active');
+    document.body.style.overflow = '';
   }
 
   /* ── Precondición ── */
@@ -698,17 +733,39 @@ document.addEventListener('DOMContentLoaded', function () {
   $('fNivel').addEventListener('change',             checkFormValidity);
   $('fTipo').addEventListener('change',              checkFormValidity);
 
+  $('btnCloseInactivar').addEventListener('click',  closeInactivarModal);
+  $('btnCancelInactivar').addEventListener('click', closeInactivarModal);
+  $('inactivarModal').addEventListener('click', (e) => {
+    if (e.target === $('inactivarModal')) closeInactivarModal();
+  });
+
+  $('btnConfirmInactivar').addEventListener('click', async () => {
+    if (!inactivarTargetId) return;
+    const id = inactivarTargetId;
+    closeInactivarModal();
+    try {
+      await apiFetch(`/api/v1/classrooms/${id}`, { method: 'DELETE' });
+      showToast('Aula inactivada', 'El aula fue inactivada correctamente.', 'success');
+      await loadAll();
+    } catch(err) {
+      showToast('Error', err.json?.message ?? 'No se pudo inactivar el aula.', 'error');
+    }
+  });
+
   $('aulasBody').addEventListener('click', (e) => {
     const edit = e.target.closest('[data-edit]');
     if (edit) { openPanel(Number(edit.dataset.edit)); return; }
     const qr = e.target.closest('[data-qr]');
     if (qr) window.location.href = `{{ route('codigosqr') }}?aula_id=${qr.dataset.qr}`;
     const del = e.target.closest('[data-delete]');
-    if (del) { deleteAula(Number(del.dataset.delete)); return; }
+    if (del) { openInactivarModal(Number(del.dataset.delete)); return; }
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && $('panelAulas').classList.contains('open')) closePanel();
+    if (e.key === 'Escape') {
+      if ($('panelAulas').classList.contains('open')) closePanel();
+      if ($('inactivarModal').classList.contains('active')) closeInactivarModal();
+    }
   });
 
   /* ── Arranque ── */
