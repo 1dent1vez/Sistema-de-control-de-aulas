@@ -69,6 +69,10 @@ class SamService
             'cookies' => $this->cookieJar,
             'http_errors' => false,
             'verify' => config('sam.verify_ssl', false),
+            'headers' => [
+                'bypass-tunnel-reminder' => 'true',
+                'User-Agent' => 'GAMA-Client/1.0',
+            ],
         ]);
 
         $this->restoreFromCache();
