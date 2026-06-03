@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => str_contains((string) env('APP_URL', ''), '${{') ? 'http://localhost' : env('APP_URL', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
